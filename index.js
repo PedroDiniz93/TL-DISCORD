@@ -6,18 +6,31 @@ const fs = require("fs");
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 }; // azul escuro
 const HEADER_FG = { red: 1, green: 1, blue: 1 }; // branco
 
+function getGoogleCredsFromEnv() {
+  const b64 = process.env.GOOGLE_CREDS_B64;
+  if (!b64) {
+    throw new Error("Missing env GOOGLE_CREDS_B64 (base64 do credentials.json).");
+  }
+
+  const jsonStr = Buffer.from(b64, "base64").toString("utf8");
+  const creds = JSON.parse(jsonStr);
+
+  // garante que a private_key tenha quebras corretas (se vier com \n)
+  if (typeof creds.private_key === "string") {
+    creds.private_key = creds.private_key.replace(/\\n/g, "\n");
+  }
+
+  return creds;
+}
+
 async function getSheet(title, headers) {
-  const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
+    const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
 
-  const creds = JSON.parse(
-    fs.readFileSync(process.env.GOOGLE_CREDS_PATH, "utf8")
-  );
-
+  const creds = getGoogleCredsFromEnv();
   await doc.useServiceAccountAuth({
     client_email: creds.client_email,
     private_key: creds.private_key,
   });
-
   await doc.loadInfo();
 
   let sheet = doc.sheetsByTitle[title];
