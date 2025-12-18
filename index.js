@@ -6,6 +6,18 @@ const fs = require("fs");
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 }; // azul escuro
 const HEADER_FG = { red: 1, green: 1, blue: 1 }; // branco
 
+function nowBrasilia() {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date());
+}
+
 function getGoogleCredsFromEnv() {
   const b64 = process.env.GOOGLE_CREDS_B64;
   if (!b64) {
@@ -88,7 +100,7 @@ client.on("interactionCreate", async (interaction) => {
       const sheet = await getSheet("LISTA DESEJO ARCH", ["Data", "Nick", "Arma"]);
 
       await sheet.addRow({
-        Data: new Date().toLocaleString("pt-BR"),
+        Data: nowBrasilia(),
         Nick: nick,
         Arma: arma,
       });
@@ -121,7 +133,7 @@ client.on("interactionCreate", async (interaction) => {
       const sheet = await getSheet("LISTA DESEJO ITEM", ["Data", "Nick", "Item"]);
 
       await sheet.addRow({
-        Data: new Date().toLocaleString("pt-BR"),
+        Data: nowBrasilia(),
         Nick: nick,
         Item: item,
       });
