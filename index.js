@@ -84,72 +84,52 @@ client.once("ready", () => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  /**
-   * /arma  -> salva em "LISTA DESEJO ARCH"
-   */
-  if (interaction.commandName === "arma") {
-    const nick = interaction.options.getString("nick", true).trim();
-    const arma = interaction.options.getString("arma", true).trim();
+  try {
+    // responde rápido e evita timeout do Discord
+    await interaction.deferReply({ ephemeral: true });
 
-    try {
-      await interaction.reply({
-        content: "📝 Registrando na planilha…",
-        ephemeral: true,
-      });
+
+    if (interaction.commandName === "arma_arch") {
+      const nick = interaction.options.getString("nick", true).trim();
+
+      // ⚠️ o nome da option tem que ser EXATAMENTE "arma_arch" (igual no deploy-commands)
+      const arma = interaction.options.getString("arma_arch", true).trim();
 
       const sheet = await getSheet("LISTA DESEJO ARCH", ["Data", "Nick", "Arma"]);
-
       await sheet.addRow({
         Data: nowBrasilia(),
         Nick: nick,
         Arma: arma,
       });
 
-      await interaction.editReply(
-        `✅ Registrado!\nNick: **${nick}**\nArma: **${arma}**`
-      );
-    } catch (err) {
-      console.error(err);
-      await interaction.editReply(
-        "❌ Erro ao registrar. Verifique credenciais e acesso à planilha."
-      );
+      return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nArma: **${arma}**`);
     }
-    return;
-  }
 
-  /**
-   * /item -> salva em "LISTA DESEJO ITEM"
-   */
-  if (interaction.commandName === "item") {
-    const nick = interaction.options.getString("nick", true).trim();
-    const item = interaction.options.getString("item", true).trim();
-
-    try {
-      await interaction.reply({
-        content: "📝 Registrando na planilha…",
-        ephemeral: true,
-      });
+    if (interaction.commandName === "item") {
+      const nick = interaction.options.getString("nick", true).trim();
+      const item = interaction.options.getString("item", true).trim();
 
       const sheet = await getSheet("LISTA DESEJO ITEM", ["Data", "Nick", "Item"]);
-
       await sheet.addRow({
         Data: nowBrasilia(),
         Nick: nick,
         Item: item,
       });
 
-      await interaction.editReply(
-        `✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`
-      );
-    } catch (err) {
-      console.error(err);
-      await interaction.editReply(
-        "❌ Erro ao registrar. Verifique credenciais e acesso à planilha."
-      );
+      return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`);
     }
-    return;
+
+    // se cair aqui, é porque você executou um comando que o bot não trata
+    return interaction.editReply("❌ Comando não suportado por este bot.");
+  } catch (err) {
+    console.error("❌ Erro ao processar comando:", err);
+    if (interaction.deferred || interaction.replied) {
+      return interaction.editReply("❌ Erro ao registrar. Veja os logs do bot.");
+    }
+    return interaction.reply({ content: "❌ Erro ao processar o comando.", ephemeral: true });
   }
 });
+
 
 client.login(process.env.DISCORD_TOKEN);
 
