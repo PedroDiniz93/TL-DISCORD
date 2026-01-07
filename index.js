@@ -54,7 +54,7 @@ const SALES_SHEET_HEADERS = [
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 }; // azul escuro
 const HEADER_FG = { red: 1, green: 1, blue: 1 }; // branco
 
-const ALLOWED_CHANNEL_ID = "1455974263906504763";
+const ALLOWED_CHANNEL_NAME = "🎢planilha-arch-boss";
 
 function nowBrasilia() {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -178,6 +178,13 @@ client.once("ready", () => {
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
+
+  if ((interaction.channel && interaction.channel.name) !== ALLOWED_CHANNEL_NAME) {
+    return interaction.reply({
+      content: `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
+      ephemeral: true,
+    });
+  }
 
   let hasDeferred = false;
   try {
