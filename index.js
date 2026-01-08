@@ -262,6 +262,50 @@ client.on("interactionCreate", async (interaction) => {
       );
     }
 
+    if (interaction.commandName === "fila_arch") {
+      const item = interaction.options.getString("item", true).trim();
+
+      const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
+      const rows = await sheet.getRows();
+
+      const filtered = rows
+        .filter((row) => (row.Arma || "").trim().toLowerCase() === item.toLowerCase())
+        .map((row) => ({
+          row,
+          parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+        }))
+        .sort((a, b) => {
+          if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
+            return a.parsedDate.getTime() - b.parsedDate.getTime();
+          }
+          return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
+        });
+
+      if (!filtered.length) {
+        return interaction.editReply(
+          `📭 Nenhum jogador na fila da arma **${item}** na aba ${ARCH_SHEET_TITLE}.`
+        );
+      }
+
+      const previewLimit = 25;
+      const lines = filtered.map(({ row }, idx) => {
+        const nick = row.Nick || "Nick não informado";
+        const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
+        const mention =
+          row.DiscordUserId && String(row.DiscordUserId).trim()
+            ? ` (<@${String(row.DiscordUserId).trim()}>)`
+            : "";
+        return `${idx + 1}. ${nick}${mention}${registro}`;
+      });
+      const preview = lines.slice(0, previewLimit).join("\n");
+      const extra = lines.length - previewLimit;
+      const suffix = extra > 0 ? `\n... e mais ${extra} jogador(es).` : "";
+
+      return interaction.editReply(
+        `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+      );
+    }
+
     if (interaction.commandName === "item") {
       const nick = interaction.options.getString("nick", true).trim();
       const item = interaction.options.getString("item", true).trim();

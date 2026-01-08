@@ -56,6 +56,17 @@ const removerArchCmd = new SlashCommandBuilder()
       .addChoices(...weapons.map((w) => ({ name: w, value: w })))
   );
 
+const filaArchCmd = new SlashCommandBuilder()
+  .setName("fila_arch")
+  .setDescription("Mostra a fila de jogadores para uma arma Archboss específica")
+  .addStringOption((o) =>
+    o
+      .setName("item")
+      .setDescription("Arma Archboss")
+      .setRequired(true)
+      .addChoices(...weapons.map((w) => ({ name: w, value: w })))
+  );
+
 const cooldownCmd = new SlashCommandBuilder()
   .setName("cooldown")
   .setDescription("Verifica quanto tempo falta para acabar o cooldown de Archboss")
@@ -104,6 +115,7 @@ const minhasVendasCmd = new SlashCommandBuilder()
         armaArchCmd.toJSON(),
         listarArchCmd.toJSON(),
         removerArchCmd.toJSON(),
+        filaArchCmd.toJSON(),
         cooldownCmd.toJSON(),
         meusItensCmd.toJSON(),
         minhasVendasCmd.toJSON(),
@@ -115,6 +127,7 @@ const minhasVendasCmd = new SlashCommandBuilder()
   console.log("- /arma_arch (Nick + Arma Archboss)");
   console.log("- /listar_arch (Lista desejos do usuário)");
   console.log("- /remover_arch (Remove item da lista)");
+  console.log("- /fila_arch (Mostra a fila de uma arma)");
   console.log("- /cooldown (Informa o tempo restante do player)");
   console.log("- /meus_itens_a_venda (Lista itens à venda do jogador)");
   console.log("- /minhas_vendas (Lista vendas pagas e pendentes do jogador)");
