@@ -4,8 +4,12 @@ const { GoogleSpreadsheet } = require("google-spreadsheet");
 
 const ARCH_SHEET_TITLE = "LISTA DESEJO ARCH";
 const ARCH_HEADERS = ["Data", "Nick", "Arma", "DiscordUserId"];
+const RARE_ITEM_SHEET_TITLE = "LISTA DESEJO ITEM RARO";
+const RARE_ITEM_HEADERS = ["Data", "Nick", "Item", "DiscordUserId"];
 const ARCH_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ARCH BOSS";
 const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)"];
+const RARE_ITEM_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ITEM RARO";
+const RARE_ITEM_HISTORY_HEADERS = ["Data/Hora", "Player", "Item"];
 const ARCH_COOLDOWN_DAYS = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ITEMS_SHEET_TITLE = "ITENS_A_VENDA";
@@ -320,6 +324,88 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`);
     }
 
+    if (interaction.commandName === "item_raro") {
+      const nick = interaction.options.getString("nick", true).trim();
+      const item = interaction.options.getString("item_raro", true).trim();
+
+      const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+      await sheet.addRow({
+        Data: nowBrasilia(),
+        Nick: nick,
+        Item: item,
+        DiscordUserId: interaction.user.id,
+      });
+
+      return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem raro: **${item}**`);
+    }
+
+    if (interaction.commandName === "remover_item_raro") {
+      const item = interaction.options.getString("item_raro", true).trim();
+
+      const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+      const rows = await sheet.getRows();
+      const targetRow = rows.find(
+        (row) =>
+          (row.DiscordUserId || "").trim() === interaction.user.id &&
+          (row.Item || "").trim() === item
+      );
+
+      if (!targetRow) {
+        return interaction.editReply("⚠️ Não encontrei esse item raro na sua lista de desejos.");
+      }
+
+      const nick = targetRow.Nick || "Nick não informado";
+      await targetRow.delete();
+
+      return interaction.editReply(
+        `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`
+      );
+    }
+
+    if (interaction.commandName === "fila_item_raro") {
+      const item = interaction.options.getString("item_raro", true).trim();
+
+      const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+      const rows = await sheet.getRows();
+
+      const filtered = rows
+        .filter((row) => (row.Item || "").trim().toLowerCase() === item.toLowerCase())
+        .map((row) => ({
+          row,
+          parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+        }))
+        .sort((a, b) => {
+          if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
+            return a.parsedDate.getTime() - b.parsedDate.getTime();
+          }
+          return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
+        });
+
+      if (!filtered.length) {
+        return interaction.editReply(
+          `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`
+        );
+      }
+
+      const previewLimit = 25;
+      const lines = filtered.map(({ row }, idx) => {
+        const nick = row.Nick || "Nick não informado";
+        const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
+        const mention =
+          row.DiscordUserId && String(row.DiscordUserId).trim()
+            ? ` (<@${String(row.DiscordUserId).trim()}>)`
+            : "";
+        return `${idx + 1}. ${nick}${mention}${registro}`;
+      });
+      const preview = lines.slice(0, previewLimit).join("\n");
+      const extra = lines.length - previewLimit;
+      const suffix = extra > 0 ? `\n... e mais ${extra} jogador(es).` : "";
+
+      return interaction.editReply(
+        `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+      );
+    }
+
     if (interaction.commandName === "meus_itens_a_venda") {
       const playerNick = interaction.options.getString("nick", true).trim();
       const targetLower = playerNick.toLowerCase();
@@ -473,6 +559,62 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.editReply(
         `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltima arma: **${
           lastWin["Item (Arma)"] || lastWin.Item || "não informado"
+        }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+      );
+    }
+
+    if (interaction.commandName === "cooldown_item_raro") {
+      const player = interaction.options.getString("nick", true).trim();
+      const sheet = await getSheet(
+        RARE_ITEM_HISTORY_SHEET_TITLE,
+        RARE_ITEM_HISTORY_HEADERS
+      );
+      const rows = await sheet.getRows();
+      let lastWin = null;
+
+      const targetLower = player.toLowerCase();
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const rowPlayer = (rows[i].Player || "").trim();
+        if (!rowPlayer) continue;
+        if (rowPlayer.toLowerCase() === targetLower) {
+          lastWin = rows[i];
+          break;
+        }
+      }
+
+      if (!lastWin) {
+        return interaction.editReply(
+          `✅ ${player} não possui registros de ganho de item raro.`
+        );
+      }
+
+      const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
+      const lastDate = parseBrazilianDateTime(dateValue);
+
+      if (!lastDate) {
+        return interaction.editReply(
+          "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
+        );
+      }
+
+      const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
+      const now = new Date();
+
+      if (nextEligible <= now) {
+        return interaction.editReply(
+          `🟢 ${player} está liberado. Último item raro em ${lastDate.toLocaleDateString(
+            "pt-BR",
+            { timeZone: "America/Sao_Paulo" }
+          )}.`
+        );
+      }
+
+      const remaining = nextEligible.getTime() - now.getTime();
+      const humanRemaining = formatDuration(remaining);
+
+      return interaction.editReply(
+        `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltimo item raro: **${
+          lastWin.Item || lastWin["Item (Arma)"] || "não informado"
         }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
       );
     }
