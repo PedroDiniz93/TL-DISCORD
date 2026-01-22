@@ -6,6 +6,8 @@ const ARCH_SHEET_TITLE = "LISTA DESEJO ARCH";
 const ARCH_HEADERS = ["Data", "Nick", "Arma", "DiscordUserId"];
 const RARE_ITEM_SHEET_TITLE = "LISTA DESEJO ITEM RARO";
 const RARE_ITEM_HEADERS = ["Data", "Nick", "Item", "DiscordUserId"];
+const FRAGMENT_SHEET_TITLE = "FRAGMENTO_ARCH_BOSS";
+const FRAGMENT_HEADERS = ["Data", "Nick", "Fragmento", "DiscordUserId"];
 const ARCH_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ARCH BOSS";
 const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)"];
 const RARE_ITEM_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ITEM RARO";
@@ -113,6 +115,13 @@ const rareItems = [
   "Bracelet of Radiant Chains (Bracelete das Correntes Radiantes)",
   "Blood Crescent Pendant (Pingente da Crescente Sangrenta)",
   "Sash of Rustling Leaves (Faixa das Folhas Farfalhantes)",
+];
+
+const fragments = [
+  "Fragmento do Cordy",
+  "Fragmento do Tevent",
+  "Fragmento da Deluznoa",
+  "Fragmento da Belandir"
 ];
 
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 }; // azul escuro
@@ -257,6 +266,7 @@ client.on("interactionCreate", async (interaction) => {
         arma_arch: weapons,    // /arma_arch, /remover_arch
         item: weapons,         // /fila_arch
         item_raro: rareItems,  // /item_raro, /remover_item_raro, /fila_item_raro
+        fragmento: fragments,  // /fragmento_arch_boss
       };
 
       const list = dataByOptionName[focused.name] || [];
@@ -419,6 +429,23 @@ client.on("interactionCreate", async (interaction) => {
       });
 
       return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`);
+    }
+
+    if (interaction.commandName === "fragmento_arch_boss") {
+      const nick = interaction.options.getString("nick", true).trim();
+      const fragmento = interaction.options.getString("fragmento", true).trim();
+
+      const sheet = await getSheet(FRAGMENT_SHEET_TITLE, FRAGMENT_HEADERS);
+      await sheet.addRow({
+        Data: nowBrasilia(),
+        Nick: nick,
+        Fragmento: fragmento,
+        DiscordUserId: interaction.user.id,
+      });
+
+      return interaction.editReply(
+          `✅ Registrado!\nNick: **${nick}**\nFragmento: **${fragmento}**`
+      );
     }
 
     if (interaction.commandName === "item_raro") {

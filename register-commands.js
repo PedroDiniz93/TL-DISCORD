@@ -57,6 +57,20 @@ const itemRaroCmd = new SlashCommandBuilder()
             .setAutocomplete(true) // ✅ AUTOCOMPLETE (resolve limite 25)
     );
 
+const fragmentoArchBossCmd = new SlashCommandBuilder()
+    .setName("fragmento_arch_boss")
+    .setDescription("Registrar fragmento Archboss na lista de desejo")
+    .addStringOption((o) =>
+        o.setName("nick").setDescription("Nick").setRequired(true)
+    )
+    .addStringOption((o) =>
+        o
+            .setName("fragmento")
+            .setDescription("Fragmento")
+            .setRequired(true)
+            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+    );
+
 const removerItemRaroCmd = new SlashCommandBuilder()
     .setName("remover_item_raro")
     .setDescription("Remove um item raro da sua lista de desejo")
@@ -136,6 +150,7 @@ const minhasVendasCmd = new SlashCommandBuilder()
           removerArchCmd.toJSON(),
           filaArchCmd.toJSON(),
           itemRaroCmd.toJSON(),
+          fragmentoArchBossCmd.toJSON(),
           removerItemRaroCmd.toJSON(),
           filaItemCmd.toJSON(),
           cooldownCmd.toJSON(),
