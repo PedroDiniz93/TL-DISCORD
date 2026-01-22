@@ -55,6 +55,66 @@ const SALES_SHEET_HEADERS = [
   "Player 6",
 ];
 
+const weapons = [
+  "🗡️ Espadão do Cordy",
+  "🗡️ Espadão do Tevent",
+  "🛡️ Espada e Escudo da Deluznoa",
+  "🛡️ Espada e Escudo da Belandir",
+  "⚔️ Adaga da Deluznoa",
+  "⚔️ Adaga do Tevent",
+  "🎯 Balestra do Cordy",
+  "🎯 Balestra da Belandir",
+  "🏹 Arco do Tevent",
+  "🏹 Arco da Deluznoa",
+  "⚡ Cajado da Deluznoa",
+  "⚡ Cajado da Belandir",
+  "🪄 Varinha do Tevent",
+  "🪄 Varinha do Cordy",
+  "🗡️ Lança da Deluznoa",
+  "🗡️ Lança da Belandir",
+  "🔮 Orb do Tevent",
+  "🔮 Orb do Cordy",
+];
+
+const rareItems = [
+  "Grand Aelon's Longbow of Blight (Arco Longo do Flagelo de Grande Aelon)",
+  "Kowazan's Daggers of the Blood Moon (Adagas da Lua Sangrenta de Kowazan)",
+  "Aridus's Immolated Voidstaff (Cajado do Vazio Imolado de Aridus)",
+  "Talus's Incandescent Staff (Cajado Incandescente de Talus)",
+  "Nirma's Sword of Falling Ash (Espada da Cinza Cadente de Nirma)",
+  "Adentus's Cinderhulk Greatsword (Espada de Duas Mãos Verdinza de Adentus)",
+  "Morokai's Soulfire Greatblade (Grande Lâmina Embrasalma de Morokai)",
+  "Daigon's Charred Emberstaff (Cajado Abrasador Carbonizado de Daigon)",
+  "Errant Scion Brim (Pala do Rebento Errante)",
+  "Soaring Emblem Ring (Anel do Emblema Ascendente)",
+  "Kowazan's Crossbows of the Eclipse (Balestras do Eclipse de Kowazan)",
+  "Breath of Boundless Sky (Sopro do Céu Sempiterno)",
+  "Veiled Concord Gloves (Luvas da Concordância Velada)",
+  "Umbral Astarch Pants (Calça do Astarca Umbral)",
+  "Undying Star Necklace (Colar da Estrela Imortal)",
+  "Extinction-proof Periapt (Periapto à Prova de Extinção)",
+  "Necklace of Morning Mist (Colar da Névoa da Manhã)",
+  "Bracelet of the Evening Tide (Bracelete da Maré Noturna)",
+  "Ring of Forbidden Lust (Anel da Luxúria Esquecida)",
+  "Coil of Righteous Demand (Espiral da Exigência Virtuosa)",
+  "Ring of Divine Retribution (Anel da Retribuição Divina)",
+  "Ring of Repeated Death (Anel da Morte Repetida)",
+  "Wildcrest Studs (Adornos da Crista Selvagem)",
+  "Talus's Transcendent Core (Núcleo Transcendente de Talus)",
+  "Ring of Falling Dusk (Anel do Anoitecer)",
+  "Cornelius's Blade of Dancing Flame (Lâmina da Flama Dançante de Cornélius)",
+  "Malakar's Flamespike Crossbows (Balestras Espinholumes de Malakar)",
+  "Akman's Bloodletting Crossbows (Balestras Sangrentas de Akman)",
+  "Deckman's Balefire Scepter (Cetro Abraseirado de Deckman)",
+  "Belt of Clutching Fear (Cinto do Medo Angustiante)",
+  "Belt of the Dying Spark (Cinto da Centelha Esmorecente)",
+  "Ring of Fractal Growth (Anel da Evolução Fractal)",
+  "Necklace of Dawn's Light (Colar da Luz da Alvorada)",
+  "Bracelet of Radiant Chains (Bracelete das Correntes Radiantes)",
+  "Blood Crescent Pendant (Pingente da Crescente Sangrenta)",
+  "Sash of Rustling Leaves (Faixa das Folhas Farfalhantes)",
+];
+
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 }; // azul escuro
 const HEADER_FG = { red: 1, green: 1, blue: 1 }; // branco
 
@@ -95,7 +155,7 @@ function parseBrazilianDateTime(value) {
   if (!trimmed) return null;
 
   const brMatch = trimmed.match(
-    /(\d{2})\/(\d{2})\/(\d{4})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
+      /(\d{2})\/(\d{2})\/(\d{4})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
   );
   if (brMatch) {
     const [, day, month, year, hour = "00", minute = "00", second = "00"] = brMatch;
@@ -105,7 +165,7 @@ function parseBrazilianDateTime(value) {
   }
 
   const isoMatch = trimmed.match(
-    /(\d{4})-(\d{2})-(\d{2})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
+      /(\d{4})-(\d{2})-(\d{2})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
   );
   if (isoMatch) {
     const [, year, month, day, hour = "00", minute = "00", second = "00"] = isoMatch;
@@ -135,7 +195,7 @@ function isPlayerCellPaid(value) {
 }
 
 async function getSheet(title, headers) {
-    const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
+  const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
 
   const creds = getGoogleCredsFromEnv();
   await doc.useServiceAccountAuth({
@@ -181,6 +241,43 @@ client.once("ready", () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
+  // ✅ 1) AUTOCOMPLETE (tem que vir antes do ChatInputCommand)
+  if (interaction.isAutocomplete()) {
+    try {
+      // (opcional) restringe ao canal também
+      if ((interaction.channel && interaction.channel.name) !== ALLOWED_CHANNEL_NAME) {
+        return interaction.respond([]); // não sugere nada fora do canal permitido
+      }
+
+      const focused = interaction.options.getFocused(true); // { name, value }
+      const q = String(focused.value || "").toLowerCase();
+
+      // mapeia por nome da OPTION (não é o commandName)
+      const dataByOptionName = {
+        arma_arch: weapons,    // /arma_arch, /remover_arch
+        item: weapons,         // /fila_arch
+        item_raro: rareItems,  // /item_raro, /remover_item_raro, /fila_item_raro
+      };
+
+      const list = dataByOptionName[focused.name] || [];
+
+      const results = list
+          .filter((x) => x.toLowerCase().includes(q))
+          .slice(0, 25)
+          .map((x) => ({
+            name: x.length > 100 ? x.slice(0, 97) + "..." : x, // name max 100
+            value: x, // value pode ser o texto completo (desde que não seja gigante)
+          }));
+
+      return interaction.respond(results);
+    } catch (err) {
+      console.error("❌ Erro no autocomplete:", err);
+      // não pode reply/editReply em autocomplete; só respond ou silêncio
+      return;
+    }
+  }
+
+  // ✅ 2) comandos normais
   if (!interaction.isChatInputCommand()) return;
 
   if ((interaction.channel && interaction.channel.name) !== ALLOWED_CHANNEL_NAME) {
@@ -217,28 +314,28 @@ client.on("interactionCreate", async (interaction) => {
       const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
       const rows = await sheet.getRows();
       const userRows = rows.filter(
-        (row) => (row.DiscordUserId || "").trim() === interaction.user.id
+          (row) => (row.DiscordUserId || "").trim() === interaction.user.id
       );
 
       if (!userRows.length) {
         return interaction.editReply(
-          "📭 Você ainda não tem armas registradas na lista de desejos."
+            "📭 Você ainda não tem armas registradas na lista de desejos."
         );
       }
 
       const lines = userRows.map(
-        (row, idx) =>
-          `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${
-            row.Data ? ` --- Registrado em ${row.Data}` : ""
-          }`
+          (row, idx) =>
+              `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${
+                  row.Data ? ` --- Registrado em ${row.Data}` : ""
+              }`
       );
 
       const previewLimit = 15;
       const preview = lines.slice(0, previewLimit).join("\n");
       const suffix =
-        lines.length > previewLimit
-          ? `\n... e mais ${lines.length - previewLimit} registro(s).`
-          : "";
+          lines.length > previewLimit
+              ? `\n... e mais ${lines.length - previewLimit} registro(s).`
+              : "";
 
       return interaction.editReply(`📋 Seus desejos registrados:\n${preview}${suffix}`);
     }
@@ -249,9 +346,9 @@ client.on("interactionCreate", async (interaction) => {
       const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
       const rows = await sheet.getRows();
       const targetRow = rows.find(
-        (row) =>
-          (row.DiscordUserId || "").trim() === interaction.user.id &&
-          (row.Arma || "").trim() === arma
+          (row) =>
+              (row.DiscordUserId || "").trim() === interaction.user.id &&
+              (row.Arma || "").trim() === arma
       );
 
       if (!targetRow) {
@@ -262,7 +359,7 @@ client.on("interactionCreate", async (interaction) => {
       await targetRow.delete();
 
       return interaction.editReply(
-        `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`
+          `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`
       );
     }
 
@@ -273,21 +370,21 @@ client.on("interactionCreate", async (interaction) => {
       const rows = await sheet.getRows();
 
       const filtered = rows
-        .filter((row) => (row.Arma || "").trim().toLowerCase() === item.toLowerCase())
-        .map((row) => ({
-          row,
-          parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
-        }))
-        .sort((a, b) => {
-          if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
-            return a.parsedDate.getTime() - b.parsedDate.getTime();
-          }
-          return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
-        });
+          .filter((row) => (row.Arma || "").trim().toLowerCase() === item.toLowerCase())
+          .map((row) => ({
+            row,
+            parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+          }))
+          .sort((a, b) => {
+            if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
+              return a.parsedDate.getTime() - b.parsedDate.getTime();
+            }
+            return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
+          });
 
       if (!filtered.length) {
         return interaction.editReply(
-          `📭 Nenhum jogador na fila da arma **${item}** na aba ${ARCH_SHEET_TITLE}.`
+            `📭 Nenhum jogador na fila da arma **${item}** na aba ${ARCH_SHEET_TITLE}.`
         );
       }
 
@@ -296,9 +393,9 @@ client.on("interactionCreate", async (interaction) => {
         const nick = row.Nick || "Nick não informado";
         const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
         const mention =
-          row.DiscordUserId && String(row.DiscordUserId).trim()
-            ? ` (<@${String(row.DiscordUserId).trim()}>)`
-            : "";
+            row.DiscordUserId && String(row.DiscordUserId).trim()
+                ? ` (<@${String(row.DiscordUserId).trim()}>)`
+                : "";
         return `${idx + 1}. ${nick}${mention}${registro}`;
       });
       const preview = lines.slice(0, previewLimit).join("\n");
@@ -306,7 +403,7 @@ client.on("interactionCreate", async (interaction) => {
       const suffix = extra > 0 ? `\n... e mais ${extra} jogador(es).` : "";
 
       return interaction.editReply(
-        `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+          `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
       );
     }
 
@@ -345,9 +442,9 @@ client.on("interactionCreate", async (interaction) => {
       const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
       const rows = await sheet.getRows();
       const targetRow = rows.find(
-        (row) =>
-          (row.DiscordUserId || "").trim() === interaction.user.id &&
-          (row.Item || "").trim() === item
+          (row) =>
+              (row.DiscordUserId || "").trim() === interaction.user.id &&
+              (row.Item || "").trim() === item
       );
 
       if (!targetRow) {
@@ -358,7 +455,7 @@ client.on("interactionCreate", async (interaction) => {
       await targetRow.delete();
 
       return interaction.editReply(
-        `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`
+          `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`
       );
     }
 
@@ -369,21 +466,21 @@ client.on("interactionCreate", async (interaction) => {
       const rows = await sheet.getRows();
 
       const filtered = rows
-        .filter((row) => (row.Item || "").trim().toLowerCase() === item.toLowerCase())
-        .map((row) => ({
-          row,
-          parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
-        }))
-        .sort((a, b) => {
-          if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
-            return a.parsedDate.getTime() - b.parsedDate.getTime();
-          }
-          return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
-        });
+          .filter((row) => (row.Item || "").trim().toLowerCase() === item.toLowerCase())
+          .map((row) => ({
+            row,
+            parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+          }))
+          .sort((a, b) => {
+            if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
+              return a.parsedDate.getTime() - b.parsedDate.getTime();
+            }
+            return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
+          });
 
       if (!filtered.length) {
         return interaction.editReply(
-          `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`
+            `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`
         );
       }
 
@@ -392,9 +489,9 @@ client.on("interactionCreate", async (interaction) => {
         const nick = row.Nick || "Nick não informado";
         const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
         const mention =
-          row.DiscordUserId && String(row.DiscordUserId).trim()
-            ? ` (<@${String(row.DiscordUserId).trim()}>)`
-            : "";
+            row.DiscordUserId && String(row.DiscordUserId).trim()
+                ? ` (<@${String(row.DiscordUserId).trim()}>)`
+                : "";
         return `${idx + 1}. ${nick}${mention}${registro}`;
       });
       const preview = lines.slice(0, previewLimit).join("\n");
@@ -402,7 +499,7 @@ client.on("interactionCreate", async (interaction) => {
       const suffix = extra > 0 ? `\n... e mais ${extra} jogador(es).` : "";
 
       return interaction.editReply(
-        `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+          `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
       );
     }
 
@@ -413,15 +510,15 @@ client.on("interactionCreate", async (interaction) => {
       const sheet = await getSheet(ITEMS_SHEET_TITLE, ITEMS_SHEET_HEADERS);
       const rows = await sheet.getRows();
       const playerRows = rows.filter((row) =>
-        ITEM_PLAYER_COLUMNS.some((col) => {
-          const cell = row[col];
-          return normalizePlayerCell(cell) === targetLower && !isPlayerCellPaid(cell);
-        })
+          ITEM_PLAYER_COLUMNS.some((col) => {
+            const cell = row[col];
+            return normalizePlayerCell(cell) === targetLower && !isPlayerCellPaid(cell);
+          })
       );
 
       if (!playerRows.length) {
         return interaction.editReply(
-          `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
+            `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
         );
       }
 
@@ -438,7 +535,7 @@ client.on("interactionCreate", async (interaction) => {
       const suffix = extraCount > 0 ? `\n... e mais ${extraCount} item(ns).` : "";
 
       return interaction.editReply(
-        `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`
+          `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`
       );
     }
 
@@ -450,7 +547,7 @@ client.on("interactionCreate", async (interaction) => {
       const rows = await sheet.getRows();
 
       const vendasDoPlayer = rows.filter((row) =>
-        ITEM_PLAYER_COLUMNS.some((col) => normalizePlayerCell(row[col]) === targetLower)
+          ITEM_PLAYER_COLUMNS.some((col) => normalizePlayerCell(row[col]) === targetLower)
       );
 
       if (!vendasDoPlayer.length) {
@@ -464,8 +561,8 @@ client.on("interactionCreate", async (interaction) => {
 
       for (const row of vendasDoPlayer) {
         const wasPaid = ITEM_PLAYER_COLUMNS.some(
-          (col) =>
-            normalizePlayerCell(row[col]) === targetLower && isPlayerCellPaid(row[col])
+            (col) =>
+                normalizePlayerCell(row[col]) === targetLower && isPlayerCellPaid(row[col])
         );
 
         const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
@@ -475,11 +572,11 @@ client.on("interactionCreate", async (interaction) => {
         const dataVenda = row.Data || row["Data/Hora"] || row["Data Venda"] || "";
 
         const entry = `ID ${vendaId} — ${itemName} • Valor por Player: ${valorPorPlayer}${
-          dataVenda ? ` • Data: ${dataVenda}` : ""
+            dataVenda ? ` • Data: ${dataVenda}` : ""
         }`;
 
         const perPlayerNumeric = Number(
-          String(valorPorPlayer).replace(/[^\d,-]/g, "").replace(".", "").replace(",", ".")
+            String(valorPorPlayer).replace(/[^\d,-]/g, "").replace(".", "").replace(",", ".")
         );
 
         if (wasPaid) {
@@ -505,11 +602,11 @@ client.on("interactionCreate", async (interaction) => {
         buildSection("Pagas", pagos),
       ];
       const totalsLine = `**Total:** Pendentes = ${totalPendente.toFixed(
-        2
+          2
       )} | Pagos = ${totalPago.toFixed(2)}`;
 
       return interaction.editReply(
-        `📑 Vendas do jogador **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
+          `📑 Vendas do jogador **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
       );
     }
 
@@ -538,7 +635,7 @@ client.on("interactionCreate", async (interaction) => {
 
       if (!lastDate) {
         return interaction.editReply(
-          "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
+            "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
         );
       }
 
@@ -547,9 +644,9 @@ client.on("interactionCreate", async (interaction) => {
 
       if (nextEligible <= now) {
         return interaction.editReply(
-          `🟢 ${player} está liberado. Última arma em ${lastDate.toLocaleDateString("pt-BR", {
-            timeZone: "America/Sao_Paulo",
-          })}.`
+            `🟢 ${player} está liberado. Última arma em ${lastDate.toLocaleDateString("pt-BR", {
+              timeZone: "America/Sao_Paulo",
+            })}.`
         );
       }
 
@@ -557,17 +654,17 @@ client.on("interactionCreate", async (interaction) => {
       const humanRemaining = formatDuration(remaining);
 
       return interaction.editReply(
-        `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltima arma: **${
-          lastWin["Item (Arma)"] || lastWin.Item || "não informado"
-        }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+          `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltima arma: **${
+              lastWin["Item (Arma)"] || lastWin.Item || "não informado"
+          }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
       );
     }
 
     if (interaction.commandName === "cooldown_item_raro") {
       const player = interaction.options.getString("nick", true).trim();
       const sheet = await getSheet(
-        RARE_ITEM_HISTORY_SHEET_TITLE,
-        RARE_ITEM_HISTORY_HEADERS
+          RARE_ITEM_HISTORY_SHEET_TITLE,
+          RARE_ITEM_HISTORY_HEADERS
       );
       const rows = await sheet.getRows();
       let lastWin = null;
@@ -584,7 +681,7 @@ client.on("interactionCreate", async (interaction) => {
 
       if (!lastWin) {
         return interaction.editReply(
-          `✅ ${player} não possui registros de ganho de item raro.`
+            `✅ ${player} não possui registros de ganho de item raro.`
         );
       }
 
@@ -593,7 +690,7 @@ client.on("interactionCreate", async (interaction) => {
 
       if (!lastDate) {
         return interaction.editReply(
-          "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
+            "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
         );
       }
 
@@ -602,10 +699,10 @@ client.on("interactionCreate", async (interaction) => {
 
       if (nextEligible <= now) {
         return interaction.editReply(
-          `🟢 ${player} está liberado. Último item raro em ${lastDate.toLocaleDateString(
-            "pt-BR",
-            { timeZone: "America/Sao_Paulo" }
-          )}.`
+            `🟢 ${player} está liberado. Último item raro em ${lastDate.toLocaleDateString(
+                "pt-BR",
+                { timeZone: "America/Sao_Paulo" }
+            )}.`
         );
       }
 
@@ -613,9 +710,9 @@ client.on("interactionCreate", async (interaction) => {
       const humanRemaining = formatDuration(remaining);
 
       return interaction.editReply(
-        `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltimo item raro: **${
-          lastWin.Item || lastWin["Item (Arma)"] || "não informado"
-        }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+          `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltimo item raro: **${
+              lastWin.Item || lastWin["Item (Arma)"] || "não informado"
+          }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
       );
     }
 
