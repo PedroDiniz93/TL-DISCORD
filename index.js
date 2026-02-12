@@ -115,6 +115,7 @@ const rareItems = [
   "Bracelet of Radiant Chains (Bracelete das Correntes Radiantes)",
   "Blood Crescent Pendant (Pingente da Crescente Sangrenta)",
   "Sash of Rustling Leaves (Faixa das Folhas Farfalhantes)",
+  "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
 ];
 
 const fragments = [
