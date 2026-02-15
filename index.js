@@ -9,9 +9,9 @@ const ARCH_HEADERS = ["Data", "Nick", "Arma", "DiscordUserId"];
 const RARE_ITEM_SHEET_TITLE = "LISTA DESEJO ITEM RARO";
 const RARE_ITEM_HEADERS = ["Data", "Nick", "Item", "DiscordUserId"];
 const ARCH_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ARCH BOSS";
-const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)"];
+const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)", "DiscordUserId"];
 const RARE_ITEM_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ITEM RARO";
-const RARE_ITEM_HISTORY_HEADERS = ["Data/Hora", "Player", "Item"];
+const RARE_ITEM_HISTORY_HEADERS = ["Data/Hora", "Player", "Item", "DiscordUserId"];
 const ARCH_COOLDOWN_DAYS = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ITEMS_SHEET_TITLE = "ITENS_A_VENDA";
@@ -750,16 +750,24 @@ async function handleCooldown(interaction) {
   const player = getRequiredOption(interaction, "nick");
   const sheet = await getSheet(ARCH_HISTORY_SHEET_TITLE, ARCH_HISTORY_HEADERS);
   const rows = await sheet.getRows();
-  let lastWin = null;
+  const findLastRow = (predicate) => {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (predicate(rows[i])) return rows[i];
+    }
+    return null;
+  };
 
   const targetLower = player.toLowerCase();
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const rowPlayer = (rows[i].Player || "").trim();
-    if (!rowPlayer) continue;
-    if (rowPlayer.toLowerCase() === targetLower) {
-      lastWin = rows[i];
-      break;
-    }
+  let lastWin = findLastRow((row) => {
+    const rowPlayer = (row.Player || "").trim();
+    return rowPlayer && rowPlayer.toLowerCase() === targetLower;
+  });
+
+  if (!lastWin) {
+    const discordId = String(interaction.user.id).trim();
+    lastWin = findLastRow(
+      (row) => String(row.DiscordUserId || "").trim() === discordId
+    );
   }
 
   if (!lastWin) {
@@ -805,16 +813,24 @@ async function handleCooldownItemRaro(interaction) {
   const player = getRequiredOption(interaction, "nick");
   const sheet = await getSheet(RARE_ITEM_HISTORY_SHEET_TITLE, RARE_ITEM_HISTORY_HEADERS);
   const rows = await sheet.getRows();
-  let lastWin = null;
+  const findLastRow = (predicate) => {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (predicate(rows[i])) return rows[i];
+    }
+    return null;
+  };
 
   const targetLower = player.toLowerCase();
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const rowPlayer = (rows[i].Player || "").trim();
-    if (!rowPlayer) continue;
-    if (rowPlayer.toLowerCase() === targetLower) {
-      lastWin = rows[i];
-      break;
-    }
+  let lastWin = findLastRow((row) => {
+    const rowPlayer = (row.Player || "").trim();
+    return rowPlayer && rowPlayer.toLowerCase() === targetLower;
+  });
+
+  if (!lastWin) {
+    const discordId = String(interaction.user.id).trim();
+    lastWin = findLastRow(
+      (row) => String(row.DiscordUserId || "").trim() === discordId
+    );
   }
 
   if (!lastWin) {
