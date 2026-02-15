@@ -1,4 +1,6 @@
 require("dotenv").config();
+const fs = require("fs/promises");
+const path = require("path");
 const { Client, GatewayIntentBits } = require("discord.js");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
@@ -6,8 +8,6 @@ const ARCH_SHEET_TITLE = "LISTA DESEJO ARCH";
 const ARCH_HEADERS = ["Data", "Nick", "Arma", "DiscordUserId"];
 const RARE_ITEM_SHEET_TITLE = "LISTA DESEJO ITEM RARO";
 const RARE_ITEM_HEADERS = ["Data", "Nick", "Item", "DiscordUserId"];
-const FRAGMENT_SHEET_TITLE = "FRAGMENTO_ARCH_BOSS";
-const FRAGMENT_HEADERS = ["Data", "Nick", "Fragmento", "DiscordUserId"];
 const ARCH_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ARCH BOSS";
 const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)"];
 const RARE_ITEM_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ITEM RARO";
@@ -37,6 +37,8 @@ const ITEM_PLAYER_COLUMNS = [
   "Player 5",
   "Player 6",
 ];
+const LOG_DIR = path.join(__dirname, "logs");
+const COMMAND_LOG_PATH = path.join(LOG_DIR, "commands.log");
 const SALES_SHEET_TITLE = "VENDAS";
 const SALES_SHEET_HEADERS = [
   "VENDA_ID",
@@ -118,18 +120,117 @@ const rareItems = [
   "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
 ];
 
-const fragments = [
-  "Fragmento do Cordy",
-  "Fragmento do Tevent",
-  "Fragmento da Deluznoa",
-  "Fragmento da Belandir"
-];
-
-const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 }; // azul escuro
-const HEADER_FG = { red: 1, green: 1, blue: 1 }; // branco
+const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 };
+const HEADER_FG = { red: 1, green: 1, blue: 1 };
 
 const ALLOWED_CHANNEL_NAME = "🎢planilha-arch-boss";
 
+/**
+ * Safely stringify an object, returning empty string on failure.
+ * @param {unknown} obj
+ * @returns {string}
+ */
+function safeJsonStringify(obj) {
+  try {
+    return JSON.stringify(obj);
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Get the best display name for a Discord user.
+ * @param {object} user
+ * @returns {string}
+ */
+function getUserDisplayName(user) {
+  return user?.globalName ?? user?.username ?? user?.tag ?? "unknown";
+}
+
+/**
+ * Read a required string option from an interaction and trim it.
+ * @param {object} interaction
+ * @param {string} name
+ * @returns {string}
+ */
+function getRequiredOption(interaction, name) {
+  return interaction.options.getString(name, true).trim();
+}
+
+/**
+ * Check if the interaction is in the allowed channel.
+ * @param {object} interaction
+ * @returns {boolean}
+ */
+function isAllowedChannel(interaction) {
+  return (interaction.channel && interaction.channel.name) === ALLOWED_CHANNEL_NAME;
+}
+
+/**
+ * Convert interaction options to a plain array for logging.
+ * @param {object} interaction
+ * @returns {Array<{name: string, value: unknown, type: number}>}
+ */
+function interactionOptionsToSimpleArray(interaction) {
+  const data = interaction?.options?.data ?? [];
+  return data.map((o) => ({
+    name: o.name,
+    value: o.value,
+    type: o.type,
+  }));
+}
+
+/**
+ * Respond to autocomplete once, ignoring duplicate acknowledgements.
+ * @param {object} interaction
+ * @param {Array<{name: string, value: string}>} results
+ * @returns {Promise<void>}
+ */
+async function respondAutocompleteOnce(interaction, results) {
+  if (interaction.responded) return;
+  try {
+    await interaction.respond(results);
+  } catch (err) {
+    if (err?.code === 40060) return;
+    throw err;
+  }
+}
+
+/**
+ * Append command execution info to a local log file.
+ * @param {object} params
+ * @param {object} params.interaction
+ * @param {string} params.status
+ * @param {Error | null} params.err
+ * @returns {Promise<void>}
+ */
+async function appendCommandLog({ interaction, status, err }) {
+  try {
+    const optionsArr = interactionOptionsToSimpleArray(interaction);
+
+    const entry = {
+      timestamp: nowBrasilia(),
+      discordUserId: interaction.user?.id ?? "",
+      name: getUserDisplayName(interaction.user),
+      command: interaction.commandName ?? "",
+      guildId: interaction.guildId ?? "",
+      channelId: interaction.channelId ?? "",
+      options: optionsArr,
+      status,
+      error: err ? String(err?.message ?? err) : "",
+    };
+
+    await fs.mkdir(LOG_DIR, { recursive: true });
+    await fs.appendFile(COMMAND_LOG_PATH, `${safeJsonStringify(entry)}\n`, "utf8");
+  } catch (e) {
+    console.error("❌ Failed to write command log:", e);
+  }
+}
+
+/**
+ * Get current date/time formatted for Sao Paulo.
+ * @returns {string}
+ */
 function nowBrasilia() {
   return new Intl.DateTimeFormat("pt-BR", {
     timeZone: "America/Sao_Paulo",
@@ -142,6 +243,10 @@ function nowBrasilia() {
   }).format(new Date());
 }
 
+/**
+ * Read and normalize Google credentials from environment.
+ * @returns {{client_email: string, private_key: string}}
+ */
 function getGoogleCredsFromEnv() {
   const b64 = process.env.GOOGLE_CREDS_B64;
   if (!b64) {
@@ -151,7 +256,6 @@ function getGoogleCredsFromEnv() {
   const jsonStr = Buffer.from(b64, "base64").toString("utf8");
   const creds = JSON.parse(jsonStr);
 
-  // garante que a private_key tenha quebras corretas (se vier com \n)
   if (typeof creds.private_key === "string") {
     creds.private_key = creds.private_key.replace(/\\n/g, "\n");
   }
@@ -159,13 +263,18 @@ function getGoogleCredsFromEnv() {
   return creds;
 }
 
+/**
+ * Parse BR or ISO date/time strings into a Date in -03:00.
+ * @param {string | number | null | undefined} value
+ * @returns {Date | null}
+ */
 function parseBrazilianDateTime(value) {
   if (!value) return null;
   const trimmed = String(value).trim();
   if (!trimmed) return null;
 
   const brMatch = trimmed.match(
-      /(\d{2})\/(\d{2})\/(\d{4})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
+    /(\d{2})\/(\d{2})\/(\d{4})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
   );
   if (brMatch) {
     const [, day, month, year, hour = "00", minute = "00", second = "00"] = brMatch;
@@ -175,7 +284,7 @@ function parseBrazilianDateTime(value) {
   }
 
   const isoMatch = trimmed.match(
-      /(\d{4})-(\d{2})-(\d{2})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
+    /(\d{4})-(\d{2})-(\d{2})(?:[^\d]*(\d{2}):(\d{2})(?::(\d{2}))?)?/
   );
   if (isoMatch) {
     const [, year, month, day, hour = "00", minute = "00", second = "00"] = isoMatch;
@@ -187,23 +296,58 @@ function parseBrazilianDateTime(value) {
   return Number.isNaN(ts) ? null : new Date(ts);
 }
 
+/**
+ * Format a duration in milliseconds into a day-based string.
+ * @param {number} ms
+ * @returns {string}
+ */
 function formatDuration(ms) {
   if (ms <= 0) return "0 dias";
   const days = Math.ceil(ms / MS_PER_DAY);
   return `${days} dia${days > 1 ? "s" : ""}`;
 }
 
+/**
+ * Normalize player cell content to a lowercase name.
+ * @param {string | null | undefined} value
+ * @returns {string}
+ */
 function normalizePlayerCell(value) {
   if (!value) return "";
   const part = String(value).split("-")[0].trim();
   return part.toLowerCase();
 }
 
+/**
+ * Check if the cell indicates the player was paid.
+ * @param {string | null | undefined} value
+ * @returns {boolean}
+ */
 function isPlayerCellPaid(value) {
   if (!value) return false;
   return String(value).toLowerCase().includes("pago");
 }
 
+/**
+ * Build preview text and suffix for long lists.
+ * @param {string[]} lines
+ * @param {number} previewLimit
+ * @param {(extra: number) => string} suffixTemplate
+ * @returns {{preview: string, suffix: string}}
+ */
+function buildPreview(lines, previewLimit, suffixTemplate) {
+  const preview = lines.slice(0, previewLimit).join("\n");
+  const extra = lines.length - previewLimit;
+  const suffix = extra > 0 ? suffixTemplate(extra) : "";
+  return { preview, suffix };
+}
+
+/**
+ * Load or create a Google Sheet and ensure header formatting.
+ * @param {string} title
+ * @param {string[]} headers
+ * @returns {Promise<import("google-spreadsheet").GoogleSpreadsheetWorksheet>}
+ */
 async function getSheet(title, headers) {
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
 
@@ -227,8 +371,7 @@ async function getSheet(title, headers) {
     if (!ok) await sheet.setHeaderRow(headers);
   }
 
-  // 🎨 Formatação do header (A1 até última coluna)
-  const lastColLetter = String.fromCharCode(65 + headers.length - 1); // A, B, C...
+  const lastColLetter = String.fromCharCode(65 + headers.length - 1);
   await sheet.loadCells(`A1:${lastColLetter}1`);
 
   for (let i = 0; i < headers.length; i++) {
@@ -242,6 +385,529 @@ async function getSheet(title, headers) {
   return sheet;
 }
 
+/**
+ * Handle /arma_arch command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleArmaArch(interaction) {
+  const nick = getRequiredOption(interaction, "nick");
+
+  const arma = getRequiredOption(interaction, "arma_arch");
+
+  const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
+  await sheet.addRow({
+    Data: nowBrasilia(),
+    Nick: nick,
+    Arma: arma,
+    DiscordUserId: interaction.user.id,
+  });
+
+  return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nArma: **${arma}**`);
+}
+
+/**
+ * Handle /listar_arch command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleListarArch(interaction) {
+  const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
+  const rows = await sheet.getRows();
+  const userRows = rows.filter(
+    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
+  );
+
+  if (!userRows.length) {
+    return interaction.editReply(
+      "📭 Você ainda não tem armas registradas na lista de desejos."
+    );
+  }
+
+  const lines = userRows.map(
+    (row, idx) =>
+      `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${
+        row.Data ? ` --- Registrado em ${row.Data}` : ""
+      }`
+  );
+
+  const { preview, suffix } = buildPreview(lines, 15, (extra) =>
+    `\n... e mais ${extra} registro(s).`
+  );
+
+  return interaction.editReply(`📋 Seus desejos registrados:\n${preview}${suffix}`);
+}
+
+/**
+ * Handle /remover_arch command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleRemoverArch(interaction) {
+  const arma = getRequiredOption(interaction, "arma_arch");
+
+  const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
+  const rows = await sheet.getRows();
+  const targetRow = rows.find(
+    (row) =>
+      (row.DiscordUserId || "").trim() === interaction.user.id &&
+      (row.Arma || "").trim() === arma
+  );
+
+  if (!targetRow) {
+    return interaction.editReply("⚠️ Não encontrei esse item na sua lista de desejos.");
+  }
+
+  const nick = targetRow.Nick || "Nick não informado";
+  await targetRow.delete();
+
+  return interaction.editReply(
+    `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`
+  );
+}
+
+/**
+ * Handle /fila_arch command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleFilaArch(interaction) {
+  const item = getRequiredOption(interaction, "item");
+
+  const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
+  const rows = await sheet.getRows();
+
+  const filtered = rows
+    .filter((row) => (row.Arma || "").trim().toLowerCase() === item.toLowerCase())
+    .map((row) => ({
+      row,
+      parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+    }))
+    .sort((a, b) => {
+      if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
+        return a.parsedDate.getTime() - b.parsedDate.getTime();
+      }
+      return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
+    });
+
+  if (!filtered.length) {
+    return interaction.editReply(
+      `📭 Nenhum jogador na fila da arma **${item}** na aba ${ARCH_SHEET_TITLE}.`
+    );
+  }
+
+  const lines = filtered.map(({ row }, idx) => {
+    const nick = row.Nick || "Nick não informado";
+    const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
+    const mention =
+      row.DiscordUserId && String(row.DiscordUserId).trim()
+        ? ` (<@${String(row.DiscordUserId).trim()}>)`
+        : "";
+    return `${idx + 1}. ${nick}${mention}${registro}`;
+  });
+  const { preview, suffix } = buildPreview(lines, 25, (extra) =>
+    `\n... e mais ${extra} jogador(es).`
+  );
+
+  return interaction.editReply(
+    `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+  );
+}
+
+/**
+ * Handle /item command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleItem(interaction) {
+  const nick = getRequiredOption(interaction, "nick");
+  const item = getRequiredOption(interaction, "item");
+
+  const sheet = await getSheet("LISTA DESEJO ITEM", ["Data", "Nick", "Item"]);
+  await sheet.addRow({
+    Data: nowBrasilia(),
+    Nick: nick,
+    Item: item,
+  });
+
+  return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`);
+}
+
+/**
+ * Handle /item_raro command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleItemRaro(interaction) {
+  const nick = getRequiredOption(interaction, "nick");
+  const item = getRequiredOption(interaction, "item_raro");
+
+  const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+  await sheet.addRow({
+    Data: nowBrasilia(),
+    Nick: nick,
+    Item: item,
+    DiscordUserId: interaction.user.id,
+  });
+
+  return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem raro: **${item}**`);
+}
+
+/**
+ * Handle /remover_item_raro command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleRemoverItemRaro(interaction) {
+  const item = getRequiredOption(interaction, "item_raro");
+
+  const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+  const rows = await sheet.getRows();
+  const targetRow = rows.find(
+    (row) =>
+      (row.DiscordUserId || "").trim() === interaction.user.id &&
+      (row.Item || "").trim() === item
+  );
+
+  if (!targetRow) {
+    return interaction.editReply("⚠️ Não encontrei esse item raro na sua lista de desejos.");
+  }
+
+  const nick = targetRow.Nick || "Nick não informado";
+  await targetRow.delete();
+
+  return interaction.editReply(
+    `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`
+  );
+}
+
+/**
+ * Handle /fila_item_raro command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleFilaItemRaro(interaction) {
+  const item = getRequiredOption(interaction, "item_raro");
+
+  const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+  const rows = await sheet.getRows();
+
+  const filtered = rows
+    .filter((row) => (row.Item || "").trim().toLowerCase() === item.toLowerCase())
+    .map((row) => ({
+      row,
+      parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+    }))
+    .sort((a, b) => {
+      if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
+        return a.parsedDate.getTime() - b.parsedDate.getTime();
+      }
+      return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
+    });
+
+  if (!filtered.length) {
+    return interaction.editReply(
+      `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`
+    );
+  }
+
+  const lines = filtered.map(({ row }, idx) => {
+    const nick = row.Nick || "Nick não informado";
+    const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
+    const mention =
+      row.DiscordUserId && String(row.DiscordUserId).trim()
+        ? ` (<@${String(row.DiscordUserId).trim()}>)`
+        : "";
+    return `${idx + 1}. ${nick}${mention}${registro}`;
+  });
+  const { preview, suffix } = buildPreview(lines, 25, (extra) =>
+    `\n... e mais ${extra} jogador(es).`
+  );
+
+  return interaction.editReply(
+    `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+  );
+}
+
+/**
+ * Handle /meus_itens_a_venda command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleMeusItensAVenda(interaction) {
+  const playerNick = getRequiredOption(interaction, "nick");
+  const targetLower = playerNick.toLowerCase();
+
+  const sheet = await getSheet(ITEMS_SHEET_TITLE, ITEMS_SHEET_HEADERS);
+  const rows = await sheet.getRows();
+  const playerRows = rows.filter((row) =>
+    ITEM_PLAYER_COLUMNS.some((col) => {
+      const cell = row[col];
+      return normalizePlayerCell(cell) === targetLower && !isPlayerCellPaid(cell);
+    })
+  );
+
+  if (!playerRows.length) {
+    return interaction.editReply(
+      `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
+    );
+  }
+
+  const lines = playerRows.map((row, idx) => {
+    const itemName = row.Item || row["Item (Arma)"] || "Item sem nome";
+    const valor = row["Valor Bruto"] || row["Valor"] || "Valor não informado";
+    const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
+    return `${idx + 1}. ID ${vendaId} — ${itemName} • Valor: ${valor}`;
+  });
+
+  const { preview, suffix } = buildPreview(lines, 20, (extraCount) =>
+    `\n... e mais ${extraCount} item(ns).`
+  );
+
+  return interaction.editReply(
+    `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`
+  );
+}
+
+/**
+ * Handle /minhas_vendas command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleMinhasVendas(interaction) {
+  const playerNick = getRequiredOption(interaction, "nick");
+  const targetLower = playerNick.toLowerCase();
+
+  const sheet = await getSheet(SALES_SHEET_TITLE, SALES_SHEET_HEADERS);
+  const rows = await sheet.getRows();
+
+  const vendasDoPlayer = rows.filter((row) =>
+    ITEM_PLAYER_COLUMNS.some((col) => normalizePlayerCell(row[col]) === targetLower)
+  );
+
+  if (!vendasDoPlayer.length) {
+    return interaction.editReply(`📭 ${playerNick} não possui vendas registradas.`);
+  }
+
+  const pagos = [];
+  const pendentes = [];
+  let totalPago = 0;
+  let totalPendente = 0;
+
+  for (const row of vendasDoPlayer) {
+    const wasPaid = ITEM_PLAYER_COLUMNS.some(
+      (col) =>
+        normalizePlayerCell(row[col]) === targetLower && isPlayerCellPaid(row[col])
+    );
+
+    const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
+    const itemName = row.Item || "Item não informado";
+    const valorPorPlayer = row["Valor por Player"] || row["Valor Player"] || "-";
+    const dataVenda = row.Data || row["Data/Hora"] || row["Data Venda"] || "";
+
+    const entry = `ID ${vendaId} — ${itemName} • Valor por Player: ${valorPorPlayer}${
+      dataVenda ? ` • Data: ${dataVenda}` : ""
+    }`;
+
+    const perPlayerNumeric = Number(
+      String(valorPorPlayer).replace(/[^\d,-]/g, "").replace(".", "").replace(",", ".")
+    );
+
+    if (wasPaid) {
+      pagos.push(entry);
+      if (!Number.isNaN(perPlayerNumeric)) totalPago += perPlayerNumeric;
+    } else {
+      pendentes.push(entry);
+      if (!Number.isNaN(perPlayerNumeric)) totalPendente += perPlayerNumeric;
+    }
+  }
+
+  const buildSection = (label, entries) => {
+    if (!entries.length) return `**${label}:** nenhum`;
+    const { preview, suffix } = buildPreview(entries, 15, (extra) =>
+      `\n... e mais ${extra} registro(s).`
+    );
+    return `**${label}:**\n${preview}${suffix}`;
+  };
+
+  const parts = [buildSection("Pendentes", pendentes), buildSection("Pagas", pagos)];
+  const totalsLine = `**Total:** Pendentes = ${totalPendente.toFixed(
+    2
+  )} | Pagos = ${totalPago.toFixed(2)}`;
+
+  return interaction.editReply(
+    `📑 Vendas do jogador **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
+  );
+}
+
+/**
+ * Handle /cooldown command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleCooldown(interaction) {
+  const player = getRequiredOption(interaction, "nick");
+  const sheet = await getSheet(ARCH_HISTORY_SHEET_TITLE, ARCH_HISTORY_HEADERS);
+  const rows = await sheet.getRows();
+  let lastWin = null;
+
+  const targetLower = player.toLowerCase();
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const rowPlayer = (rows[i].Player || "").trim();
+    if (!rowPlayer) continue;
+    if (rowPlayer.toLowerCase() === targetLower) {
+      lastWin = rows[i];
+      break;
+    }
+  }
+
+  if (!lastWin) {
+    return interaction.editReply(`✅ ${player} não possui registros de ganho de Archboss.`);
+  }
+
+  const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
+  const lastDate = parseBrazilianDateTime(dateValue);
+
+  if (!lastDate) {
+    return interaction.editReply(
+      "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
+    );
+  }
+
+  const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
+  const now = new Date();
+
+  if (nextEligible <= now) {
+    return interaction.editReply(
+      `🟢 ${player} está liberado. Última arma em ${lastDate.toLocaleDateString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      })}.`
+    );
+  }
+
+  const remaining = nextEligible.getTime() - now.getTime();
+  const humanRemaining = formatDuration(remaining);
+
+  return interaction.editReply(
+    `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltima arma: **${
+      lastWin["Item (Arma)"] || lastWin.Item || "não informado"
+    }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+  );
+}
+
+/**
+ * Handle /cooldown_item_raro command.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleCooldownItemRaro(interaction) {
+  const player = getRequiredOption(interaction, "nick");
+  const sheet = await getSheet(RARE_ITEM_HISTORY_SHEET_TITLE, RARE_ITEM_HISTORY_HEADERS);
+  const rows = await sheet.getRows();
+  let lastWin = null;
+
+  const targetLower = player.toLowerCase();
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const rowPlayer = (rows[i].Player || "").trim();
+    if (!rowPlayer) continue;
+    if (rowPlayer.toLowerCase() === targetLower) {
+      lastWin = rows[i];
+      break;
+    }
+  }
+
+  if (!lastWin) {
+    return interaction.editReply(
+      `✅ ${player} não possui registros de ganho de item raro.`
+    );
+  }
+
+  const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
+  const lastDate = parseBrazilianDateTime(dateValue);
+
+  if (!lastDate) {
+    return interaction.editReply(
+      "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
+    );
+  }
+
+  const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
+  const now = new Date();
+
+  if (nextEligible <= now) {
+    return interaction.editReply(
+      `🟢 ${player} está liberado. Último item raro em ${lastDate.toLocaleDateString(
+        "pt-BR",
+        { timeZone: "America/Sao_Paulo" }
+      )}.`
+    );
+  }
+
+  const remaining = nextEligible.getTime() - now.getTime();
+  const humanRemaining = formatDuration(remaining);
+
+  return interaction.editReply(
+    `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltimo item raro: **${
+      lastWin.Item || lastWin["Item (Arma)"] || "não informado"
+    }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+  );
+}
+
+/**
+ * Handle autocomplete interactions for supported options.
+ * @param {object} interaction
+ * @returns {Promise<void>}
+ */
+async function handleAutocomplete(interaction) {
+  try {
+    if (interaction.responded) return;
+    if (!isAllowedChannel(interaction)) {
+      await respondAutocompleteOnce(interaction, []);
+      return;
+    }
+
+    const focused = interaction.options.getFocused(true);
+    const q = String(focused.value || "").toLowerCase();
+
+    const dataByOptionName = {
+      arma_arch: weapons,
+      item: weapons,
+      item_raro: rareItems,
+    };
+
+    const list = dataByOptionName[focused.name] || [];
+
+    const results = list
+      .filter((x) => x.toLowerCase().includes(q))
+      .slice(0, 25)
+      .map((x) => ({
+        name: x.length > 100 ? x.slice(0, 97) + "..." : x,
+        value: x,
+      }));
+
+    await respondAutocompleteOnce(interaction, results);
+    return;
+  } catch (err) {
+    console.error("❌ Erro no autocomplete:", err);
+    return;
+  }
+}
+
+const commandHandlers = {
+  arma_arch: handleArmaArch,
+  listar_arch: handleListarArch,
+  remover_arch: handleRemoverArch,
+  fila_arch: handleFilaArch,
+  item: handleItem,
+  item_raro: handleItemRaro,
+  remover_item_raro: handleRemoverItemRaro,
+  fila_item_raro: handleFilaItemRaro,
+  meus_itens_a_venda: handleMeusItensAVenda,
+  minhas_vendas: handleMinhasVendas,
+  cooldown: handleCooldown,
+  cooldown_item_raro: handleCooldownItemRaro,
+};
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
@@ -251,47 +917,20 @@ client.once("ready", () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-  // ✅ 1) AUTOCOMPLETE (tem que vir antes do ChatInputCommand)
   if (interaction.isAutocomplete()) {
-    try {
-      // (opcional) restringe ao canal também
-      if ((interaction.channel && interaction.channel.name) !== ALLOWED_CHANNEL_NAME) {
-        return interaction.respond([]); // não sugere nada fora do canal permitido
-      }
-
-      const focused = interaction.options.getFocused(true); // { name, value }
-      const q = String(focused.value || "").toLowerCase();
-
-      // mapeia por nome da OPTION (não é o commandName)
-      const dataByOptionName = {
-        arma_arch: weapons,    // /arma_arch, /remover_arch
-        item: weapons,         // /fila_arch
-        item_raro: rareItems,  // /item_raro, /remover_item_raro, /fila_item_raro
-        fragmento: fragments,  // /fragmento_arch_boss
-      };
-
-      const list = dataByOptionName[focused.name] || [];
-
-      const results = list
-          .filter((x) => x.toLowerCase().includes(q))
-          .slice(0, 25)
-          .map((x) => ({
-            name: x.length > 100 ? x.slice(0, 97) + "..." : x, // name max 100
-            value: x, // value pode ser o texto completo (desde que não seja gigante)
-          }));
-
-      return interaction.respond(results);
-    } catch (err) {
-      console.error("❌ Erro no autocomplete:", err);
-      // não pode reply/editReply em autocomplete; só respond ou silêncio
-      return;
-    }
+    await handleAutocomplete(interaction);
+    return;
   }
 
-  // ✅ 2) comandos normais
   if (!interaction.isChatInputCommand()) return;
 
-  if ((interaction.channel && interaction.channel.name) !== ALLOWED_CHANNEL_NAME) {
+  if (!isAllowedChannel(interaction)) {
+    await appendCommandLog({
+      interaction,
+      status: "BLOCKED_CHANNEL",
+      err: null,
+    });
+
     return interaction.reply({
       content: `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
       ephemeral: true,
@@ -300,455 +939,34 @@ client.on("interactionCreate", async (interaction) => {
 
   let hasDeferred = false;
   try {
-    // responde rápido e evita timeout do Discord
     await interaction.deferReply({ ephemeral: true });
     hasDeferred = true;
 
-    if (interaction.commandName === "arma_arch") {
-      const nick = interaction.options.getString("nick", true).trim();
-
-      // ⚠️ o nome da option tem que ser EXATAMENTE "arma_arch" (igual no deploy-commands)
-      const arma = interaction.options.getString("arma_arch", true).trim();
-
-      const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
-      await sheet.addRow({
-        Data: nowBrasilia(),
-        Nick: nick,
-        Arma: arma,
-        DiscordUserId: interaction.user.id,
+    const handler = commandHandlers[interaction.commandName];
+    if (!handler) {
+      await appendCommandLog({
+        interaction,
+        status: "UNKNOWN_COMMAND",
+        err: null,
       });
-
-      return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nArma: **${arma}**`);
+      return interaction.editReply("❌ Comando não suportado por este bot.");
     }
 
-    if (interaction.commandName === "listar_arch") {
-      const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
-      const rows = await sheet.getRows();
-      const userRows = rows.filter(
-          (row) => (row.DiscordUserId || "").trim() === interaction.user.id
-      );
-
-      if (!userRows.length) {
-        return interaction.editReply(
-            "📭 Você ainda não tem armas registradas na lista de desejos."
-        );
-      }
-
-      const lines = userRows.map(
-          (row, idx) =>
-              `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${
-                  row.Data ? ` --- Registrado em ${row.Data}` : ""
-              }`
-      );
-
-      const previewLimit = 15;
-      const preview = lines.slice(0, previewLimit).join("\n");
-      const suffix =
-          lines.length > previewLimit
-              ? `\n... e mais ${lines.length - previewLimit} registro(s).`
-              : "";
-
-      return interaction.editReply(`📋 Seus desejos registrados:\n${preview}${suffix}`);
-    }
-
-    if (interaction.commandName === "remover_arch") {
-      const arma = interaction.options.getString("arma_arch", true).trim();
-
-      const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
-      const rows = await sheet.getRows();
-      const targetRow = rows.find(
-          (row) =>
-              (row.DiscordUserId || "").trim() === interaction.user.id &&
-              (row.Arma || "").trim() === arma
-      );
-
-      if (!targetRow) {
-        return interaction.editReply("⚠️ Não encontrei esse item na sua lista de desejos.");
-      }
-
-      const nick = targetRow.Nick || "Nick não informado";
-      await targetRow.delete();
-
-      return interaction.editReply(
-          `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`
-      );
-    }
-
-    if (interaction.commandName === "fila_arch") {
-      const item = interaction.options.getString("item", true).trim();
-
-      const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
-      const rows = await sheet.getRows();
-
-      const filtered = rows
-          .filter((row) => (row.Arma || "").trim().toLowerCase() === item.toLowerCase())
-          .map((row) => ({
-            row,
-            parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
-          }))
-          .sort((a, b) => {
-            if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
-              return a.parsedDate.getTime() - b.parsedDate.getTime();
-            }
-            return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
-          });
-
-      if (!filtered.length) {
-        return interaction.editReply(
-            `📭 Nenhum jogador na fila da arma **${item}** na aba ${ARCH_SHEET_TITLE}.`
-        );
-      }
-
-      const previewLimit = 25;
-      const lines = filtered.map(({ row }, idx) => {
-        const nick = row.Nick || "Nick não informado";
-        const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
-        const mention =
-            row.DiscordUserId && String(row.DiscordUserId).trim()
-                ? ` (<@${String(row.DiscordUserId).trim()}>)`
-                : "";
-        return `${idx + 1}. ${nick}${mention}${registro}`;
-      });
-      const preview = lines.slice(0, previewLimit).join("\n");
-      const extra = lines.length - previewLimit;
-      const suffix = extra > 0 ? `\n... e mais ${extra} jogador(es).` : "";
-
-      return interaction.editReply(
-          `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
-      );
-    }
-
-    if (interaction.commandName === "item") {
-      const nick = interaction.options.getString("nick", true).trim();
-      const item = interaction.options.getString("item", true).trim();
-
-      const sheet = await getSheet("LISTA DESEJO ITEM", ["Data", "Nick", "Item"]);
-      await sheet.addRow({
-        Data: nowBrasilia(),
-        Nick: nick,
-        Item: item,
-      });
-
-      return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`);
-    }
-
-    if (interaction.commandName === "fragmento_arch_boss") {
-      const nick = interaction.options.getString("nick", true).trim();
-      const fragmento = interaction.options.getString("fragmento", true).trim();
-
-      const sheet = await getSheet(FRAGMENT_SHEET_TITLE, FRAGMENT_HEADERS);
-      await sheet.addRow({
-        Data: nowBrasilia(),
-        Nick: nick,
-        Fragmento: fragmento,
-        DiscordUserId: interaction.user.id,
-      });
-
-      return interaction.editReply(
-          `✅ Registrado!\nNick: **${nick}**\nFragmento: **${fragmento}**`
-      );
-    }
-
-    if (interaction.commandName === "item_raro") {
-      const nick = interaction.options.getString("nick", true).trim();
-      const item = interaction.options.getString("item_raro", true).trim();
-
-      const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
-      await sheet.addRow({
-        Data: nowBrasilia(),
-        Nick: nick,
-        Item: item,
-        DiscordUserId: interaction.user.id,
-      });
-
-      return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem raro: **${item}**`);
-    }
-
-    if (interaction.commandName === "remover_item_raro") {
-      const item = interaction.options.getString("item_raro", true).trim();
-
-      const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
-      const rows = await sheet.getRows();
-      const targetRow = rows.find(
-          (row) =>
-              (row.DiscordUserId || "").trim() === interaction.user.id &&
-              (row.Item || "").trim() === item
-      );
-
-      if (!targetRow) {
-        return interaction.editReply("⚠️ Não encontrei esse item raro na sua lista de desejos.");
-      }
-
-      const nick = targetRow.Nick || "Nick não informado";
-      await targetRow.delete();
-
-      return interaction.editReply(
-          `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`
-      );
-    }
-
-    if (interaction.commandName === "fila_item_raro") {
-      const item = interaction.options.getString("item_raro", true).trim();
-
-      const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
-      const rows = await sheet.getRows();
-
-      const filtered = rows
-          .filter((row) => (row.Item || "").trim().toLowerCase() === item.toLowerCase())
-          .map((row) => ({
-            row,
-            parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
-          }))
-          .sort((a, b) => {
-            if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
-              return a.parsedDate.getTime() - b.parsedDate.getTime();
-            }
-            return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
-          });
-
-      if (!filtered.length) {
-        return interaction.editReply(
-            `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`
-        );
-      }
-
-      const previewLimit = 25;
-      const lines = filtered.map(({ row }, idx) => {
-        const nick = row.Nick || "Nick não informado";
-        const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
-        const mention =
-            row.DiscordUserId && String(row.DiscordUserId).trim()
-                ? ` (<@${String(row.DiscordUserId).trim()}>)`
-                : "";
-        return `${idx + 1}. ${nick}${mention}${registro}`;
-      });
-      const preview = lines.slice(0, previewLimit).join("\n");
-      const extra = lines.length - previewLimit;
-      const suffix = extra > 0 ? `\n... e mais ${extra} jogador(es).` : "";
-
-      return interaction.editReply(
-          `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
-      );
-    }
-
-    if (interaction.commandName === "meus_itens_a_venda") {
-      const playerNick = interaction.options.getString("nick", true).trim();
-      const targetLower = playerNick.toLowerCase();
-
-      const sheet = await getSheet(ITEMS_SHEET_TITLE, ITEMS_SHEET_HEADERS);
-      const rows = await sheet.getRows();
-      const playerRows = rows.filter((row) =>
-          ITEM_PLAYER_COLUMNS.some((col) => {
-            const cell = row[col];
-            return normalizePlayerCell(cell) === targetLower && !isPlayerCellPaid(cell);
-          })
-      );
-
-      if (!playerRows.length) {
-        return interaction.editReply(
-            `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
-        );
-      }
-
-      const lines = playerRows.map((row, idx) => {
-        const itemName = row.Item || row["Item (Arma)"] || "Item sem nome";
-        const valor = row["Valor Bruto"] || row["Valor"] || "Valor não informado";
-        const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
-        return `${idx + 1}. ID ${vendaId} — ${itemName} • Valor: ${valor}`;
-      });
-
-      const previewLimit = 20;
-      const preview = lines.slice(0, previewLimit).join("\n");
-      const extraCount = lines.length - previewLimit;
-      const suffix = extraCount > 0 ? `\n... e mais ${extraCount} item(ns).` : "";
-
-      return interaction.editReply(
-          `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`
-      );
-    }
-
-    if (interaction.commandName === "minhas_vendas") {
-      const playerNick = interaction.options.getString("nick", true).trim();
-      const targetLower = playerNick.toLowerCase();
-
-      const sheet = await getSheet(SALES_SHEET_TITLE, SALES_SHEET_HEADERS);
-      const rows = await sheet.getRows();
-
-      const vendasDoPlayer = rows.filter((row) =>
-          ITEM_PLAYER_COLUMNS.some((col) => normalizePlayerCell(row[col]) === targetLower)
-      );
-
-      if (!vendasDoPlayer.length) {
-        return interaction.editReply(`📭 ${playerNick} não possui vendas registradas.`);
-      }
-
-      const pagos = [];
-      const pendentes = [];
-      let totalPago = 0;
-      let totalPendente = 0;
-
-      for (const row of vendasDoPlayer) {
-        const wasPaid = ITEM_PLAYER_COLUMNS.some(
-            (col) =>
-                normalizePlayerCell(row[col]) === targetLower && isPlayerCellPaid(row[col])
-        );
-
-        const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
-        const itemName = row.Item || "Item não informado";
-        const valorLiquido = row["Valor Líquido"] || row["Valor Liquido"] || "Valor não informado";
-        const valorPorPlayer = row["Valor por Player"] || row["Valor Player"] || "-";
-        const dataVenda = row.Data || row["Data/Hora"] || row["Data Venda"] || "";
-
-        const entry = `ID ${vendaId} — ${itemName} • Valor por Player: ${valorPorPlayer}${
-            dataVenda ? ` • Data: ${dataVenda}` : ""
-        }`;
-
-        const perPlayerNumeric = Number(
-            String(valorPorPlayer).replace(/[^\d,-]/g, "").replace(".", "").replace(",", ".")
-        );
-
-        if (wasPaid) {
-          pagos.push(entry);
-          if (!Number.isNaN(perPlayerNumeric)) totalPago += perPlayerNumeric;
-        } else {
-          pendentes.push(entry);
-          if (!Number.isNaN(perPlayerNumeric)) totalPendente += perPlayerNumeric;
-        }
-      }
-
-      const buildSection = (label, entries) => {
-        if (!entries.length) return `**${label}:** nenhum`;
-        const previewLimit = 15;
-        const preview = entries.slice(0, previewLimit).join("\n");
-        const extra = entries.length - previewLimit;
-        const suffix = extra > 0 ? `\n... e mais ${extra} registro(s).` : "";
-        return `**${label}:**\n${preview}${suffix}`;
-      };
-
-      const parts = [
-        buildSection("Pendentes", pendentes),
-        buildSection("Pagas", pagos),
-      ];
-      const totalsLine = `**Total:** Pendentes = ${totalPendente.toFixed(
-          2
-      )} | Pagos = ${totalPago.toFixed(2)}`;
-
-      return interaction.editReply(
-          `📑 Vendas do jogador **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
-      );
-    }
-
-    if (interaction.commandName === "cooldown") {
-      const player = interaction.options.getString("nick", true).trim();
-      const sheet = await getSheet(ARCH_HISTORY_SHEET_TITLE, ARCH_HISTORY_HEADERS);
-      const rows = await sheet.getRows();
-      let lastWin = null;
-
-      const targetLower = player.toLowerCase();
-      for (let i = rows.length - 1; i >= 0; i--) {
-        const rowPlayer = (rows[i].Player || "").trim();
-        if (!rowPlayer) continue;
-        if (rowPlayer.toLowerCase() === targetLower) {
-          lastWin = rows[i];
-          break;
-        }
-      }
-
-      if (!lastWin) {
-        return interaction.editReply(`✅ ${player} não possui registros de ganho de Archboss.`);
-      }
-
-      const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
-      const lastDate = parseBrazilianDateTime(dateValue);
-
-      if (!lastDate) {
-        return interaction.editReply(
-            "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
-        );
-      }
-
-      const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
-      const now = new Date();
-
-      if (nextEligible <= now) {
-        return interaction.editReply(
-            `🟢 ${player} está liberado. Última arma em ${lastDate.toLocaleDateString("pt-BR", {
-              timeZone: "America/Sao_Paulo",
-            })}.`
-        );
-      }
-
-      const remaining = nextEligible.getTime() - now.getTime();
-      const humanRemaining = formatDuration(remaining);
-
-      return interaction.editReply(
-          `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltima arma: **${
-              lastWin["Item (Arma)"] || lastWin.Item || "não informado"
-          }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
-      );
-    }
-
-    if (interaction.commandName === "cooldown_item_raro") {
-      const player = interaction.options.getString("nick", true).trim();
-      const sheet = await getSheet(
-          RARE_ITEM_HISTORY_SHEET_TITLE,
-          RARE_ITEM_HISTORY_HEADERS
-      );
-      const rows = await sheet.getRows();
-      let lastWin = null;
-
-      const targetLower = player.toLowerCase();
-      for (let i = rows.length - 1; i >= 0; i--) {
-        const rowPlayer = (rows[i].Player || "").trim();
-        if (!rowPlayer) continue;
-        if (rowPlayer.toLowerCase() === targetLower) {
-          lastWin = rows[i];
-          break;
-        }
-      }
-
-      if (!lastWin) {
-        return interaction.editReply(
-            `✅ ${player} não possui registros de ganho de item raro.`
-        );
-      }
-
-      const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
-      const lastDate = parseBrazilianDateTime(dateValue);
-
-      if (!lastDate) {
-        return interaction.editReply(
-            "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
-        );
-      }
-
-      const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
-      const now = new Date();
-
-      if (nextEligible <= now) {
-        return interaction.editReply(
-            `🟢 ${player} está liberado. Último item raro em ${lastDate.toLocaleDateString(
-                "pt-BR",
-                { timeZone: "America/Sao_Paulo" }
-            )}.`
-        );
-      }
-
-      const remaining = nextEligible.getTime() - now.getTime();
-      const humanRemaining = formatDuration(remaining);
-
-      return interaction.editReply(
-          `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltimo item raro: **${
-              lastWin.Item || lastWin["Item (Arma)"] || "não informado"
-          }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
-      );
-    }
-
-    // se cair aqui, é porque você executou um comando que o bot não trata
-    return interaction.editReply("❌ Comando não suportado por este bot.");
+    const result = await handler(interaction);
+    await appendCommandLog({
+      interaction,
+      status: "OK",
+      err: null,
+    });
+    return result;
   } catch (err) {
     console.error("❌ Erro ao processar comando:", err);
     const errorMsg = "❌ Erro ao registrar. Veja os logs do bot.";
+    await appendCommandLog({
+      interaction,
+      status: "ERROR",
+      err,
+    });
 
     if (interaction.replied) {
       return interaction.followUp({ content: errorMsg, ephemeral: true });

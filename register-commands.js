@@ -14,7 +14,7 @@ const armaArchCmd = new SlashCommandBuilder()
             .setName("arma_arch")
             .setDescription("Arma Archboss")
             .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+            .setAutocomplete(true)
     );
 
 const listarArchCmd = new SlashCommandBuilder()
@@ -29,7 +29,7 @@ const removerArchCmd = new SlashCommandBuilder()
             .setName("arma_arch")
             .setDescription("Arma a ser removida")
             .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+            .setAutocomplete(true)
     );
 
 const filaArchCmd = new SlashCommandBuilder()
@@ -40,7 +40,7 @@ const filaArchCmd = new SlashCommandBuilder()
             .setName("item")
             .setDescription("Arma Archboss")
             .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+            .setAutocomplete(true)
     );
 
 const itemRaroCmd = new SlashCommandBuilder()
@@ -54,21 +54,7 @@ const itemRaroCmd = new SlashCommandBuilder()
             .setName("item_raro")
             .setDescription("Item raro")
             .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE (resolve limite 25)
-    );
-
-const fragmentoArchBossCmd = new SlashCommandBuilder()
-    .setName("fragmento_arch_boss")
-    .setDescription("Registrar fragmento Archboss na lista de desejo")
-    .addStringOption((o) =>
-        o.setName("nick").setDescription("Nick").setRequired(true)
-    )
-    .addStringOption((o) =>
-        o
-            .setName("fragmento")
-            .setDescription("Fragmento")
-            .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+            .setAutocomplete(true)
     );
 
 const removerItemRaroCmd = new SlashCommandBuilder()
@@ -79,7 +65,7 @@ const removerItemRaroCmd = new SlashCommandBuilder()
             .setName("item_raro")
             .setDescription("Item raro a ser removido")
             .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+            .setAutocomplete(true)
     );
 
 const filaItemCmd = new SlashCommandBuilder()
@@ -90,7 +76,7 @@ const filaItemCmd = new SlashCommandBuilder()
             .setName("item_raro")
             .setDescription("Item raro")
             .setRequired(true)
-            .setAutocomplete(true) // ✅ AUTOCOMPLETE
+            .setAutocomplete(true)
     );
 
 const cooldownCmd = new SlashCommandBuilder()
@@ -136,7 +122,6 @@ const minhasVendasCmd = new SlashCommandBuilder()
 (async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-  // limpa comandos globais (mantive como você fez)
   await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID), {
     body: [],
   });
@@ -150,7 +135,6 @@ const minhasVendasCmd = new SlashCommandBuilder()
           removerArchCmd.toJSON(),
           filaArchCmd.toJSON(),
           itemRaroCmd.toJSON(),
-          fragmentoArchBossCmd.toJSON(),
           removerItemRaroCmd.toJSON(),
           filaItemCmd.toJSON(),
           cooldownCmd.toJSON(),
@@ -161,5 +145,5 @@ const minhasVendasCmd = new SlashCommandBuilder()
       }
   );
 
-  console.log("✅ Comandos registrados na guild (com AUTOCOMPLETE).");
+  console.log("✅ Comandos registrados na guild.");
 })();
