@@ -220,6 +220,7 @@ async function appendCommandLog({ interaction, status, err }) {
       error: err ? String(err?.message ?? err) : "",
     };
 
+    console.log(`[COMMAND_LOG] ${safeJsonStringify(entry)}`);
     await fs.mkdir(LOG_DIR, { recursive: true });
     await fs.appendFile(COMMAND_LOG_PATH, `${safeJsonStringify(entry)}\n`, "utf8");
   } catch (e) {
