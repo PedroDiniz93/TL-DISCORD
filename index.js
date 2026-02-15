@@ -139,6 +139,18 @@ function safeJsonStringify(obj) {
 }
 
 /**
+ * Normalize item names for queue matching (strip leading icons/emoji).
+ * @param {string} value
+ * @returns {string}
+ */
+function normalizeQueueItemName(value) {
+  return String(value || "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
  * Get the best display name for a Discord user.
  * @param {object} user
  * @returns {string}
@@ -478,8 +490,9 @@ async function handleFilaArch(interaction) {
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
 
+  const targetItem = normalizeQueueItemName(item);
   const filtered = rows
-    .filter((row) => (row.Arma || "").trim().toLowerCase() === item.toLowerCase())
+    .filter((row) => normalizeQueueItemName(row.Arma) === targetItem)
     .map((row) => ({
       row,
       parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
@@ -593,8 +606,9 @@ async function handleFilaItemRaro(interaction) {
   const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
   const rows = await sheet.getRows();
 
+  const targetItem = normalizeQueueItemName(item);
   const filtered = rows
-    .filter((row) => (row.Item || "").trim().toLowerCase() === item.toLowerCase())
+    .filter((row) => normalizeQueueItemName(row.Item) === targetItem)
     .map((row) => ({
       row,
       parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
