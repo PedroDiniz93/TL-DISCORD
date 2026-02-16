@@ -528,14 +528,14 @@ async function handleFilaArch(interaction) {
     );
   }
 
-  const lines = filtered.map(({ row }, idx) => {
+  const lines = filtered.map(({ row }) => {
     const nick = row.Nick || "Nick não informado";
     const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
     const mention =
       row.DiscordUserId && String(row.DiscordUserId).trim()
         ? ` (<@${String(row.DiscordUserId).trim()}>)`
         : "";
-    return `${idx + 1}. ${nick}${mention}${registro}`;
+    return `${nick}${mention}${registro}`;
   });
   const { preview, suffix } = buildPreview(lines, 25, (extra) =>
     `\n... e mais ${extra} jogador(es).`
@@ -644,14 +644,14 @@ async function handleFilaItemRaro(interaction) {
     );
   }
 
-  const lines = filtered.map(({ row }, idx) => {
+  const lines = filtered.map(({ row }) => {
     const nick = row.Nick || "Nick não informado";
     const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
     const mention =
       row.DiscordUserId && String(row.DiscordUserId).trim()
         ? ` (<@${String(row.DiscordUserId).trim()}>)`
         : "";
-    return `${idx + 1}. ${nick}${mention}${registro}`;
+    return `${nick}${mention}${registro}`;
   });
   const { preview, suffix } = buildPreview(lines, 25, (extra) =>
     `\n... e mais ${extra} jogador(es).`
