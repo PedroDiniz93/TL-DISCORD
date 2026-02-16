@@ -13,6 +13,9 @@ const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)", "DiscordUser
 const RARE_ITEM_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ITEM RARO";
 const RARE_ITEM_HISTORY_HEADERS = ["Data/Hora", "Player", "Item", "DiscordUserId"];
 const ARCH_COOLDOWN_DAYS = 20;
+const ARCH_COOLDOWN_DAYS_NEW = 10;
+const ARCH_COOLDOWN_CUTOFF_MONTH = 1; // February (0-based)
+const ARCH_COOLDOWN_CUTOFF_DAY = 10;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ITEMS_SHEET_TITLE = "ITENS_A_VENDA";
 const ITEMS_SHEET_HEADERS = [
@@ -137,6 +140,20 @@ function safeJsonStringify(obj) {
   } catch {
     return "";
   }
+}
+
+/**
+ * Pick cooldown days based on cutoff date.
+ * @param {Date} lastDate
+ * @returns {number}
+ */
+function getCooldownDaysForDate(lastDate) {
+  const cutoff = new Date(
+    lastDate.getFullYear(),
+    ARCH_COOLDOWN_CUTOFF_MONTH,
+    ARCH_COOLDOWN_CUTOFF_DAY
+  );
+  return lastDate >= cutoff ? ARCH_COOLDOWN_DAYS_NEW : ARCH_COOLDOWN_DAYS;
 }
 
 /**
@@ -798,7 +815,8 @@ async function handleCooldown(interaction) {
     );
   }
 
-  const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
+  const cooldownDays = getCooldownDaysForDate(lastDate);
+  const nextEligible = new Date(lastDate.getTime() + cooldownDays * MS_PER_DAY);
   const now = new Date();
 
   if (nextEligible <= now) {
@@ -863,7 +881,8 @@ async function handleCooldownItemRaro(interaction) {
     );
   }
 
-  const nextEligible = new Date(lastDate.getTime() + ARCH_COOLDOWN_DAYS * MS_PER_DAY);
+  const cooldownDays = getCooldownDaysForDate(lastDate);
+  const nextEligible = new Date(lastDate.getTime() + cooldownDays * MS_PER_DAY);
   const now = new Date();
 
   if (nextEligible <= now) {
