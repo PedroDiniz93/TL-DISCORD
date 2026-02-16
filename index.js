@@ -535,7 +535,7 @@ async function handleFilaArch(interaction) {
       row.DiscordUserId && String(row.DiscordUserId).trim()
         ? ` (<@${String(row.DiscordUserId).trim()}>)`
         : "";
-    return `${nick}${mention}${registro}`;
+    return `- ${nick}${mention}${registro}`;
   });
   const { preview, suffix } = buildPreview(lines, 25, (extra) =>
     `\n... e mais ${extra} jogador(es).`
@@ -653,7 +653,7 @@ async function handleFilaItemRaro(interaction) {
       row.DiscordUserId && String(row.DiscordUserId).trim()
         ? ` (<@${String(row.DiscordUserId).trim()}>)`
         : "";
-    return `${nick}${mention}${registro}`;
+    return `- ${nick}${mention}${registro}`;
   });
   const { preview, suffix } = buildPreview(lines, 25, (extra) =>
     `\n... e mais ${extra} jogador(es).`
