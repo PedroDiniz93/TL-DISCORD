@@ -542,7 +542,9 @@ async function handleFilaArch(interaction) {
   );
 
   return interaction.editReply(
-    `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+    `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n` +
+      "Essa listagem é apenas para saber quem colocou a arma na lista de desejo; " +
+      "não necessariamente é a ordem prioritária."
   );
 }
 
@@ -658,7 +660,9 @@ async function handleFilaItemRaro(interaction) {
   );
 
   return interaction.editReply(
-    `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}`
+    `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n` +
+      "Essa listagem é apenas para saber quem colocou o item raro na lista de desejo; " +
+      "não necessariamente é a ordem prioritária."
   );
 }
 
