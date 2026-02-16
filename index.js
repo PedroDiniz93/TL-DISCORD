@@ -118,6 +118,7 @@ const rareItems = [
   "Blood Crescent Pendant (Pingente da Crescente Sangrenta)",
   "Sash of Rustling Leaves (Faixa das Folhas Farfalhantes)",
   "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
+  "Signet of the Alpha (Sinete do alfa)",
 ];
 
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 };
