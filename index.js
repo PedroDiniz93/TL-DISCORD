@@ -1,7 +1,11 @@
 require("dotenv").config();
 const fs = require("fs/promises");
 const path = require("path");
-const { Client, GatewayIntentBits } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  InteractionResponseFlags,
+} = require("discord.js");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
 const ARCH_SHEET_TITLE = "LISTA DESEJO ARCH";
@@ -967,7 +971,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`✅ Bot online como ${client.user.tag}`);
 });
 
@@ -988,13 +992,15 @@ client.on("interactionCreate", async (interaction) => {
 
     return interaction.reply({
       content: `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
-      ephemeral: true,
+      flags: InteractionResponseFlags.Ephemeral,
     });
   }
 
   let hasDeferred = false;
   try {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({
+      flags: InteractionResponseFlags.Ephemeral,
+    });
     hasDeferred = true;
 
     const handler = commandHandlers[interaction.commandName];
@@ -1024,12 +1030,18 @@ client.on("interactionCreate", async (interaction) => {
     });
 
     if (interaction.replied) {
-      return interaction.followUp({ content: errorMsg, ephemeral: true });
+      return interaction.followUp({
+        content: errorMsg,
+        flags: InteractionResponseFlags.Ephemeral,
+      });
     }
     if (hasDeferred || interaction.deferred) {
       return interaction.editReply(errorMsg);
     }
-    return interaction.reply({ content: errorMsg, ephemeral: true });
+    return interaction.reply({
+      content: errorMsg,
+      flags: InteractionResponseFlags.Ephemeral,
+    });
   }
 });
 client.login(process.env.DISCORD_TOKEN);
