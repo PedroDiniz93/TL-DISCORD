@@ -992,14 +992,14 @@ client.on("interactionCreate", async (interaction) => {
 
     return interaction.reply({
       content: `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
-      flags: InteractionResponseFlags.Ephemeral,
+      ephemeral: true,
     });
   }
 
   let hasDeferred = false;
   try {
     await interaction.deferReply({
-      flags: InteractionResponseFlags.Ephemeral,
+      ephemeral: true,
     });
     hasDeferred = true;
 
@@ -1032,7 +1032,7 @@ client.on("interactionCreate", async (interaction) => {
     if (interaction.replied) {
       return interaction.followUp({
         content: errorMsg,
-        flags: InteractionResponseFlags.Ephemeral,
+        ephemeral: true,
       });
     }
     if (hasDeferred || interaction.deferred) {
@@ -1040,7 +1040,7 @@ client.on("interactionCreate", async (interaction) => {
     }
     return interaction.reply({
       content: errorMsg,
-      flags: InteractionResponseFlags.Ephemeral,
+      ephemeral: true,
     });
   }
 });
