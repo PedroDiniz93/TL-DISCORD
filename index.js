@@ -431,6 +431,27 @@ async function handleArmaArch(interaction) {
   const arma = getRequiredOption(interaction, "arma_arch");
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
+  const rows = await sheet.getRows();
+  const hasExisting = rows.some(
+    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
+  );
+
+  if (hasExisting) {
+    const userWeapons = rows
+      .filter((row) => (row.DiscordUserId || "").trim() === interaction.user.id)
+      .map((row) => row.Arma)
+      .filter(Boolean)
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+    const weaponList = userWeapons.length
+      ? `\nArma(s) cadastrada(s): ${userWeapons.join(", ")}`
+      : "";
+    return interaction.editReply(
+      "⚠️ Você já possui uma arma na lista de desejos. Remova a atual com `/remover_arch` para adicionar outra." +
+        weaponList
+    );
+  }
+
   await sheet.addRow({
     Data: nowBrasilia(),
     Nick: nick,
