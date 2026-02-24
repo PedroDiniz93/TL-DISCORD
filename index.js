@@ -627,21 +627,22 @@ async function handleItemRaro(interaction) {
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
   const targetIsWeapon = isRareWeapon(item);
-  const hasWeapon = userRows.some((row) => isRareWeapon((row.Item || "").trim()));
-  const hasEquip = userRows.some((row) => {
-    const name = (row.Item || "").trim();
-    return name && !isRareWeapon(name);
-  });
+  const existingWeapon = userRows
+    .map((row) => (row.Item || "").trim())
+    .find((name) => isRareWeapon(name));
+  const existingEquip = userRows
+    .map((row) => (row.Item || "").trim())
+    .find((name) => name && !isRareWeapon(name));
 
-  if (targetIsWeapon && hasWeapon) {
+  if (targetIsWeapon && existingWeapon) {
     return interaction.editReply(
-      "⚠️ Você já possui uma arma rara registrada. Remova antes de adicionar outra."
+      `⚠️ Você já possui uma arma rara registrada: **${existingWeapon}**. Remova antes de adicionar outra.`
     );
   }
 
-  if (!targetIsWeapon && hasEquip) {
+  if (!targetIsWeapon && existingEquip) {
     return interaction.editReply(
-      "⚠️ Você já possui um equipamento/acessorio raro registrado. Remova antes de adicionar outro."
+      `⚠️ Você já possui um equipamento/acessorio raro registrado: **${existingEquip}**. Remova antes de adicionar outro.`
     );
   }
 
