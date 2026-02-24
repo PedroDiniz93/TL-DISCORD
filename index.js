@@ -128,6 +128,26 @@ const rareItems = [
   "Signet of the Alpha (Sinete do alfa)",
 ];
 
+const RARE_WEAPON_ITEMS = new Set([
+  "Grand Aelon's Longbow of Blight (Arco Longo do Flagelo de Grande Aelon)",
+  "Kowazan's Daggers of the Blood Moon (Adagas da Lua Sangrenta de Kowazan)",
+  "Aridus's Immolated Voidstaff (Cajado do Vazio Imolado de Aridus)",
+  "Talus's Incandescent Staff (Cajado Incandescente de Talus)",
+  "Nirma's Sword of Falling Ash (Espada da Cinza Cadente de Nirma)",
+  "Adentus's Cinderhulk Greatsword (Espada de Duas Mãos Verdinza de Adentus)",
+  "Morokai's Soulfire Greatblade (Grande Lâmina Embrasalma de Morokai)",
+  "Daigon's Charred Emberstaff (Cajado Abrasador Carbonizado de Daigon)",
+  "Kowazan's Crossbows of the Eclipse (Balestras do Eclipse de Kowazan)",
+  "Cornelius's Blade of Dancing Flame (Lâmina da Flama Dançante de Cornélius)",
+  "Malakar's Flamespike Crossbows (Balestras Espinholumes de Malakar)",
+  "Akman's Bloodletting Crossbows (Balestras Sangrentas de Akman)",
+  "Deckman's Balefire Scepter (Cetro Abraseirado de Deckman)",
+]);
+
+function isRareWeapon(itemName) {
+  return RARE_WEAPON_ITEMS.has(itemName);
+}
+
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 };
 const HEADER_FG = { red: 1, green: 1, blue: 1 };
 
@@ -602,6 +622,29 @@ async function handleItemRaro(interaction) {
   const item = getRequiredOption(interaction, "item_raro");
 
   const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
+  const rows = await sheet.getRows();
+  const userRows = rows.filter(
+    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
+  );
+  const targetIsWeapon = isRareWeapon(item);
+  const hasWeapon = userRows.some((row) => isRareWeapon((row.Item || "").trim()));
+  const hasEquip = userRows.some((row) => {
+    const name = (row.Item || "").trim();
+    return name && !isRareWeapon(name);
+  });
+
+  if (targetIsWeapon && hasWeapon) {
+    return interaction.editReply(
+      "⚠️ Você já possui uma arma rara registrada. Remova antes de adicionar outra."
+    );
+  }
+
+  if (!targetIsWeapon && hasEquip) {
+    return interaction.editReply(
+      "⚠️ Você já possui um equipamento/acessorio raro registrado. Remova antes de adicionar outro."
+    );
+  }
+
   await sheet.addRow({
     Data: nowBrasilia(),
     Nick: nick,
