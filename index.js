@@ -636,13 +636,13 @@ async function handleItemRaro(interaction) {
 
   if (targetIsWeapon && existingWeapon) {
     return interaction.editReply(
-      `⚠️ Você já possui uma arma rara registrada: **${existingWeapon}**. Remova antes de adicionar outra.`
+      `⚠️ Você já possui uma arma rara registrada: **${existingWeapon}**. Remova a atual com \`/remover_item_raro\` para adicionar outra.`
     );
   }
 
   if (!targetIsWeapon && existingEquip) {
     return interaction.editReply(
-      `⚠️ Você já possui um equipamento/acessorio raro registrado: **${existingEquip}**. Remova antes de adicionar outro.`
+      `⚠️ Você já possui um equipamento/acessorio raro registrado: **${existingEquip}**. Remova a atual com \`/remover_item_raro\` para adicionar outro.`
     );
   }
 
