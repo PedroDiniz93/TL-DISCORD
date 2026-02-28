@@ -927,53 +927,57 @@ async function handleCooldownItemRaro(interaction) {
   };
 
   const targetLower = player.toLowerCase();
-  let lastWin = findLastRow((row) => {
+  const discordId = String(interaction.user.id).trim();
+  const matchesPlayer = (row) => {
     const rowPlayer = (row.Player || "").trim();
-    return rowPlayer && rowPlayer.toLowerCase() === targetLower;
-  });
+    if (rowPlayer && rowPlayer.toLowerCase() === targetLower) return true;
+    return String(row.DiscordUserId || "").trim() === discordId;
+  };
+  const getItemName = (row) => row.Item || row["Item (Arma)"] || "";
+  const lastWeaponWin = findLastRow(
+    (row) => matchesPlayer(row) && isRareWeapon(getItemName(row))
+  );
+  const lastEquipWin = findLastRow(
+    (row) => matchesPlayer(row) && getItemName(row) && !isRareWeapon(getItemName(row))
+  );
 
-  if (!lastWin) {
-    const discordId = String(interaction.user.id).trim();
-    lastWin = findLastRow(
-      (row) => String(row.DiscordUserId || "").trim() === discordId
-    );
-  }
-
-  if (!lastWin) {
+  if (!lastWeaponWin && !lastEquipWin) {
     return interaction.editReply(
       `✅ ${player} não possui registros de ganho de item raro.`
     );
   }
 
-  const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
-  const lastDate = parseBrazilianDateTime(dateValue);
-
-  if (!lastDate) {
-    return interaction.editReply(
-      "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
-    );
-  }
-
-  const cooldownDays = getCooldownDaysForDate(lastDate);
-  const nextEligible = new Date(lastDate.getTime() + cooldownDays * MS_PER_DAY);
   const now = new Date();
+  const formatStatus = (label, lastWin) => {
+    if (!lastWin) return `🟢 ${label}: liberado (sem registros).`;
 
-  if (nextEligible <= now) {
-    return interaction.editReply(
-      `🟢 ${player} está liberado. Último item raro em ${lastDate.toLocaleDateString(
-        "pt-BR",
-        { timeZone: "America/Sao_Paulo" }
-      )}.`
-    );
-  }
+    const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
+    const lastDate = parseBrazilianDateTime(dateValue);
+    if (!lastDate) {
+      return `⚠️ ${label}: não consegui interpretar a data do último registro.`;
+    }
 
-  const remaining = nextEligible.getTime() - now.getTime();
-  const humanRemaining = formatDuration(remaining);
+    const cooldownDays = getCooldownDaysForDate(lastDate);
+    const nextEligible = new Date(lastDate.getTime() + cooldownDays * MS_PER_DAY);
+    const itemName = getItemName(lastWin) || "não informado";
+    const formattedDate = lastDate.toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    });
+
+    if (nextEligible <= now) {
+      return `🟢 ${label}: liberado. Último item: **${itemName}** em ${formattedDate}.`;
+    }
+
+    const remaining = nextEligible.getTime() - now.getTime();
+    const humanRemaining = formatDuration(remaining);
+    return `⏳ ${label}: restam ${humanRemaining}.\nÚltimo item: **${itemName}** em ${formattedDate}`;
+  };
+
+  const weaponStatus = formatStatus("Arma rara", lastWeaponWin);
+  const equipStatus = formatStatus("Item/equipamento raro", lastEquipWin);
 
   return interaction.editReply(
-    `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltimo item raro: **${
-      lastWin.Item || lastWin["Item (Arma)"] || "não informado"
-    }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+    `${weaponStatus}\n${equipStatus}`
   );
 }
 

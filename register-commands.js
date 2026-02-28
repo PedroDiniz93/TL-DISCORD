@@ -98,27 +98,6 @@ const cooldownItemRaroCmd = new SlashCommandBuilder()
             .setDescription("Nick do personagem registrado no histórico")
             .setRequired(true)
     );
-
-const meusItensCmd = new SlashCommandBuilder()
-    .setName("meus_itens_a_venda")
-    .setDescription("Lista os itens à venda de um jogador")
-    .addStringOption((o) =>
-        o
-            .setName("nick")
-            .setDescription("Nick exato do jogador na planilha (ex: Evojoker)")
-            .setRequired(true)
-    );
-
-const minhasVendasCmd = new SlashCommandBuilder()
-    .setName("minhas_vendas")
-    .setDescription("Mostra as vendas (pagas e pendentes) de um jogador")
-    .addStringOption((o) =>
-        o
-            .setName("nick")
-            .setDescription("Nick exato do jogador na planilha de vendas")
-            .setRequired(true)
-    );
-
 (async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
@@ -139,8 +118,6 @@ const minhasVendasCmd = new SlashCommandBuilder()
           filaItemCmd.toJSON(),
           cooldownCmd.toJSON(),
           cooldownItemRaroCmd.toJSON(),
-          meusItensCmd.toJSON(),
-          minhasVendasCmd.toJSON(),
         ],
       }
   );
