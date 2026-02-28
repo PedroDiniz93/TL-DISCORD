@@ -142,7 +142,7 @@ const RARE_WEAPON_ITEMS = new Set([
   "Malakar's Flamespike Crossbows (Balestras Espinholumes de Malakar)",
   "Akman's Bloodletting Crossbows (Balestras Sangrentas de Akman)",
   "Deckman's Balefire Scepter (Cetro Abraseirado de Deckman)",
-  "Talus's Transcendent Core (Núcleo Transcendente de Talus)"
+  "Talus's Transcendent Core (Núcleo Transcendente de Talus)",
 ]);
 
 function isRareWeapon(itemName) {
