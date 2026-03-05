@@ -126,6 +126,7 @@ const rareItems = [
   "Sash of Rustling Leaves (Faixa das Folhas Farfalhantes)",
   "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
   "Signet of the Alpha (Sinete do alfa)",
+  "Junobote's Extra Smoldering Ranseur (Ranseur Esbraseantissimo de Junobote)",
 ];
 
 const RARE_WEAPON_ITEMS = new Set([
@@ -143,6 +144,7 @@ const RARE_WEAPON_ITEMS = new Set([
   "Akman's Bloodletting Crossbows (Balestras Sangrentas de Akman)",
   "Deckman's Balefire Scepter (Cetro Abraseirado de Deckman)",
   "Talus's Transcendent Core (Núcleo Transcendente de Talus)",
+  "Junobote's Extra Smoldering Ranseur (Ranseur Esbraseantissimo de Junobote)",
 ]);
 
 function isRareWeapon(itemName) {
