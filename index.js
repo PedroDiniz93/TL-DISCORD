@@ -16,10 +16,9 @@ const ARCH_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ARCH BOSS";
 const ARCH_HISTORY_HEADERS = ["Data/Hora", "Player", "Item (Arma)", "DiscordUserId"];
 const RARE_ITEM_HISTORY_SHEET_TITLE = "HISTORICO DE GANHO ITEM RARO";
 const RARE_ITEM_HISTORY_HEADERS = ["Data/Hora", "Player", "Item", "DiscordUserId"];
-const ARCH_COOLDOWN_DAYS = 20;
-const ARCH_COOLDOWN_DAYS_NEW = 10;
-const ARCH_COOLDOWN_CUTOFF_MONTH = 1; // February (0-based)
-const ARCH_COOLDOWN_CUTOFF_DAY = 10;
+const ARCH_COOLDOWN_DAYS_BEFORE_CUTOFF = 10;
+const ARCH_COOLDOWN_DAYS_FROM_MAR_12_2026 = 20;
+const ARCH_COOLDOWN_CUTOFF_DATE = new Date(2026, 2, 12); // 12/03/2026 (month is 0-based)
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ITEMS_SHEET_TITLE = "ITENS_A_VENDA";
 const ITEMS_SHEET_HEADERS = [
@@ -172,17 +171,14 @@ function safeJsonStringify(obj) {
 }
 
 /**
- * Pick cooldown days based on cutoff date.
+ * Pick cooldown days based on fixed cutoff date (12/03/2026).
  * @param {Date} lastDate
  * @returns {number}
  */
 function getCooldownDaysForDate(lastDate) {
-  const cutoff = new Date(
-    lastDate.getFullYear(),
-    ARCH_COOLDOWN_CUTOFF_MONTH,
-    ARCH_COOLDOWN_CUTOFF_DAY
-  );
-  return lastDate >= cutoff ? ARCH_COOLDOWN_DAYS_NEW : ARCH_COOLDOWN_DAYS;
+  return lastDate >= ARCH_COOLDOWN_CUTOFF_DATE
+    ? ARCH_COOLDOWN_DAYS_FROM_MAR_12_2026
+    : ARCH_COOLDOWN_DAYS_BEFORE_CUTOFF;
 }
 
 /**
