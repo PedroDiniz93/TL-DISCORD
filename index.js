@@ -66,24 +66,24 @@ const SALES_SHEET_HEADERS = [
 ];
 
 const weapons = [
-  "🗡️ Espadão do Cordy",
-  "🗡️ Espadão do Tevent",
-  "🛡️ Espada e Escudo da Deluznoa",
-  "🛡️ Espada e Escudo da Belandir",
-  "⚔️ Adaga da Deluznoa",
-  "⚔️ Adaga do Tevent",
-  "🎯 Balestra do Cordy",
-  "🎯 Balestra da Belandir",
-  "🏹 Arco do Tevent",
-  "🏹 Arco da Deluznoa",
-  "⚡ Cajado da Deluznoa",
-  "⚡ Cajado da Belandir",
-  "🪄 Varinha do Tevent",
-  "🪄 Varinha do Cordy",
-  "🗡️ Lança da Deluznoa",
-  "🗡️ Lança da Belandir",
-  "🔮 Orb do Tevent",
-  "🔮 Orb do Cordy",
+  "🗡️ Espadão do Cordy (Cordy Greatsword)",
+  "🗡️ Espadão do Tevent (Tevent Greatsword)",
+  "🛡️ Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)",
+  "🛡️ Espada e Escudo da Belandir (Belandir Sword and Shield)",
+  "⚔️ Adaga da Deluznoa (Deluznoa Dagger)",
+  "⚔️ Adaga do Tevent (Tevent Dagger)",
+  "🎯 Balestra do Cordy (Cordy Crossbow)",
+  "🎯 Balestra da Belandir (Belandir Crossbow)",
+  "🏹 Arco do Tevent (Tevent Bow)",
+  "🏹 Arco da Deluznoa (Deluznoa Bow)",
+  "⚡ Cajado da Deluznoa (Deluznoa Staff)",
+  "⚡ Cajado da Belandir (Belandir Staff)",
+  "🪄 Varinha do Tevent (Tevent Wand)",
+  "🪄 Varinha do Cordy (Cordy Wand)",
+  "🗡️ Lança da Deluznoa (Deluznoa Spear)",
+  "🗡️ Lança da Belandir (Belandir Spear)",
+  "🔮 Orb do Tevent (Tevent Orb)",
+  "🔮 Orb do Cordy (Cordy Orb)"
 ];
 
 const rareItems = [
