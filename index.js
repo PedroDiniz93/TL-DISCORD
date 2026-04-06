@@ -156,6 +156,17 @@ const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 };
 const HEADER_FG = { red: 1, green: 1, blue: 1 };
 
 const ALLOWED_CHANNEL_NAME = "🎢planilha-arch-boss";
+const PT_BR_COMMANDS = new Set([
+  "arma_arch",
+  "listar_arch",
+  "remover_arch",
+  "fila_arch",
+  "item_raro",
+  "remover_item_raro",
+  "fila_item_raro",
+  "meus_itens_a_venda",
+  "minhas_vendas",
+]);
 
 /**
  * Safely stringify an object, returning empty string on failure.
@@ -210,6 +221,28 @@ function getUserDisplayName(user) {
  */
 function getRequiredOption(interaction, name) {
   return interaction.options.getString(name, true).trim();
+}
+
+/**
+ * Read required option from the first available name in the provided list.
+ * @param {object} interaction
+ * @param {string[]} names
+ * @returns {string}
+ */
+function getRequiredOptionAny(interaction, names) {
+  for (const name of names) {
+    const value = interaction.options.getString(name, false);
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  throw new Error(`Missing required option. Tried: ${names.join(", ")}`);
+}
+
+function isPtBrCommand(interaction) {
+  return PT_BR_COMMANDS.has(interaction?.commandName);
+}
+
+function tr(interaction, ptBr, en) {
+  return isPtBrCommand(interaction) ? ptBr : en;
 }
 
 /**
@@ -306,7 +339,7 @@ function nowBrasilia() {
 function getGoogleCredsFromEnv() {
   const b64 = process.env.GOOGLE_CREDS_B64;
   if (!b64) {
-    throw new Error("Missing env GOOGLE_CREDS_B64 (base64 do credentials.json).");
+    throw new Error("Missing env GOOGLE_CREDS_B64 (base64 of credentials.json).");
   }
 
   const jsonStr = Buffer.from(b64, "base64").toString("utf8");
@@ -447,9 +480,9 @@ async function getSheet(title, headers) {
  * @returns {Promise<void>}
  */
 async function handleArmaArch(interaction) {
-  const nick = getRequiredOption(interaction, "nick");
+  const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
 
-  const arma = getRequiredOption(interaction, "arma_arch");
+  const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
@@ -464,12 +497,15 @@ async function handleArmaArch(interaction) {
       .filter(Boolean)
       .map((value) => String(value).trim())
       .filter(Boolean);
-    const weaponList = userWeapons.length
-      ? `\nArma(s) cadastrada(s): ${userWeapons.join(", ")}`
-      : "";
+    const weaponList = userWeapons.length ? `\nRegistered weapon(s): ${userWeapons.join(", ")}` : "";
     return interaction.editReply(
-      "⚠️ Você já possui uma arma na lista de desejos. Remova a atual com `/remover_arch` para adicionar outra." +
-        weaponList
+      tr(
+        interaction,
+        "⚠️ Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra." +
+          (userWeapons.length ? `\nArma(s) registrada(s): ${userWeapons.join(", ")}` : ""),
+        "⚠️ You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one." +
+          weaponList
+      )
     );
   }
 
@@ -480,7 +516,13 @@ async function handleArmaArch(interaction) {
     DiscordUserId: interaction.user.id,
   });
 
-  return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nArma: **${arma}**`);
+  return interaction.editReply(
+    tr(
+      interaction,
+      `✅ Registrado!\nNick: **${nick}**\nArma Archboss: **${arma}**`,
+      `✅ Registered!\nNickname: **${nick}**\nArchboss weapon: **${arma}**`
+    )
+  );
 }
 
 /**
@@ -497,22 +539,34 @@ async function handleListarArch(interaction) {
 
   if (!userRows.length) {
     return interaction.editReply(
-      "📭 Você ainda não tem armas registradas na lista de desejos."
+      tr(
+        interaction,
+        "📭 Você ainda não tem armas de Archboss registradas.",
+        "📭 You don't have any registered Archboss weapons yet."
+      )
     );
   }
 
   const lines = userRows.map(
     (row, idx) =>
-      `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${
-        row.Data ? ` --- Registrado em ${row.Data}` : ""
-      }`
+      tr(
+        interaction,
+        `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${row.Data ? ` --- Registrado em ${row.Data}` : ""}`,
+        `${idx + 1}. Nickname: ${row.Nick} --- Weapon: ${row.Arma}${row.Data ? ` --- Registered at ${row.Data}` : ""}`
+      )
   );
 
   const { preview, suffix } = buildPreview(lines, 15, (extra) =>
-    `\n... e mais ${extra} registro(s).`
+    tr(interaction, `\n... e mais ${extra} registro(s).`, `\n... and ${extra} more record(s).`)
   );
 
-  return interaction.editReply(`📋 Seus desejos registrados:\n${preview}${suffix}`);
+  return interaction.editReply(
+    tr(
+      interaction,
+      `📋 Seus registros na lista de desejos:\n${preview}${suffix}`,
+      `📋 Your registered wishlist entries:\n${preview}${suffix}`
+    )
+  );
 }
 
 /**
@@ -521,7 +575,7 @@ async function handleListarArch(interaction) {
  * @returns {Promise<void>}
  */
 async function handleRemoverArch(interaction) {
-  const arma = getRequiredOption(interaction, "arma_arch");
+  const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
@@ -532,14 +586,24 @@ async function handleRemoverArch(interaction) {
   );
 
   if (!targetRow) {
-    return interaction.editReply("⚠️ Não encontrei esse item na sua lista de desejos.");
+    return interaction.editReply(
+      tr(
+        interaction,
+        "⚠️ Não encontrei esse item na sua lista de desejos.",
+        "⚠️ I couldn't find this item in your wishlist."
+      )
+    );
   }
 
-  const nick = targetRow.Nick || "Nick não informado";
+  const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
 
   return interaction.editReply(
-    `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`
+    tr(
+      interaction,
+      `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`,
+      `🗑️ Removed!\nNickname: **${nick}**\nRemoved weapon: **${arma}**`
+    )
   );
 }
 
@@ -549,7 +613,7 @@ async function handleRemoverArch(interaction) {
  * @returns {Promise<void>}
  */
 async function handleFilaArch(interaction) {
-  const item = getRequiredOption(interaction, "item");
+  const item = getRequiredOptionAny(interaction, ["arch_weapon", "item"]);
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
@@ -570,13 +634,19 @@ async function handleFilaArch(interaction) {
 
   if (!filtered.length) {
     return interaction.editReply(
-      `📭 Nenhum jogador na fila da arma **${item}** na aba ${ARCH_SHEET_TITLE}.`
+      tr(
+        interaction,
+        `📭 Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET_TITLE}.`,
+        `📭 No players in queue for **${item}** in sheet ${ARCH_SHEET_TITLE}.`
+      )
     );
   }
 
   const lines = filtered.map(({ row }) => {
-    const nick = row.Nick || "Nick não informado";
-    const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
+    const nick = row.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
+    const registro = row.Data
+      ? tr(interaction, ` • Registrado em ${row.Data}`, ` • Registered at ${row.Data}`)
+      : "";
     const mention =
       row.DiscordUserId && String(row.DiscordUserId).trim()
         ? ` (<@${String(row.DiscordUserId).trim()}>)`
@@ -584,13 +654,15 @@ async function handleFilaArch(interaction) {
     return `- ${nick}${mention}${registro}`;
   });
   const { preview, suffix } = buildPreview(lines, 25, (extra) =>
-    `\n... e mais ${extra} jogador(es).`
+    tr(interaction, `\n... e mais ${extra} jogador(es).`, `\n... and ${extra} more player(s).`)
   );
 
   return interaction.editReply(
-    `📜 Fila da arma **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n` +
-      "⚠️ Essa listagem é apenas para saber quem colocou a arma na lista de desejo; " +
-      "não necessariamente é a ordem prioritária. ⚠️"
+    tr(
+      interaction,
+      `📜 Fila de **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n⚠️ Essa lista mostra apenas quem colocou a arma na wishlist; não é necessariamente a ordem de prioridade. ⚠️`,
+      `📜 Queue for **${item}** (${filtered.length} players):\n${preview}${suffix}\n\n⚠️ This list only shows who added the weapon to the wishlist; it is not necessarily the priority order. ⚠️`
+    )
   );
 }
 
@@ -600,7 +672,7 @@ async function handleFilaArch(interaction) {
  * @returns {Promise<void>}
  */
 async function handleItem(interaction) {
-  const nick = getRequiredOption(interaction, "nick");
+  const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const item = getRequiredOption(interaction, "item");
 
   const sheet = await getSheet("LISTA DESEJO ITEM", ["Data", "Nick", "Item"]);
@@ -610,7 +682,13 @@ async function handleItem(interaction) {
     Item: item,
   });
 
-  return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`);
+  return interaction.editReply(
+    tr(
+      interaction,
+      `✅ Registrado!\nNick: **${nick}**\nItem: **${item}**`,
+      `✅ Registered!\nNickname: **${nick}**\nItem: **${item}**`
+    )
+  );
 }
 
 /**
@@ -619,8 +697,8 @@ async function handleItem(interaction) {
  * @returns {Promise<void>}
  */
 async function handleItemRaro(interaction) {
-  const nick = getRequiredOption(interaction, "nick");
-  const item = getRequiredOption(interaction, "item_raro");
+  const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
+  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
 
   const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
   const rows = await sheet.getRows();
@@ -637,13 +715,21 @@ async function handleItemRaro(interaction) {
 
   if (targetIsWeapon && existingWeapon) {
     return interaction.editReply(
-      `⚠️ Você já possui uma arma rara registrada: **${existingWeapon}**. Remova a atual com \`/remover_item_raro\` para adicionar outra.`
+      tr(
+        interaction,
+        `⚠️ Você já possui uma arma rara registrada: **${existingWeapon}**. Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outra.`,
+        `⚠️ You already have a registered rare weapon: **${existingWeapon}**. Remove it with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+      )
     );
   }
 
   if (!targetIsWeapon && existingEquip) {
     return interaction.editReply(
-      `⚠️ Você já possui um equipamento/acessorio raro registrado: **${existingEquip}**. Remova a atual com \`/remover_item_raro\` para adicionar outro.`
+      tr(
+        interaction,
+        `⚠️ Você já possui um equipamento/acessório raro registrado: **${existingEquip}**. Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `⚠️ You already have a registered rare equipment/accessory: **${existingEquip}**. Remove it with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+      )
     );
   }
 
@@ -654,7 +740,13 @@ async function handleItemRaro(interaction) {
     DiscordUserId: interaction.user.id,
   });
 
-  return interaction.editReply(`✅ Registrado!\nNick: **${nick}**\nItem raro: **${item}**`);
+  return interaction.editReply(
+    tr(
+      interaction,
+      `✅ Registrado!\nNick: **${nick}**\nItem raro: **${item}**`,
+      `✅ Registered!\nNickname: **${nick}**\nRare item: **${item}**`
+    )
+  );
 }
 
 /**
@@ -663,7 +755,7 @@ async function handleItemRaro(interaction) {
  * @returns {Promise<void>}
  */
 async function handleRemoverItemRaro(interaction) {
-  const item = getRequiredOption(interaction, "item_raro");
+  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
 
   const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
   const rows = await sheet.getRows();
@@ -674,14 +766,24 @@ async function handleRemoverItemRaro(interaction) {
   );
 
   if (!targetRow) {
-    return interaction.editReply("⚠️ Não encontrei esse item raro na sua lista de desejos.");
+    return interaction.editReply(
+      tr(
+        interaction,
+        "⚠️ Não encontrei esse item raro na sua lista de desejos.",
+        "⚠️ I couldn't find this rare item in your wishlist."
+      )
+    );
   }
 
-  const nick = targetRow.Nick || "Nick não informado";
+  const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
 
   return interaction.editReply(
-    `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`
+    tr(
+      interaction,
+      `🗑️ Removido!\nNick: **${nick}**\nItem raro removido: **${item}**`,
+      `🗑️ Removed!\nNickname: **${nick}**\nRemoved rare item: **${item}**`
+    )
   );
 }
 
@@ -691,7 +793,7 @@ async function handleRemoverItemRaro(interaction) {
  * @returns {Promise<void>}
  */
 async function handleFilaItemRaro(interaction) {
-  const item = getRequiredOption(interaction, "item_raro");
+  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
 
   const sheet = await getSheet(RARE_ITEM_SHEET_TITLE, RARE_ITEM_HEADERS);
   const rows = await sheet.getRows();
@@ -712,13 +814,19 @@ async function handleFilaItemRaro(interaction) {
 
   if (!filtered.length) {
     return interaction.editReply(
-      `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`
+      tr(
+        interaction,
+        `📭 Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET_TITLE}.`,
+        `📭 No players in queue for rare item **${item}** in sheet ${RARE_ITEM_SHEET_TITLE}.`
+      )
     );
   }
 
   const lines = filtered.map(({ row }) => {
-    const nick = row.Nick || "Nick não informado";
-    const registro = row.Data ? ` • Registrado em ${row.Data}` : "";
+    const nick = row.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
+    const registro = row.Data
+      ? tr(interaction, ` • Registrado em ${row.Data}`, ` • Registered at ${row.Data}`)
+      : "";
     const mention =
       row.DiscordUserId && String(row.DiscordUserId).trim()
         ? ` (<@${String(row.DiscordUserId).trim()}>)`
@@ -726,13 +834,15 @@ async function handleFilaItemRaro(interaction) {
     return `- ${nick}${mention}${registro}`;
   });
   const { preview, suffix } = buildPreview(lines, 25, (extra) =>
-    `\n... e mais ${extra} jogador(es).`
+    tr(interaction, `\n... e mais ${extra} jogador(es).`, `\n... and ${extra} more player(s).`)
   );
 
   return interaction.editReply(
-    `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n` +
-      "⚠️ Essa listagem é apenas para saber quem colocou o item raro na lista de desejo; " +
-      "não necessariamente é a ordem prioritária. ⚠️"
+    tr(
+      interaction,
+      `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n⚠️ Essa lista mostra apenas quem colocou o item raro na wishlist; não é necessariamente a ordem de prioridade. ⚠️`,
+      `📜 Queue for rare item **${item}** (${filtered.length} players):\n${preview}${suffix}\n\n⚠️ This list only shows who added the rare item to the wishlist; it is not necessarily the priority order. ⚠️`
+    )
   );
 }
 
@@ -742,7 +852,7 @@ async function handleFilaItemRaro(interaction) {
  * @returns {Promise<void>}
  */
 async function handleMeusItensAVenda(interaction) {
-  const playerNick = getRequiredOption(interaction, "nick");
+  const playerNick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const targetLower = playerNick.toLowerCase();
 
   const sheet = await getSheet(ITEMS_SHEET_TITLE, ITEMS_SHEET_HEADERS);
@@ -756,23 +866,35 @@ async function handleMeusItensAVenda(interaction) {
 
   if (!playerRows.length) {
     return interaction.editReply(
-      `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
+      tr(
+        interaction,
+        `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`,
+        `📭 ${playerNick} has no items listed in ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
+      )
     );
   }
 
   const lines = playerRows.map((row, idx) => {
-    const itemName = row.Item || row["Item (Arma)"] || "Item sem nome";
-    const valor = row["Valor Bruto"] || row["Valor"] || "Valor não informado";
+    const itemName = row.Item || row["Item (Arma)"] || tr(interaction, "Item sem nome", "Unnamed item");
+    const valor = row["Valor Bruto"] || row["Valor"] || tr(interaction, "Valor não informado", "Value not informed");
     const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
-    return `${idx + 1}. ID ${vendaId} — ${itemName} • Valor: ${valor}`;
+    return tr(
+      interaction,
+      `${idx + 1}. ID ${vendaId} — ${itemName} • Valor: ${valor}`,
+      `${idx + 1}. ID ${vendaId} — ${itemName} • Value: ${valor}`
+    );
   });
 
   const { preview, suffix } = buildPreview(lines, 20, (extraCount) =>
-    `\n... e mais ${extraCount} item(ns).`
+    tr(interaction, `\n... e mais ${extraCount} item(ns).`, `\n... and ${extraCount} more item(s).`)
   );
 
   return interaction.editReply(
-    `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`
+    tr(
+      interaction,
+      `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`,
+      `🛒 Items for sale for **${playerNick}**:\n${preview}${suffix}`
+    )
   );
 }
 
@@ -782,68 +904,85 @@ async function handleMeusItensAVenda(interaction) {
  * @returns {Promise<void>}
  */
 async function handleMinhasVendas(interaction) {
-  const playerNick = getRequiredOption(interaction, "nick");
+  const playerNick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const targetLower = playerNick.toLowerCase();
 
   const sheet = await getSheet(SALES_SHEET_TITLE, SALES_SHEET_HEADERS);
   const rows = await sheet.getRows();
 
-  const vendasDoPlayer = rows.filter((row) =>
+  const salesByPlayer = rows.filter((row) =>
     ITEM_PLAYER_COLUMNS.some((col) => normalizePlayerCell(row[col]) === targetLower)
   );
 
-  if (!vendasDoPlayer.length) {
-    return interaction.editReply(`📭 ${playerNick} não possui vendas registradas.`);
+  if (!salesByPlayer.length) {
+    return interaction.editReply(
+      tr(
+        interaction,
+        `📭 ${playerNick} não possui vendas registradas.`,
+        `📭 ${playerNick} has no registered sales.`
+      )
+    );
   }
 
-  const pagos = [];
-  const pendentes = [];
-  let totalPago = 0;
-  let totalPendente = 0;
+  const paid = [];
+  const pending = [];
+  let totalPaid = 0;
+  let totalPending = 0;
 
-  for (const row of vendasDoPlayer) {
+  for (const row of salesByPlayer) {
     const wasPaid = ITEM_PLAYER_COLUMNS.some(
       (col) =>
         normalizePlayerCell(row[col]) === targetLower && isPlayerCellPaid(row[col])
     );
 
     const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
-    const itemName = row.Item || "Item não informado";
+    const itemName = row.Item || tr(interaction, "Item não informado", "Item not informed");
     const valorPorPlayer = row["Valor por Player"] || row["Valor Player"] || "-";
     const dataVenda = row.Data || row["Data/Hora"] || row["Data Venda"] || "";
 
-    const entry = `ID ${vendaId} — ${itemName} • Valor por Player: ${valorPorPlayer}${
-      dataVenda ? ` • Data: ${dataVenda}` : ""
-    }`;
+    const entry = tr(
+      interaction,
+      `ID ${vendaId} — ${itemName} • Valor por Player: ${valorPorPlayer}${dataVenda ? ` • Data: ${dataVenda}` : ""}`,
+      `ID ${vendaId} — ${itemName} • Value per Player: ${valorPorPlayer}${dataVenda ? ` • Date: ${dataVenda}` : ""}`
+    );
 
     const perPlayerNumeric = Number(
       String(valorPorPlayer).replace(/[^\d,-]/g, "").replace(".", "").replace(",", ".")
     );
 
     if (wasPaid) {
-      pagos.push(entry);
-      if (!Number.isNaN(perPlayerNumeric)) totalPago += perPlayerNumeric;
+      paid.push(entry);
+      if (!Number.isNaN(perPlayerNumeric)) totalPaid += perPlayerNumeric;
     } else {
-      pendentes.push(entry);
-      if (!Number.isNaN(perPlayerNumeric)) totalPendente += perPlayerNumeric;
+      pending.push(entry);
+      if (!Number.isNaN(perPlayerNumeric)) totalPending += perPlayerNumeric;
     }
   }
 
   const buildSection = (label, entries) => {
-    if (!entries.length) return `**${label}:** nenhum`;
+    if (!entries.length) return `**${label}:** ${tr(interaction, "nenhum", "none")}`;
     const { preview, suffix } = buildPreview(entries, 15, (extra) =>
-      `\n... e mais ${extra} registro(s).`
+      tr(interaction, `\n... e mais ${extra} registro(s).`, `\n... and ${extra} more record(s).`)
     );
     return `**${label}:**\n${preview}${suffix}`;
   };
 
-  const parts = [buildSection("Pendentes", pendentes), buildSection("Pagas", pagos)];
-  const totalsLine = `**Total:** Pendentes = ${totalPendente.toFixed(
-    2
-  )} | Pagos = ${totalPago.toFixed(2)}`;
+  const parts = [
+    buildSection(tr(interaction, "Pendentes", "Pending"), pending),
+    buildSection(tr(interaction, "Pagas", "Paid"), paid),
+  ];
+  const totalsLine = tr(
+    interaction,
+    `**Total:** Pendentes = ${totalPending.toFixed(2)} | Pagas = ${totalPaid.toFixed(2)}`,
+    `**Total:** Pending = ${totalPending.toFixed(2)} | Paid = ${totalPaid.toFixed(2)}`
+  );
 
   return interaction.editReply(
-    `📑 Vendas do jogador **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
+    tr(
+      interaction,
+      `📑 Vendas de **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`,
+      `📑 Sales for **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
+    )
   );
 }
 
@@ -853,7 +992,7 @@ async function handleMinhasVendas(interaction) {
  * @returns {Promise<void>}
  */
 async function handleCooldown(interaction) {
-  const player = getRequiredOption(interaction, "nick");
+  const player = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const sheet = await getSheet(ARCH_HISTORY_SHEET_TITLE, ARCH_HISTORY_HEADERS);
   const rows = await sheet.getRows();
   const findLastRow = (predicate) => {
@@ -877,7 +1016,7 @@ async function handleCooldown(interaction) {
   }
 
   if (!lastWin) {
-    return interaction.editReply(`✅ ${player} não possui registros de ganho de Archboss.`);
+    return interaction.editReply(`✅ ${player} has no Archboss win records.`);
   }
 
   const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
@@ -885,7 +1024,7 @@ async function handleCooldown(interaction) {
 
   if (!lastDate) {
     return interaction.editReply(
-      "⚠️ Não consegui interpretar a data do último registro. Verifique a planilha."
+      "⚠️ I couldn't parse the date of the last record. Please check the spreadsheet."
     );
   }
 
@@ -895,7 +1034,7 @@ async function handleCooldown(interaction) {
 
   if (nextEligible <= now) {
     return interaction.editReply(
-      `🟢 ${player} está liberado. Última arma em ${lastDate.toLocaleDateString("pt-BR", {
+      `🟢 ${player} is eligible. Last weapon on ${lastDate.toLocaleDateString("en-US", {
         timeZone: "America/Sao_Paulo",
       })}.`
     );
@@ -905,9 +1044,9 @@ async function handleCooldown(interaction) {
   const humanRemaining = formatDuration(remaining);
 
   return interaction.editReply(
-    `⏳ Restam ${humanRemaining} para o cooldown do jogador **${player}** acabar.\nÚltima arma: **${
-      lastWin["Item (Arma)"] || lastWin.Item || "não informado"
-    }** em ${lastDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+    `⏳ ${humanRemaining} remaining for player **${player}** cooldown.\nLast weapon: **${
+      lastWin["Item (Arma)"] || lastWin.Item || "not informed"
+    }** on ${lastDate.toLocaleDateString("en-US", { timeZone: "America/Sao_Paulo" })}`
   );
 }
 
@@ -917,7 +1056,7 @@ async function handleCooldown(interaction) {
  * @returns {Promise<void>}
  */
 async function handleCooldownItemRaro(interaction) {
-  const player = getRequiredOption(interaction, "nick");
+  const player = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const sheet = await getSheet(RARE_ITEM_HISTORY_SHEET_TITLE, RARE_ITEM_HISTORY_HEADERS);
   const rows = await sheet.getRows();
   const findLastRow = (predicate) => {
@@ -944,38 +1083,38 @@ async function handleCooldownItemRaro(interaction) {
 
   if (!lastWeaponWin && !lastEquipWin) {
     return interaction.editReply(
-      `✅ ${player} não possui registros de ganho de item raro.`
+      `✅ ${player} has no rare item win records.`
     );
   }
 
   const now = new Date();
   const formatStatus = (label, lastWin) => {
-    if (!lastWin) return `🟢 ${label}: liberado (sem registros).`;
+    if (!lastWin) return `🟢 ${label}: eligible (no records).`;
 
     const dateValue = lastWin["Data/Hora"] || lastWin.Data || lastWin["Data Hora"];
     const lastDate = parseBrazilianDateTime(dateValue);
     if (!lastDate) {
-      return `⚠️ ${label}: não consegui interpretar a data do último registro.`;
+      return `⚠️ ${label}: I couldn't parse the date of the last record.`;
     }
 
     const cooldownDays = getCooldownDaysForDate(lastDate);
     const nextEligible = new Date(lastDate.getTime() + cooldownDays * MS_PER_DAY);
-    const itemName = getItemName(lastWin) || "não informado";
-    const formattedDate = lastDate.toLocaleDateString("pt-BR", {
+    const itemName = getItemName(lastWin) || "not informed";
+    const formattedDate = lastDate.toLocaleDateString("en-US", {
       timeZone: "America/Sao_Paulo",
     });
 
     if (nextEligible <= now) {
-      return `🟢 ${label}: liberado. Último item: **${itemName}** em ${formattedDate}.`;
+      return `🟢 ${label}: eligible. Last item: **${itemName}** on ${formattedDate}.`;
     }
 
     const remaining = nextEligible.getTime() - now.getTime();
     const humanRemaining = formatDuration(remaining);
-    return `⏳ ${label}: restam ${humanRemaining}.\nÚltimo item: **${itemName}** em ${formattedDate}`;
+    return `⏳ ${label}: ${humanRemaining} remaining.\nLast item: **${itemName}** on ${formattedDate}`;
   };
 
-  const weaponStatus = formatStatus("Arma rara", lastWeaponWin);
-  const equipStatus = formatStatus("Item/equipamento raro", lastEquipWin);
+  const weaponStatus = formatStatus("Rare weapon", lastWeaponWin);
+  const equipStatus = formatStatus("Rare item/equipment", lastEquipWin);
 
   return interaction.editReply(
     `${weaponStatus}\n${equipStatus}`
@@ -999,8 +1138,10 @@ async function handleAutocomplete(interaction) {
     const q = String(focused.value || "").toLowerCase();
 
     const dataByOptionName = {
+      arch_weapon: weapons,
       arma_arch: weapons,
       item: weapons,
+      rare_item: rareItems,
       item_raro: rareItems,
     };
 
@@ -1017,24 +1158,32 @@ async function handleAutocomplete(interaction) {
     await respondAutocompleteOnce(interaction, results);
     return;
   } catch (err) {
-    console.error("❌ Erro no autocomplete:", err);
+    console.error("❌ Autocomplete error:", err);
     return;
   }
 }
 
 const commandHandlers = {
+  weapon_arch: handleArmaArch,
+  arch_weapon: handleArmaArch,
   arma_arch: handleArmaArch,
+  list_arch: handleListarArch,
   listar_arch: handleListarArch,
+  remove_arch: handleRemoverArch,
   remover_arch: handleRemoverArch,
+  arch_queue: handleFilaArch,
   fila_arch: handleFilaArch,
-  item: handleItem,
+  rare_item: handleItemRaro,
   item_raro: handleItemRaro,
+  remove_rare_item: handleRemoverItemRaro,
   remover_item_raro: handleRemoverItemRaro,
+  rare_item_queue: handleFilaItemRaro,
   fila_item_raro: handleFilaItemRaro,
+  item: handleItem,
+  my_items_for_sale: handleMeusItensAVenda,
   meus_itens_a_venda: handleMeusItensAVenda,
+  my_sales: handleMinhasVendas,
   minhas_vendas: handleMinhasVendas,
-  cooldown: handleCooldown,
-  cooldown_item_raro: handleCooldownItemRaro,
 };
 
 const client = new Client({
@@ -1042,7 +1191,7 @@ const client = new Client({
 });
 
 client.once("ready", () => {
-  console.log(`✅ Bot online como ${client.user.tag}`);
+  console.log(`✅ Bot online as ${client.user.tag}`);
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -1061,7 +1210,11 @@ client.on("interactionCreate", async (interaction) => {
     });
 
     return interaction.reply({
-      content: `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
+      content: tr(
+        interaction,
+        `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
+        `❌ This bot can only be used in #${ALLOWED_CHANNEL_NAME}.`
+      ),
       ephemeral: true,
     });
   }
@@ -1080,7 +1233,13 @@ client.on("interactionCreate", async (interaction) => {
         status: "UNKNOWN_COMMAND",
         err: null,
       });
-      return interaction.editReply("❌ Comando não suportado por este bot.");
+      return interaction.editReply(
+        tr(
+          interaction,
+          "❌ Comando não suportado por este bot.",
+          "❌ This command is not supported by this bot."
+        )
+      );
     }
 
     const result = await handler(interaction);
@@ -1091,8 +1250,12 @@ client.on("interactionCreate", async (interaction) => {
     });
     return result;
   } catch (err) {
-    console.error("❌ Erro ao processar comando:", err);
-    const errorMsg = "❌ Erro ao registrar. Veja os logs do bot.";
+    console.error("❌ Error while processing command:", err);
+    const errorMsg = tr(
+      interaction,
+      "❌ Erro ao registrar. Veja os logs do bot.",
+      "❌ Error while registering. Check bot logs."
+    );
     await appendCommandLog({
       interaction,
       status: "ERROR",

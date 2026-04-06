@@ -3,7 +3,21 @@ const { REST, Routes, SlashCommandBuilder } = require("discord.js");
 
 const GUILD_ID = process.env.GUILD_ID;
 
-const armaArchCmd = new SlashCommandBuilder()
+const weaponArchCmdEn = new SlashCommandBuilder()
+    .setName("weapon_arch")
+    .setDescription("Register an Archboss weapon in your wishlist")
+    .addStringOption((o) =>
+        o.setName("nickname").setDescription("Character nickname").setRequired(true)
+    )
+    .addStringOption((o) =>
+        o
+            .setName("arch_weapon")
+            .setDescription("Archboss weapon")
+            .setRequired(true)
+            .setAutocomplete(true)
+    );
+
+const weaponArchCmdPt = new SlashCommandBuilder()
     .setName("arma_arch")
     .setDescription("Registrar arma Archboss na lista de desejo")
     .addStringOption((o) =>
@@ -18,10 +32,25 @@ const armaArchCmd = new SlashCommandBuilder()
     );
 
 const listarArchCmd = new SlashCommandBuilder()
+    .setName("list_arch")
+    .setDescription("Show your Archboss wishlist registrations");
+
+const listarArchCmdPt = new SlashCommandBuilder()
     .setName("listar_arch")
     .setDescription("Mostra seus registros da lista Archboss");
 
 const removerArchCmd = new SlashCommandBuilder()
+    .setName("remove_arch")
+    .setDescription("Remove an item from your Archboss wishlist")
+    .addStringOption((o) =>
+        o
+            .setName("arch_weapon")
+            .setDescription("Weapon to remove")
+            .setRequired(true)
+            .setAutocomplete(true)
+    );
+
+const removerArchCmdPt = new SlashCommandBuilder()
     .setName("remover_arch")
     .setDescription("Remove um item da sua lista de desejo Archboss")
     .addStringOption((o) =>
@@ -33,6 +62,17 @@ const removerArchCmd = new SlashCommandBuilder()
     );
 
 const filaArchCmd = new SlashCommandBuilder()
+    .setName("arch_queue")
+    .setDescription("Show the player queue for a specific Archboss weapon")
+    .addStringOption((o) =>
+        o
+            .setName("arch_weapon")
+            .setDescription("Archboss weapon")
+            .setRequired(true)
+            .setAutocomplete(true)
+    );
+
+const filaArchCmdPt = new SlashCommandBuilder()
     .setName("fila_arch")
     .setDescription("Mostra a fila de jogadores para uma arma Archboss específica")
     .addStringOption((o) =>
@@ -44,6 +84,20 @@ const filaArchCmd = new SlashCommandBuilder()
     );
 
 const itemRaroCmd = new SlashCommandBuilder()
+    .setName("rare_item")
+    .setDescription("Register a rare item in your wishlist")
+    .addStringOption((o) =>
+        o.setName("nickname").setDescription("Character nickname").setRequired(true)
+    )
+    .addStringOption((o) =>
+        o
+            .setName("rare_item")
+            .setDescription("Rare item")
+            .setRequired(true)
+            .setAutocomplete(true)
+    );
+
+const itemRaroCmdPt = new SlashCommandBuilder()
     .setName("item_raro")
     .setDescription("Registrar item raro na lista de desejo")
     .addStringOption((o) =>
@@ -58,6 +112,17 @@ const itemRaroCmd = new SlashCommandBuilder()
     );
 
 const removerItemRaroCmd = new SlashCommandBuilder()
+    .setName("remove_rare_item")
+    .setDescription("Remove a rare item from your wishlist")
+    .addStringOption((o) =>
+        o
+            .setName("rare_item")
+            .setDescription("Rare item to remove")
+            .setRequired(true)
+            .setAutocomplete(true)
+    );
+
+const removerItemRaroCmdPt = new SlashCommandBuilder()
     .setName("remover_item_raro")
     .setDescription("Remove um item raro da sua lista de desejo")
     .addStringOption((o) =>
@@ -69,6 +134,17 @@ const removerItemRaroCmd = new SlashCommandBuilder()
     );
 
 const filaItemCmd = new SlashCommandBuilder()
+    .setName("rare_item_queue")
+    .setDescription("Show the player queue for a specific rare item")
+    .addStringOption((o) =>
+        o
+            .setName("rare_item")
+            .setDescription("Rare item")
+            .setRequired(true)
+            .setAutocomplete(true)
+    );
+
+const filaItemCmdPt = new SlashCommandBuilder()
     .setName("fila_item_raro")
     .setDescription("Mostra a fila de jogadores para um item raro específico")
     .addStringOption((o) =>
@@ -79,25 +155,6 @@ const filaItemCmd = new SlashCommandBuilder()
             .setAutocomplete(true)
     );
 
-const cooldownCmd = new SlashCommandBuilder()
-    .setName("cooldown")
-    .setDescription("Verifica quanto tempo falta para acabar o cooldown de Archboss")
-    .addStringOption((o) =>
-        o
-            .setName("nick")
-            .setDescription("Nick do personagem registrado no histórico")
-            .setRequired(true)
-    );
-
-const cooldownItemRaroCmd = new SlashCommandBuilder()
-    .setName("cooldown_item_raro")
-    .setDescription("Verifica quanto tempo falta para acabar o cooldown de item raro")
-    .addStringOption((o) =>
-        o
-            .setName("nick")
-            .setDescription("Nick do personagem registrado no histórico")
-            .setRequired(true)
-    );
 (async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
@@ -109,18 +166,23 @@ const cooldownItemRaroCmd = new SlashCommandBuilder()
       Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, GUILD_ID),
       {
         body: [
-          armaArchCmd.toJSON(),
+          weaponArchCmdEn.toJSON(),
+          weaponArchCmdPt.toJSON(),
           listarArchCmd.toJSON(),
+          listarArchCmdPt.toJSON(),
           removerArchCmd.toJSON(),
+          removerArchCmdPt.toJSON(),
           filaArchCmd.toJSON(),
+          filaArchCmdPt.toJSON(),
           itemRaroCmd.toJSON(),
+          itemRaroCmdPt.toJSON(),
           removerItemRaroCmd.toJSON(),
+          removerItemRaroCmdPt.toJSON(),
           filaItemCmd.toJSON(),
-          cooldownCmd.toJSON(),
-          cooldownItemRaroCmd.toJSON(),
+          filaItemCmdPt.toJSON(),
         ],
       }
   );
 
-  console.log("✅ Comandos registrados na guild.");
+  console.log("✅ Guild commands registered.");
 })();
