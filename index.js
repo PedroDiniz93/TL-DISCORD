@@ -6,7 +6,6 @@ const {
   GatewayIntentBits,
   InteractionResponseFlags,
 } = require("discord.js");
-const { JWT } = require("google-auth-library");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
 const ARCH_SHEET_TITLE = "LISTA DESEJO ARCH";
@@ -439,26 +438,13 @@ function buildPreview(lines, previewLimit, suffixTemplate) {
  * @returns {Promise<import("google-spreadsheet").GoogleSpreadsheetWorksheet>}
  */
 async function getSheet(title, headers) {
+  const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
+
   const creds = getGoogleCredsFromEnv();
-  let doc = new GoogleSpreadsheet(process.env.SHEET_ID);
-
-  if (typeof doc.useServiceAccountAuth === "function") {
-    await doc.useServiceAccountAuth({
-      client_email: creds.client_email,
-      private_key: creds.private_key,
-    });
-  } else {
-    const serviceAccountAuth = new JWT({
-      email: creds.client_email,
-      key: creds.private_key,
-      scopes: [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive.file",
-      ],
-    });
-    doc = new GoogleSpreadsheet(process.env.SHEET_ID, serviceAccountAuth);
-  }
-
+  await doc.useServiceAccountAuth({
+    client_email: creds.client_email,
+    private_key: creds.private_key,
+  });
   await doc.loadInfo();
 
   let sheet = doc.sheetsByTitle[title];
