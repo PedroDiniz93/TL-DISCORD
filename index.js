@@ -116,8 +116,23 @@ const RARE_WEAPON_ITEMS = new Set([
   "Junobote's Blade of the Red Colossus (Lamina do Colosso Vermelho de Junobote)"
 ]);
 
+const RARE_ARMOR_ITEMS = new Set([
+  "Errant Scion Brim (Pala do Rebento Errante)",
+  "Veiled Concord Gloves (Luvas da Concordância Velada)",
+  "Umbral Astarch Pants (Calça do Astarca Umbral)",
+  "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
+  "Breath of Boundless Sky (Sopro do Céu Sempiterno)"
+]);
+
+const MAX_RARE_ACCESSORIES_PER_USER = 3;
+const MAX_RARE_ARMORS_PER_USER = 1;
+
 function isRareWeapon(itemName) {
   return RARE_WEAPON_ITEMS.has(itemName);
+}
+
+function isRareArmor(itemName) {
+  return RARE_ARMOR_ITEMS.has(itemName);
 }
 
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 };
@@ -672,12 +687,16 @@ async function handleItemRaro(interaction) {
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
   const targetIsWeapon = isRareWeapon(item);
+  const targetIsArmor = isRareArmor(item);
   const existingWeapon = userRows
     .map((row) => (row.Item || "").trim())
     .find((name) => isRareWeapon(name));
-  const existingEquip = userRows
+  const userArmors = userRows
     .map((row) => (row.Item || "").trim())
-    .find((name) => name && !isRareWeapon(name));
+    .filter((name) => isRareArmor(name));
+  const userAccessories = userRows
+    .map((row) => (row.Item || "").trim())
+    .filter((name) => name && !isRareWeapon(name) && !isRareArmor(name));
 
   if (targetIsWeapon && existingWeapon) {
     return interaction.editReply(
@@ -689,12 +708,22 @@ async function handleItemRaro(interaction) {
     );
   }
 
-  if (!targetIsWeapon && existingEquip) {
+  if (targetIsArmor && userArmors.length >= MAX_RARE_ARMORS_PER_USER) {
     return interaction.editReply(
       tr(
         interaction,
-        `⚠️ Você já possui um equipamento/acessório raro registrado: **${existingEquip}**. Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
-        `⚠️ You already have a registered rare equipment/accessory: **${existingEquip}**. Remove it with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+        `⚠️ Você já possui 1 armadura rara registrada: **${userArmors[0]}**. Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outra.`,
+        `⚠️ You already have 1 registered rare armor: **${userArmors[0]}**. Remove it with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+      )
+    );
+  }
+
+  if (!targetIsWeapon && !targetIsArmor && userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER) {
+    return interaction.editReply(
+      tr(
+        interaction,
+        `⚠️ Você já possui ${MAX_RARE_ACCESSORIES_PER_USER} acessórios raros registrados. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `⚠️ You already have ${MAX_RARE_ACCESSORIES_PER_USER} registered rare accessories. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
       )
     );
   }
