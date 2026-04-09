@@ -20,50 +20,8 @@ const ARCH_COOLDOWN_DAYS_BEFORE_CUTOFF = 10;
 const ARCH_COOLDOWN_DAYS_FROM_MAR_12_2026 = 20;
 const ARCH_COOLDOWN_CUTOFF_DATE = new Date(2026, 2, 12); // 12/03/2026 (month is 0-based)
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const ITEMS_SHEET_TITLE = "ITENS_A_VENDA";
-const ITEMS_SHEET_HEADERS = [
-  "VENDA_ID",
-  "Data",
-  "Item",
-  "Valor Bruto",
-  "PT",
-  "Player 1",
-  "Player 2",
-  "Player 3",
-  "Player 4",
-  "Player 5",
-  "Player 6",
-  "Observação",
-];
-const ITEM_PLAYER_COLUMNS = [
-  "Player 1",
-  "Player 2",
-  "Player 3",
-  "Player 4",
-  "Player 5",
-  "Player 6",
-];
 const LOG_DIR = path.join(__dirname, "logs");
 const COMMAND_LOG_PATH = path.join(LOG_DIR, "commands.log");
-const SALES_SHEET_TITLE = "VENDAS";
-const SALES_SHEET_HEADERS = [
-  "VENDA_ID",
-  "Data",
-  "Item",
-  "PT",
-  "Valor Bruto",
-  "Valor Líquido",
-  "Valor PT",
-  "Valor Staff",
-  "Valor por Player",
-  "Qtd Players",
-  "Player 1",
-  "Player 2",
-  "Player 3",
-  "Player 4",
-  "Player 5",
-  "Player 6",
-];
 
 const weapons = [
   "🗡️ Espadão do Cordy (Cordy Greatsword)",
@@ -87,6 +45,16 @@ const weapons = [
 ];
 
 const rareItems = [
+  "Brooch of Certainty (Broche da Certeza)",
+  "Brooch of Nimblesness (Broche da Agilidade)",
+  "Brooch of Devastation (Broche da Devastação)",
+  "Brooch of Everlasting (Broche da Eternidade)",
+  "Brooch of Power Overwhelming (Broche do Poder Avassalador)",
+  "Brooch of Awareness (Broche da Consciencia)",
+  "Brooch of Primacy (Broche da Primazia)",
+  "Sundering Brooch (Broche da Separação)",
+  "Ballistic Brooch (Broche da Balistica)",
+  "Tempest Brooch (Broche da Tempestade)",
   "Grand Aelon's Longbow of Blight (Arco Longo do Flagelo de Grande Aelon)",
   "Kowazan's Daggers of the Blood Moon (Adagas da Lua Sangrenta de Kowazan)",
   "Aridus's Immolated Voidstaff (Cajado do Vazio Imolado de Aridus)",
@@ -164,8 +132,6 @@ const PT_BR_COMMANDS = new Set([
   "item_raro",
   "remover_item_raro",
   "fila_item_raro",
-  "meus_itens_a_venda",
-  "minhas_vendas",
 ]);
 
 /**
@@ -847,146 +813,6 @@ async function handleFilaItemRaro(interaction) {
 }
 
 /**
- * Handle /meus_itens_a_venda command.
- * @param {object} interaction
- * @returns {Promise<void>}
- */
-async function handleMeusItensAVenda(interaction) {
-  const playerNick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
-  const targetLower = playerNick.toLowerCase();
-
-  const sheet = await getSheet(ITEMS_SHEET_TITLE, ITEMS_SHEET_HEADERS);
-  const rows = await sheet.getRows();
-  const playerRows = rows.filter((row) =>
-    ITEM_PLAYER_COLUMNS.some((col) => {
-      const cell = row[col];
-      return normalizePlayerCell(cell) === targetLower && !isPlayerCellPaid(cell);
-    })
-  );
-
-  if (!playerRows.length) {
-    return interaction.editReply(
-      tr(
-        interaction,
-        `📭 ${playerNick} não possui itens listados em ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`,
-        `📭 ${playerNick} has no items listed in ${ITEMS_SHEET_TITLE.replace(/_/g, " ")}.`
-      )
-    );
-  }
-
-  const lines = playerRows.map((row, idx) => {
-    const itemName = row.Item || row["Item (Arma)"] || tr(interaction, "Item sem nome", "Unnamed item");
-    const valor = row["Valor Bruto"] || row["Valor"] || tr(interaction, "Valor não informado", "Value not informed");
-    const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
-    return tr(
-      interaction,
-      `${idx + 1}. ID ${vendaId} — ${itemName} • Valor: ${valor}`,
-      `${idx + 1}. ID ${vendaId} — ${itemName} • Value: ${valor}`
-    );
-  });
-
-  const { preview, suffix } = buildPreview(lines, 20, (extraCount) =>
-    tr(interaction, `\n... e mais ${extraCount} item(ns).`, `\n... and ${extraCount} more item(s).`)
-  );
-
-  return interaction.editReply(
-    tr(
-      interaction,
-      `🛒 Itens à venda para **${playerNick}**:\n${preview}${suffix}`,
-      `🛒 Items for sale for **${playerNick}**:\n${preview}${suffix}`
-    )
-  );
-}
-
-/**
- * Handle /minhas_vendas command.
- * @param {object} interaction
- * @returns {Promise<void>}
- */
-async function handleMinhasVendas(interaction) {
-  const playerNick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
-  const targetLower = playerNick.toLowerCase();
-
-  const sheet = await getSheet(SALES_SHEET_TITLE, SALES_SHEET_HEADERS);
-  const rows = await sheet.getRows();
-
-  const salesByPlayer = rows.filter((row) =>
-    ITEM_PLAYER_COLUMNS.some((col) => normalizePlayerCell(row[col]) === targetLower)
-  );
-
-  if (!salesByPlayer.length) {
-    return interaction.editReply(
-      tr(
-        interaction,
-        `📭 ${playerNick} não possui vendas registradas.`,
-        `📭 ${playerNick} has no registered sales.`
-      )
-    );
-  }
-
-  const paid = [];
-  const pending = [];
-  let totalPaid = 0;
-  let totalPending = 0;
-
-  for (const row of salesByPlayer) {
-    const wasPaid = ITEM_PLAYER_COLUMNS.some(
-      (col) =>
-        normalizePlayerCell(row[col]) === targetLower && isPlayerCellPaid(row[col])
-    );
-
-    const vendaId = row.VENDA_ID || row["VENDA_ID"] || "?";
-    const itemName = row.Item || tr(interaction, "Item não informado", "Item not informed");
-    const valorPorPlayer = row["Valor por Player"] || row["Valor Player"] || "-";
-    const dataVenda = row.Data || row["Data/Hora"] || row["Data Venda"] || "";
-
-    const entry = tr(
-      interaction,
-      `ID ${vendaId} — ${itemName} • Valor por Player: ${valorPorPlayer}${dataVenda ? ` • Data: ${dataVenda}` : ""}`,
-      `ID ${vendaId} — ${itemName} • Value per Player: ${valorPorPlayer}${dataVenda ? ` • Date: ${dataVenda}` : ""}`
-    );
-
-    const perPlayerNumeric = Number(
-      String(valorPorPlayer).replace(/[^\d,-]/g, "").replace(".", "").replace(",", ".")
-    );
-
-    if (wasPaid) {
-      paid.push(entry);
-      if (!Number.isNaN(perPlayerNumeric)) totalPaid += perPlayerNumeric;
-    } else {
-      pending.push(entry);
-      if (!Number.isNaN(perPlayerNumeric)) totalPending += perPlayerNumeric;
-    }
-  }
-
-  const buildSection = (label, entries) => {
-    if (!entries.length) return `**${label}:** ${tr(interaction, "nenhum", "none")}`;
-    const { preview, suffix } = buildPreview(entries, 15, (extra) =>
-      tr(interaction, `\n... e mais ${extra} registro(s).`, `\n... and ${extra} more record(s).`)
-    );
-    return `**${label}:**\n${preview}${suffix}`;
-  };
-
-  const parts = [
-    buildSection(tr(interaction, "Pendentes", "Pending"), pending),
-    buildSection(tr(interaction, "Pagas", "Paid"), paid),
-  ];
-  const totalsLine = tr(
-    interaction,
-    `**Total:** Pendentes = ${totalPending.toFixed(2)} | Pagas = ${totalPaid.toFixed(2)}`,
-    `**Total:** Pending = ${totalPending.toFixed(2)} | Paid = ${totalPaid.toFixed(2)}`
-  );
-
-  return interaction.editReply(
-    tr(
-      interaction,
-      `📑 Vendas de **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`,
-      `📑 Sales for **${playerNick}**:\n${parts.join("\n\n")}\n\n${totalsLine}`
-    )
-  );
-}
-
-/**
  * Handle /cooldown command.
  * @param {object} interaction
  * @returns {Promise<void>}
@@ -1180,10 +1006,6 @@ const commandHandlers = {
   rare_item_queue: handleFilaItemRaro,
   fila_item_raro: handleFilaItemRaro,
   item: handleItem,
-  my_items_for_sale: handleMeusItensAVenda,
-  meus_itens_a_venda: handleMeusItensAVenda,
-  my_sales: handleMinhasVendas,
-  minhas_vendas: handleMinhasVendas,
 };
 
 const client = new Client({
