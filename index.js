@@ -55,6 +55,7 @@ const rareItems = [
   "Sundering Brooch (Broche da Separação)",
   "Ballistic Brooch (Broche da Balistica)",
   "Tempest Brooch (Broche da Tempestade)",
+  "Necklace of Exceptional Greed (Colar da Avareza Exepctional)",
   "Grand Aelon's Longbow of Blight (Arco Longo do Flagelo de Grande Aelon)",
   "Kowazan's Daggers of the Blood Moon (Adagas da Lua Sangrenta de Kowazan)",
   "Aridus's Immolated Voidstaff (Cajado do Vazio Imolado de Aridus)",
