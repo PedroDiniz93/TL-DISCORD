@@ -1110,16 +1110,10 @@ async function handleAutocomplete(interaction) {
     const list = dataByOptionName[focused.name] || [];
 
     const results = list
-      .filter((x) => {
-        const display = formatArchWeaponDisplay(x);
-        return x.toLowerCase().includes(q) || display.toLowerCase().includes(q);
-      })
+      .filter((x) => x.toLowerCase().includes(q))
       .slice(0, 25)
       .map((x) => ({
-        name:
-          formatArchWeaponDisplay(x).length > 100
-            ? formatArchWeaponDisplay(x).slice(0, 97) + "..."
-            : formatArchWeaponDisplay(x),
+        name: x.length > 100 ? x.slice(0, 97) + "..." : x,
         value: x,
       }));
 
@@ -1154,11 +1148,8 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-client.once("ready", async () => {
+client.once("ready", () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
-  await loadArchWeaponIconsFromGuild(client);
-  await syncArchWeaponIconsToGuild(client);
-  console.log("✅ Arch weapon icon sync complete.");
 });
 
 client.on("interactionCreate", async (interaction) => {
