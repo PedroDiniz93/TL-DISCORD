@@ -26,13 +26,6 @@ const ARCH_WEAPON_ICON_DIRS = [
   path.join(__dirname, "assets", "icons", "arch-weapons"),
   path.join(__dirname, "icons"),
 ];
-const ARCH_WEAPON_ICON_MAP_PATH = path.join(
-  __dirname,
-  "assets",
-  "icons",
-  "arch-weapons",
-  "icons-map.json"
-);
 const ARCH_WEAPON_ICON_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
 const ARCH_WEAPONS = [
@@ -253,23 +246,6 @@ async function loadArchWeaponIconsFromGuild(client) {
     }
   } catch (err) {
     console.error("⚠️ Failed to load Arch weapon emojis from guild:", err?.message || err);
-  }
-}
-
-async function loadArchWeaponIconsFromFileMap() {
-  try {
-    const raw = await fs.readFile(ARCH_WEAPON_ICON_MAP_PATH, "utf8");
-    const iconBySlug = JSON.parse(raw);
-    if (!iconBySlug || typeof iconBySlug !== "object") return;
-
-    for (const weapon of ARCH_WEAPONS) {
-      const value = iconBySlug[weapon.iconSlug];
-      if (typeof value === "string" && value.trim()) {
-        archWeaponIconPrefixByName.set(weapon.name, value.trim());
-      }
-    }
-  } catch {
-    // Optional file: ignore when missing or invalid.
   }
 }
 
@@ -1185,7 +1161,6 @@ const client = new Client({
 
 client.once("ready", async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
-  await loadArchWeaponIconsFromFileMap();
   await loadArchWeaponIconsFromGuild(client);
   await syncArchWeaponIconsToGuild(client);
   console.log("✅ Arch weapon icon sync complete.");
