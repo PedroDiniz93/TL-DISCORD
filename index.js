@@ -22,10 +22,7 @@ const ARCH_COOLDOWN_CUTOFF_DATE = new Date(2026, 2, 12); // 12/03/2026 (month is
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const LOG_DIR = path.join(__dirname, "logs");
 const COMMAND_LOG_PATH = path.join(LOG_DIR, "commands.log");
-const ARCH_WEAPON_ICON_DIRS = [
-  path.join(__dirname, "assets", "icons", "arch-weapons"),
-  path.join(__dirname, "icons"),
-];
+const ARCH_WEAPON_ICON_DIR = path.join(__dirname, "assets", "icons", "arch-weapons");
 const ARCH_WEAPON_ICON_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
 const ARCH_WEAPONS = [
@@ -215,15 +212,13 @@ function getEmojiNameForSlug(slug) {
 }
 
 async function getArchWeaponIconFilePath(iconSlug) {
-  for (const dirPath of ARCH_WEAPON_ICON_DIRS) {
-    for (const ext of ARCH_WEAPON_ICON_EXTENSIONS) {
-      const filePath = path.join(dirPath, `${iconSlug}${ext}`);
-      try {
-        await fs.access(filePath);
-        return filePath;
-      } catch {
-        // File with this extension does not exist; continue.
-      }
+  for (const ext of ARCH_WEAPON_ICON_EXTENSIONS) {
+    const filePath = path.join(ARCH_WEAPON_ICON_DIR, `${iconSlug}${ext}`);
+    try {
+      await fs.access(filePath);
+      return filePath;
+    } catch {
+      // File with this extension does not exist; continue.
     }
   }
   return null;
