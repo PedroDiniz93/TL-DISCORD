@@ -22,35 +22,27 @@ const ARCH_COOLDOWN_CUTOFF_DATE = new Date(2026, 2, 12); // 12/03/2026 (month is
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const LOG_DIR = path.join(__dirname, "logs");
 const COMMAND_LOG_PATH = path.join(LOG_DIR, "commands.log");
-const ARCH_WEAPON_ICON_DIR = path.join(__dirname, "assets", "icons", "arch-weapons");
-const ARCH_WEAPON_ICON_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
-const ARCH_WEAPONS = [
-  { name: "Espadão do Cordy (Cordy Greatsword)", iconSlug: "cordy-greatsword", fallbackIcon: "🗡️" },
-  { name: "Espadão do Tevent (Tevent Greatsword)", iconSlug: "tevent-greatsword", fallbackIcon: "🗡️" },
-  { name: "Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)", iconSlug: "deluznoa-sword-and-shield", fallbackIcon: "🛡️"},
-  { name: "Espada e Escudo da Belandir (Belandir Sword and Shield)", iconSlug: "belandir-sword-and-shield", fallbackIcon: "🛡️"},
-  { name: "Adaga da Deluznoa (Deluznoa Dagger)", iconSlug: "deluznoa-dagger", fallbackIcon: "⚔️" },
-  { name: "Adaga do Tevent (Tevent Dagger)", iconSlug: "tevent-dagger", fallbackIcon: "⚔️" },
-  { name: "Balestra do Cordy (Cordy Crossbow)", iconSlug: "cordy-crossbow", fallbackIcon: "🎯" },
-  { name: "Balestra da Belandir (Belandir Crossbow)", iconSlug: "belandir-crossbow", fallbackIcon: "🎯" },
-  { name: "Arco do Tevent (Tevent Bow)", iconSlug: "tevent-bow", fallbackIcon: "🏹" },
-  { name: "Arco da Deluznoa (Deluznoa Bow)", iconSlug: "deluznoa-bow", fallbackIcon: "🏹" },
-  { name: "Cajado da Deluznoa (Deluznoa Staff)", iconSlug: "deluznoa-staff", fallbackIcon: "⚡" },
-  { name: "Cajado da Belandir (Belandir Staff)", iconSlug: "belandir-staff", fallbackIcon: "⚡" },
-  { name: "Varinha do Tevent (Tevent Wand)", iconSlug: "tevent-wand", fallbackIcon: "🪄" },
-  { name: "Varinha do Cordy (Cordy Wand)", iconSlug: "cordy-wand", fallbackIcon: "🪄" },
-  { name: "Lança da Deluznoa (Deluznoa Spear)", iconSlug: "deluznoa-spear", fallbackIcon: "🗡️" },
-  { name: "Lança da Belandir (Belandir Spear)", iconSlug: "belandir-spear", fallbackIcon: "🗡️" },
-  { name: "Orb do Tevent (Tevent Orb)", iconSlug: "tevent-orb", fallbackIcon: "🔮" },
-  { name: "Orb do Cordy (Cordy Orb)", iconSlug: "cordy-orb", fallbackIcon: "🔮" },
+const weapons = [
+  "🗡️ Espadão do Cordy (Cordy Greatsword)",
+  "🗡️ Espadão do Tevent (Tevent Greatsword)",
+  "🛡️ Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)",
+  "🛡️ Espada e Escudo da Belandir (Belandir Sword and Shield)",
+  "⚔️ Adaga da Deluznoa (Deluznoa Dagger)",
+  "⚔️ Adaga do Tevent (Tevent Dagger)",
+  "🎯 Balestra do Cordy (Cordy Crossbow)",
+  "🎯 Balestra da Belandir (Belandir Crossbow)",
+  "🏹 Arco do Tevent (Tevent Bow)",
+  "🏹 Arco da Deluznoa (Deluznoa Bow)",
+  "⚡ Cajado da Deluznoa (Deluznoa Staff)",
+  "⚡ Cajado da Belandir (Belandir Staff)",
+  "🪄 Varinha do Tevent (Tevent Wand)",
+  "🪄 Varinha do Cordy (Cordy Wand)",
+  "🗡️ Lança da Deluznoa (Deluznoa Spear)",
+  "🗡️ Lança da Belandir (Belandir Spear)",
+  "🔮 Orb do Tevent (Tevent Orb)",
+  "🔮 Orb do Cordy (Cordy Orb)"
 ];
-
-const weapons = ARCH_WEAPONS.map((weapon) => weapon.name);
-const archWeaponByNormalizedName = new Map(
-  ARCH_WEAPONS.map((weapon) => [normalizeQueueItemName(weapon.name), weapon])
-);
-const archWeaponIconPrefixByName = new Map();
 
 const rareItems = [
   "Brooch of Certainty (Broche da Certeza)",
@@ -191,95 +183,6 @@ function normalizeQueueItemName(value) {
     .replace(/^[^\p{L}\p{N}]+/u, "")
     .trim()
     .toLowerCase();
-}
-
-function normalizeArchWeaponValue(value) {
-  const normalized = normalizeQueueItemName(value);
-  const weapon = archWeaponByNormalizedName.get(normalized);
-  return weapon ? weapon.name : String(value || "").trim();
-}
-
-function formatArchWeaponDisplay(value) {
-  const normalizedName = normalizeArchWeaponValue(value);
-  const weapon = archWeaponByNormalizedName.get(normalizeQueueItemName(normalizedName));
-  if (!weapon) return normalizedName;
-  const icon = archWeaponIconPrefixByName.get(weapon.name) || weapon.fallbackIcon;
-  return `${icon} ${weapon.name}`;
-}
-
-function getEmojiNameForSlug(slug) {
-  return `arch_${slug.replace(/-/g, "_")}`.slice(0, 32);
-}
-
-async function getArchWeaponIconFilePath(iconSlug) {
-  for (const ext of ARCH_WEAPON_ICON_EXTENSIONS) {
-    const filePath = path.join(ARCH_WEAPON_ICON_DIR, `${iconSlug}${ext}`);
-    try {
-      await fs.access(filePath);
-      return filePath;
-    } catch {
-      // File with this extension does not exist; continue.
-    }
-  }
-  return null;
-}
-
-async function loadArchWeaponIconsFromGuild(client) {
-  const guildId = process.env.GUILD_ID;
-  if (!guildId) return;
-
-  try {
-    const guild = await client.guilds.fetch(guildId);
-    await guild.emojis.fetch();
-
-    for (const weapon of ARCH_WEAPONS) {
-      const emojiName = getEmojiNameForSlug(weapon.iconSlug);
-      const emoji = guild.emojis.cache.find((entry) => entry.name === emojiName);
-      if (emoji) {
-        archWeaponIconPrefixByName.set(weapon.name, `<:${emoji.name}:${emoji.id}>`);
-      }
-    }
-  } catch (err) {
-    console.error("⚠️ Failed to load Arch weapon emojis from guild:", err?.message || err);
-  }
-}
-
-async function syncArchWeaponIconsToGuild(client) {
-  const guildId = process.env.GUILD_ID;
-  if (!guildId) return;
-
-  try {
-    const guild = await client.guilds.fetch(guildId);
-    await guild.emojis.fetch();
-
-    for (const weapon of ARCH_WEAPONS) {
-      const emojiName = getEmojiNameForSlug(weapon.iconSlug);
-      const existingEmoji = guild.emojis.cache.find((entry) => entry.name === emojiName);
-      if (existingEmoji) {
-        archWeaponIconPrefixByName.set(weapon.name, `<:${existingEmoji.name}:${existingEmoji.id}>`);
-        continue;
-      }
-
-      const iconFilePath = await getArchWeaponIconFilePath(weapon.iconSlug);
-      if (!iconFilePath) continue;
-
-      try {
-        const createdEmoji = await guild.emojis.create({
-          attachment: iconFilePath,
-          name: emojiName,
-        });
-        archWeaponIconPrefixByName.set(weapon.name, `<:${createdEmoji.name}:${createdEmoji.id}>`);
-        console.log(`✅ Uploaded Arch weapon emoji: ${emojiName}`);
-      } catch (err) {
-        console.error(
-          `⚠️ Failed to create emoji ${emojiName}. Keep fallback icon.`,
-          err?.message || err
-        );
-      }
-    }
-  } catch (err) {
-    console.error("⚠️ Failed to sync Arch weapon icons to guild:", err?.message || err);
-  }
 }
 
 /**
@@ -560,9 +463,7 @@ async function getSheet(title, headers) {
 async function handleArmaArch(interaction) {
   const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
 
-  const arma = normalizeArchWeaponValue(
-    getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"])
-  );
+  const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
@@ -575,18 +476,14 @@ async function handleArmaArch(interaction) {
       .filter((row) => (row.DiscordUserId || "").trim() === interaction.user.id)
       .map((row) => row.Arma)
       .filter(Boolean)
-      .map((value) => normalizeArchWeaponValue(value))
+      .map((value) => String(value).trim())
       .filter(Boolean);
-    const weaponList = userWeapons.length
-      ? `\nRegistered weapon(s): ${userWeapons.map((weapon) => formatArchWeaponDisplay(weapon)).join(", ")}`
-      : "";
+    const weaponList = userWeapons.length ? `\nRegistered weapon(s): ${userWeapons.join(", ")}` : "";
     return interaction.editReply(
       tr(
         interaction,
         "⚠️ Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra." +
-          (userWeapons.length
-            ? `\nArma(s) registrada(s): ${userWeapons.map((weapon) => formatArchWeaponDisplay(weapon)).join(", ")}`
-            : ""),
+          (userWeapons.length ? `\nArma(s) registrada(s): ${userWeapons.join(", ")}` : ""),
         "⚠️ You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one." +
           weaponList
       )
@@ -603,8 +500,8 @@ async function handleArmaArch(interaction) {
   return interaction.editReply(
     tr(
       interaction,
-      `✅ Registrado!\nNick: **${nick}**\nArma Archboss: **${formatArchWeaponDisplay(arma)}**`,
-      `✅ Registered!\nNickname: **${nick}**\nArchboss weapon: **${formatArchWeaponDisplay(arma)}**`
+      `✅ Registrado!\nNick: **${nick}**\nArma Archboss: **${arma}**`,
+      `✅ Registered!\nNickname: **${nick}**\nArchboss weapon: **${arma}**`
     )
   );
 }
@@ -635,8 +532,8 @@ async function handleListarArch(interaction) {
     (row, idx) =>
       tr(
         interaction,
-        `${idx + 1}. Nick: ${row.Nick} --- Arma: ${formatArchWeaponDisplay(row.Arma)}${row.Data ? ` --- Registrado em ${row.Data}` : ""}`,
-        `${idx + 1}. Nickname: ${row.Nick} --- Weapon: ${formatArchWeaponDisplay(row.Arma)}${row.Data ? ` --- Registered at ${row.Data}` : ""}`
+        `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${row.Data ? ` --- Registrado em ${row.Data}` : ""}`,
+        `${idx + 1}. Nickname: ${row.Nick} --- Weapon: ${row.Arma}${row.Data ? ` --- Registered at ${row.Data}` : ""}`
       )
   );
 
@@ -659,16 +556,14 @@ async function handleListarArch(interaction) {
  * @returns {Promise<void>}
  */
 async function handleRemoverArch(interaction) {
-  const arma = normalizeArchWeaponValue(
-    getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"])
-  );
+  const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
   const targetRow = rows.find(
     (row) =>
       (row.DiscordUserId || "").trim() === interaction.user.id &&
-      normalizeArchWeaponValue(row.Arma) === arma
+      (row.Arma || "").trim() === arma
   );
 
   if (!targetRow) {
@@ -687,8 +582,8 @@ async function handleRemoverArch(interaction) {
   return interaction.editReply(
     tr(
       interaction,
-      `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${formatArchWeaponDisplay(arma)}**`,
-      `🗑️ Removed!\nNickname: **${nick}**\nRemoved weapon: **${formatArchWeaponDisplay(arma)}**`
+      `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`,
+      `🗑️ Removed!\nNickname: **${nick}**\nRemoved weapon: **${arma}**`
     )
   );
 }
@@ -699,9 +594,7 @@ async function handleRemoverArch(interaction) {
  * @returns {Promise<void>}
  */
 async function handleFilaArch(interaction) {
-  const item = normalizeArchWeaponValue(
-    getRequiredOptionAny(interaction, ["arch_weapon", "item"])
-  );
+  const item = getRequiredOptionAny(interaction, ["arch_weapon", "item"]);
 
   const sheet = await getSheet(ARCH_SHEET_TITLE, ARCH_HEADERS);
   const rows = await sheet.getRows();
@@ -724,8 +617,8 @@ async function handleFilaArch(interaction) {
     return interaction.editReply(
       tr(
         interaction,
-        `📭 Nenhum jogador na fila de **${formatArchWeaponDisplay(item)}** na aba ${ARCH_SHEET_TITLE}.`,
-        `📭 No players in queue for **${formatArchWeaponDisplay(item)}** in sheet ${ARCH_SHEET_TITLE}.`
+        `📭 Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET_TITLE}.`,
+        `📭 No players in queue for **${item}** in sheet ${ARCH_SHEET_TITLE}.`
       )
     );
   }
@@ -748,8 +641,8 @@ async function handleFilaArch(interaction) {
   return interaction.editReply(
     tr(
       interaction,
-      `📜 Fila de **${formatArchWeaponDisplay(item)}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n⚠️ Essa lista mostra apenas quem colocou a arma na wishlist; não é necessariamente a ordem de prioridade. ⚠️`,
-      `📜 Queue for **${formatArchWeaponDisplay(item)}** (${filtered.length} players):\n${preview}${suffix}\n\n⚠️ This list only shows who added the weapon to the wishlist; it is not necessarily the priority order. ⚠️`
+      `📜 Fila de **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n⚠️ Essa lista mostra apenas quem colocou a arma na wishlist; não é necessariamente a ordem de prioridade. ⚠️`,
+      `📜 Queue for **${item}** (${filtered.length} players):\n${preview}${suffix}\n\n⚠️ This list only shows who added the weapon to the wishlist; it is not necessarily the priority order. ⚠️`
     )
   );
 }
