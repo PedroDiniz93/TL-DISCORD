@@ -423,10 +423,53 @@ function buildRegisteredItemActions(interaction, type) {
   );
 }
 
+function buildControlPanelReply() {
+  const embed = new EmbedBuilder()
+    .setColor(0x65b0fc)
+    .setTitle("Painel Archboss")
+    .setDescription(
+      "Use os botões abaixo para registrar seus itens e consultar sua lista sem precisar digitar comandos."
+    )
+    .setFooter({
+      text: "TL control panel",
+    });
+
+  return {
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("panel:register_arch")
+          .setLabel("Registrar arma Archboss")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("panel:register_rare")
+          .setLabel("Registrar item raro")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("panel:my_items")
+          .setLabel("Meus itens")
+          .setStyle(ButtonStyle.Secondary)
+      ),
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("panel:queue_arch")
+          .setLabel("Ver fila Archboss")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId("panel:queue_rare")
+          .setLabel("Ver fila item raro")
+          .setStyle(ButtonStyle.Success)
+      ),
+    ],
+  };
+}
+
 module.exports = {
   buildArchQueueReply,
   buildArchWishlistReply,
   buildEmptyItemReply,
+  buildControlPanelReply,
   buildRareItemQueueReply,
   buildRareItemWishlistReply,
   buildMyItemsReply,

@@ -4,6 +4,11 @@ const { ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
 const { handleWishlistButton } = require("./src/handlers/buttons");
 const { commandHandlers } = require("./src/handlers");
+const {
+  ensureControlPanel,
+  handleControlPanelButton,
+  handleControlPanelModal,
+} = require("./src/handlers/panel");
 const { appendCommandLog } = require("./src/logging");
 const { buildWarningItemReply } = require("./src/responses");
 const { isAllowedChannel, tr } = require("./src/utils");
@@ -12,8 +17,11 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
+  await ensureControlPanel(client, ALLOWED_CHANNEL_NAME).catch((err) => {
+    console.error("❌ Failed to ensure control panel:", err);
+  });
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -23,11 +31,20 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (interaction.isButton()) {
-    let hasDeferred = false;
     try {
+      const panelHandled = await handleControlPanelButton(interaction);
+      if (panelHandled) {
+        await appendCommandLog({
+          interaction,
+          status: "OK",
+          err: null,
+        });
+        return true;
+      }
+
+      let hasDeferred = false;
       await interaction.deferReply({ ephemeral: true });
       hasDeferred = true;
-
       const handled = await handleWishlistButton(interaction);
       await appendCommandLog({
         interaction,
@@ -71,6 +88,52 @@ client.on("interactionCreate", async (interaction) => {
         });
       }
       if (hasDeferred || interaction.deferred) {
+        return interaction.editReply(errorReply);
+      }
+      return interaction.reply({
+        ...errorReply,
+        ephemeral: true,
+      });
+    }
+  }
+
+  if (interaction.isModalSubmit()) {
+    try {
+      const handled = await handleControlPanelModal(interaction);
+      if (handled) {
+        await appendCommandLog({
+          interaction,
+          status: "OK",
+          err: null,
+        });
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error("❌ Error while processing modal:", err);
+      const errorReply = buildWarningItemReply({
+        interaction,
+        title: tr(interaction, "❌ Erro ao processar", "❌ Processing error"),
+        description: tr(
+          interaction,
+          "Erro ao processar o formulário. Veja os logs do bot.",
+          "Error while processing the form. Check bot logs."
+        ),
+      });
+      await appendCommandLog({
+        interaction,
+        status: "ERROR",
+        err,
+      });
+
+      if (interaction.replied) {
+        return interaction.followUp({
+          ...errorReply,
+          ephemeral: true,
+        });
+      }
+      if (interaction.deferred) {
         return interaction.editReply(errorReply);
       }
       return interaction.reply({

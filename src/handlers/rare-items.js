@@ -26,19 +26,27 @@ async function handleItemRaro(interaction) {
   const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
 
+  return interaction.editReply(
+    await registerRareItem({
+      interaction,
+      nick,
+      item,
+    })
+  );
+}
+
+async function registerRareItem({ interaction, nick, item }) {
   if (!isKnownRareItem(item)) {
-    return interaction.editReply(
-      buildWarningItemReply({
+    return buildWarningItemReply({
+      interaction,
+      itemName: item,
+      title: tr(interaction, "⚠️ Item indisponível", "⚠️ Item unavailable"),
+      description: tr(
         interaction,
-        itemName: item,
-        title: tr(interaction, "⚠️ Item indisponível", "⚠️ Item unavailable"),
-        description: tr(
-          interaction,
-          "Esse item raro não está disponível para registro.",
-          "This rare item is not available for registration."
-        ),
-      })
-    );
+        "Esse item raro não está disponível para registro.",
+        "This rare item is not available for registration."
+      ),
+    });
   }
 
   const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
@@ -55,50 +63,46 @@ async function handleItemRaro(interaction) {
     .filter((name) => isKnownRareItem(name) && !isRareArmor(name));
 
   if (targetIsArmor && userArmors.length >= MAX_RARE_ARMORS_PER_USER) {
-    return interaction.editReply(
-      buildWarningItemReply({
+    return buildWarningItemReply({
+      interaction,
+      itemName: userArmors[0],
+      title: tr(interaction, "⚠️ Limite de armadura", "⚠️ Armor limit reached"),
+      description: tr(
         interaction,
-        itemName: userArmors[0],
-        title: tr(interaction, "⚠️ Limite de armadura", "⚠️ Armor limit reached"),
-        description: tr(
-          interaction,
-          "Você já possui 1 armadura rara registrada. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outra.",
-          "You already have 1 registered rare armor. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
-        ),
-        fields: [
-          {
-            name: tr(interaction, "Armadura registrada", "Registered armor"),
-            value: userArmors[0],
-            inline: false,
-          },
-        ],
-      })
-    );
+        "Você já possui 1 armadura rara registrada. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outra.",
+        "You already have 1 registered rare armor. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+      ),
+      fields: [
+        {
+          name: tr(interaction, "Armadura registrada", "Registered armor"),
+          value: userArmors[0],
+          inline: false,
+        },
+      ],
+    });
   }
 
   if (
     !targetIsArmor &&
     userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER
   ) {
-    return interaction.editReply(
-      buildWarningItemReply({
+    return buildWarningItemReply({
+      interaction,
+      itemName: userAccessories[0],
+      title: tr(interaction, "⚠️ Limite de acessórios", "⚠️ Accessory limit reached"),
+      description: tr(
         interaction,
-        itemName: userAccessories[0],
-        title: tr(interaction, "⚠️ Limite de acessórios", "⚠️ Accessory limit reached"),
-        description: tr(
-          interaction,
-          `Você já possui ${MAX_RARE_ACCESSORIES_PER_USER} acessórios raros registrados. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
-          `You already have ${MAX_RARE_ACCESSORIES_PER_USER} registered rare accessories. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
-        ),
-        fields: [
-          {
-            name: tr(interaction, "Acessórios registrados", "Registered accessories"),
-            value: userAccessories.join("\n"),
-            inline: false,
-          },
-        ],
-      })
-    );
+        `Você já possui ${MAX_RARE_ACCESSORIES_PER_USER} acessórios raros registrados. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `You already have ${MAX_RARE_ACCESSORIES_PER_USER} registered rare accessories. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+      ),
+      fields: [
+        {
+          name: tr(interaction, "Acessórios registrados", "Registered accessories"),
+          value: userAccessories.join("\n"),
+          inline: false,
+        },
+      ],
+    });
   }
 
   await sheet.addRow({
@@ -108,18 +112,16 @@ async function handleItemRaro(interaction) {
     DiscordUserId: interaction.user.id,
   });
 
-  return interaction.editReply(
-    buildRegisteredItemReply({
-      interaction,
-      nick,
-      itemName: item,
-      itemLabel: {
-        pt: "Item raro",
-        en: "Rare item",
-      },
-      type: "rare",
-    })
-  );
+  return buildRegisteredItemReply({
+    interaction,
+    nick,
+    itemName: item,
+    itemLabel: {
+      pt: "Item raro",
+      en: "Rare item",
+    },
+    type: "rare",
+  });
 }
 
 async function buildRemoverItemRaroReply(interaction, item) {
@@ -234,4 +236,5 @@ module.exports = {
   handleFilaItemRaro,
   handleItemRaro,
   handleRemoverItemRaro,
+  registerRareItem,
 };

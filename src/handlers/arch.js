@@ -20,6 +20,16 @@ async function handleArmaArch(interaction) {
   const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
 
+  return interaction.editReply(
+    await registerArchWeapon({
+      interaction,
+      nick,
+      arma,
+    })
+  );
+}
+
+async function registerArchWeapon({ interaction, nick, arma }) {
   const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   const rows = await sheet.getRows();
   const userRows = rows.filter(
@@ -32,27 +42,25 @@ async function handleArmaArch(interaction) {
       .filter(Boolean)
       .map((value) => String(value).trim())
       .filter(Boolean);
-    return interaction.editReply(
-      buildWarningItemReply({
+    return buildWarningItemReply({
+      interaction,
+      itemName: userWeapons[0],
+      title: tr(interaction, "⚠️ Arma já registrada", "⚠️ Weapon already registered"),
+      description: tr(
         interaction,
-        itemName: userWeapons[0],
-        title: tr(interaction, "⚠️ Arma já registrada", "⚠️ Weapon already registered"),
-        description: tr(
-          interaction,
-          "Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra.",
-          "You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one."
-        ),
-        fields: userWeapons.length
-          ? [
-              {
-                name: tr(interaction, "Arma registrada", "Registered weapon"),
-                value: userWeapons.join("\n"),
-                inline: false,
-              },
-            ]
-          : [],
-      })
-    );
+        "Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra.",
+        "You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one."
+      ),
+      fields: userWeapons.length
+        ? [
+            {
+              name: tr(interaction, "Arma registrada", "Registered weapon"),
+              value: userWeapons.join("\n"),
+              inline: false,
+            },
+          ]
+        : [],
+    });
   }
 
   await sheet.addRow({
@@ -62,18 +70,16 @@ async function handleArmaArch(interaction) {
     DiscordUserId: interaction.user.id,
   });
 
-  return interaction.editReply(
-    buildRegisteredItemReply({
-      interaction,
-      nick,
-      itemName: arma,
-      itemLabel: {
-        pt: "Arma Archboss",
-        en: "Archboss weapon",
-      },
-      type: "arch",
-    })
-  );
+  return buildRegisteredItemReply({
+    interaction,
+    nick,
+    itemName: arma,
+    itemLabel: {
+      pt: "Arma Archboss",
+      en: "Archboss weapon",
+    },
+    type: "arch",
+  });
 }
 
 async function buildListarArchReply(interaction) {
@@ -193,4 +199,5 @@ module.exports = {
   handleFilaArch,
   handleListarArch,
   handleRemoverArch,
+  registerArchWeapon,
 };
