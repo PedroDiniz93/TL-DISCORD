@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node --check index.js && node --check register-commands.js && find src -name '*.js' -exec node --check {} \\;",
+    "register": "node register-commands.js",
+    "start": "node index.js",
+    "test": "npm run check"
   },
   "keywords": [],
   "author": "",
