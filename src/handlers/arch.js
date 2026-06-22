@@ -1,4 +1,5 @@
 const { ARCH_SHEET } = require("../config");
+const { buildRegisteredItemReply } = require("../responses");
 const { getSheet } = require("../sheets");
 const {
   buildPreview,
@@ -48,11 +49,15 @@ async function handleArmaArch(interaction) {
   });
 
   return interaction.editReply(
-    tr(
+    buildRegisteredItemReply({
       interaction,
-      `✅ Registrado!\nNick: **${nick}**\nArma Archboss: **${arma}**`,
-      `✅ Registered!\nNickname: **${nick}**\nArchboss weapon: **${arma}**`
-    )
+      nick,
+      itemName: arma,
+      itemLabel: {
+        pt: "Arma Archboss",
+        en: "Archboss weapon",
+      },
+    })
   );
 }
 

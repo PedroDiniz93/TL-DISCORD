@@ -2,9 +2,10 @@ const { RARE_ITEM_SHEET } = require("../config");
 const {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_ARMORS_PER_USER,
+  isKnownRareItem,
   isRareArmor,
-  isRareWeapon,
 } = require("../items");
+const { buildRegisteredItemReply } = require("../responses");
 const { getSheet } = require("../sheets");
 const {
   buildPreview,
@@ -19,32 +20,28 @@ async function handleItemRaro(interaction) {
   const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
   const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
 
+  if (!isKnownRareItem(item)) {
+    return interaction.editReply(
+      tr(
+        interaction,
+        "⚠️ Esse item raro não está disponível para registro.",
+        "⚠️ This rare item is not available for registration."
+      )
+    );
+  }
+
   const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const rows = await sheet.getRows();
   const userRows = rows.filter(
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
-  const targetIsWeapon = isRareWeapon(item);
   const targetIsArmor = isRareArmor(item);
-  const existingWeapon = userRows
-    .map((row) => (row.Item || "").trim())
-    .find((name) => isRareWeapon(name));
   const userArmors = userRows
     .map((row) => (row.Item || "").trim())
     .filter((name) => isRareArmor(name));
   const userAccessories = userRows
     .map((row) => (row.Item || "").trim())
-    .filter((name) => name && !isRareWeapon(name) && !isRareArmor(name));
-
-  if (targetIsWeapon && existingWeapon) {
-    return interaction.editReply(
-      tr(
-        interaction,
-        `⚠️ Você já possui uma arma rara registrada: **${existingWeapon}**. Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outra.`,
-        `⚠️ You already have a registered rare weapon: **${existingWeapon}**. Remove it with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
-      )
-    );
-  }
+    .filter((name) => isKnownRareItem(name) && !isRareArmor(name));
 
   if (targetIsArmor && userArmors.length >= MAX_RARE_ARMORS_PER_USER) {
     return interaction.editReply(
@@ -57,7 +54,6 @@ async function handleItemRaro(interaction) {
   }
 
   if (
-    !targetIsWeapon &&
     !targetIsArmor &&
     userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER
   ) {
@@ -78,11 +74,15 @@ async function handleItemRaro(interaction) {
   });
 
   return interaction.editReply(
-    tr(
+    buildRegisteredItemReply({
       interaction,
-      `✅ Registrado!\nNick: **${nick}**\nItem raro: **${item}**`,
-      `✅ Registered!\nNickname: **${nick}**\nRare item: **${item}**`
-    )
+      nick,
+      itemName: item,
+      itemLabel: {
+        pt: "Item raro",
+        en: "Rare item",
+      },
+    })
   );
 }
 
