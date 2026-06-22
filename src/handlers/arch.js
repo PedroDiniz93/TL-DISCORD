@@ -1,8 +1,11 @@
 const { ARCH_SHEET } = require("../config");
-const { buildRegisteredItemReply } = require("../responses");
+const {
+  buildArchQueueReply,
+  buildArchWishlistReply,
+  buildRegisteredItemReply,
+} = require("../responses");
 const { getSheet } = require("../sheets");
 const {
-  buildPreview,
   getRequiredOptionAny,
   normalizeQueueItemName,
   nowBrasilia,
@@ -78,29 +81,7 @@ async function handleListarArch(interaction) {
     );
   }
 
-  const lines = userRows.map((row, idx) =>
-    tr(
-      interaction,
-      `${idx + 1}. Nick: ${row.Nick} --- Arma: ${row.Arma}${
-        row.Data ? ` --- Registrado em ${row.Data}` : ""
-      }`,
-      `${idx + 1}. Nickname: ${row.Nick} --- Weapon: ${row.Arma}${
-        row.Data ? ` --- Registered at ${row.Data}` : ""
-      }`
-    )
-  );
-
-  const { preview, suffix } = buildPreview(lines, 15, (extra) =>
-    tr(interaction, `\n... e mais ${extra} registro(s).`, `\n... and ${extra} more record(s).`)
-  );
-
-  return interaction.editReply(
-    tr(
-      interaction,
-      `📋 Seus registros na lista de desejos:\n${preview}${suffix}`,
-      `📋 Your registered wishlist entries:\n${preview}${suffix}`
-    )
-  );
+  return interaction.editReply(buildArchWishlistReply({ interaction, rows: userRows }));
 }
 
 async function handleRemoverArch(interaction) {
@@ -165,27 +146,12 @@ async function handleFilaArch(interaction) {
     );
   }
 
-  const lines = filtered.map(({ row }) => {
-    const nick = row.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
-    const registro = row.Data
-      ? tr(interaction, ` • Registrado em ${row.Data}`, ` • Registered at ${row.Data}`)
-      : "";
-    const mention =
-      row.DiscordUserId && String(row.DiscordUserId).trim()
-        ? ` (<@${String(row.DiscordUserId).trim()}>)`
-        : "";
-    return `- ${nick}${mention}${registro}`;
-  });
-  const { preview, suffix } = buildPreview(lines, 25, (extra) =>
-    tr(interaction, `\n... e mais ${extra} jogador(es).`, `\n... and ${extra} more player(s).`)
-  );
-
   return interaction.editReply(
-    tr(
+    buildArchQueueReply({
       interaction,
-      `📜 Fila de **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n⚠️ Essa lista mostra apenas quem colocou a arma na wishlist; não é necessariamente a ordem de prioridade. ⚠️`,
-      `📜 Queue for **${item}** (${filtered.length} players):\n${preview}${suffix}\n\n⚠️ This list only shows who added the weapon to the wishlist; it is not necessarily the priority order. ⚠️`
-    )
+      itemName: item,
+      rows: filtered,
+    })
   );
 }
 
