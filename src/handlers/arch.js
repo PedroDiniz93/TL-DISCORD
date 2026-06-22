@@ -2,7 +2,10 @@ const { ARCH_SHEET } = require("../config");
 const {
   buildArchQueueReply,
   buildArchWishlistReply,
+  buildEmptyItemReply,
   buildRegisteredItemReply,
+  buildRemovedItemReply,
+  buildWarningItemReply,
 } = require("../responses");
 const { getSheet } = require("../sheets");
 const {
@@ -29,18 +32,26 @@ async function handleArmaArch(interaction) {
       .filter(Boolean)
       .map((value) => String(value).trim())
       .filter(Boolean);
-    const weaponList = userWeapons.length
-      ? `\nRegistered weapon(s): ${userWeapons.join(", ")}`
-      : "";
-
     return interaction.editReply(
-      tr(
+      buildWarningItemReply({
         interaction,
-        "⚠️ Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra." +
-          (userWeapons.length ? `\nArma(s) registrada(s): ${userWeapons.join(", ")}` : ""),
-        "⚠️ You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one." +
-          weaponList
-      )
+        itemName: userWeapons[0],
+        title: tr(interaction, "⚠️ Arma já registrada", "⚠️ Weapon already registered"),
+        description: tr(
+          interaction,
+          "Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra.",
+          "You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one."
+        ),
+        fields: userWeapons.length
+          ? [
+              {
+                name: tr(interaction, "Arma registrada", "Registered weapon"),
+                value: userWeapons.join("\n"),
+                inline: false,
+              },
+            ]
+          : [],
+      })
     );
   }
 
@@ -73,11 +84,15 @@ async function handleListarArch(interaction) {
 
   if (!userRows.length) {
     return interaction.editReply(
-      tr(
+      buildEmptyItemReply({
         interaction,
-        "📭 Você ainda não tem armas de Archboss registradas.",
-        "📭 You don't have any registered Archboss weapons yet."
-      )
+        title: tr(interaction, "📭 Lista vazia", "📭 Empty wishlist"),
+        description: tr(
+          interaction,
+          "Você ainda não tem armas de Archboss registradas.",
+          "You don't have any registered Archboss weapons yet."
+        ),
+      })
     );
   }
 
@@ -97,11 +112,16 @@ async function handleRemoverArch(interaction) {
 
   if (!targetRow) {
     return interaction.editReply(
-      tr(
+      buildWarningItemReply({
         interaction,
-        "⚠️ Não encontrei esse item na sua lista de desejos.",
-        "⚠️ I couldn't find this item in your wishlist."
-      )
+        itemName: arma,
+        title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+        description: tr(
+          interaction,
+          "Não encontrei essa arma na sua lista de desejos.",
+          "I couldn't find this weapon in your wishlist."
+        ),
+      })
     );
   }
 
@@ -109,11 +129,15 @@ async function handleRemoverArch(interaction) {
   await targetRow.delete();
 
   return interaction.editReply(
-    tr(
+    buildRemovedItemReply({
       interaction,
-      `🗑️ Removido!\nNick: **${nick}**\nArma removida: **${arma}**`,
-      `🗑️ Removed!\nNickname: **${nick}**\nRemoved weapon: **${arma}**`
-    )
+      nick,
+      itemName: arma,
+      itemLabel: {
+        pt: "Arma removida",
+        en: "Removed weapon",
+      },
+    })
   );
 }
 
@@ -138,11 +162,16 @@ async function handleFilaArch(interaction) {
 
   if (!filtered.length) {
     return interaction.editReply(
-      tr(
+      buildEmptyItemReply({
         interaction,
-        `📭 Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET.title}.`,
-        `📭 No players in queue for **${item}** in sheet ${ARCH_SHEET.title}.`
-      )
+        itemName: item,
+        title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
+        description: tr(
+          interaction,
+          `Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET.title}.`,
+          `No players in queue for **${item}** in sheet ${ARCH_SHEET.title}.`
+        ),
+      })
     );
   }
 

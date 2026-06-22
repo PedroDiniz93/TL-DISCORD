@@ -4,6 +4,7 @@ const { ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
 const { commandHandlers } = require("./src/handlers");
 const { appendCommandLog } = require("./src/logging");
+const { buildWarningItemReply } = require("./src/responses");
 const { isAllowedChannel, tr } = require("./src/utils");
 
 const client = new Client({
@@ -30,11 +31,15 @@ client.on("interactionCreate", async (interaction) => {
     });
 
     return interaction.reply({
-      content: tr(
+      ...buildWarningItemReply({
         interaction,
-        `❌ Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
-        `❌ This bot can only be used in #${ALLOWED_CHANNEL_NAME}.`
-      ),
+        title: tr(interaction, "❌ Canal incorreto", "❌ Wrong channel"),
+        description: tr(
+          interaction,
+          `Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
+          `This bot can only be used in #${ALLOWED_CHANNEL_NAME}.`
+        ),
+      }),
       ephemeral: true,
     });
   }
@@ -52,11 +57,15 @@ client.on("interactionCreate", async (interaction) => {
         err: null,
       });
       return interaction.editReply(
-        tr(
+        buildWarningItemReply({
           interaction,
-          "❌ Comando não suportado por este bot.",
-          "❌ This command is not supported by this bot."
-        )
+          title: tr(interaction, "❌ Comando não suportado", "❌ Unsupported command"),
+          description: tr(
+            interaction,
+            "Comando não suportado por este bot.",
+            "This command is not supported by this bot."
+          ),
+        })
       );
     }
 
@@ -69,11 +78,15 @@ client.on("interactionCreate", async (interaction) => {
     return result;
   } catch (err) {
     console.error("❌ Error while processing command:", err);
-    const errorMsg = tr(
+    const errorReply = buildWarningItemReply({
       interaction,
-      "❌ Erro ao registrar. Veja os logs do bot.",
-      "❌ Error while registering. Check bot logs."
-    );
+      title: tr(interaction, "❌ Erro ao processar", "❌ Processing error"),
+      description: tr(
+        interaction,
+        "Erro ao registrar. Veja os logs do bot.",
+        "Error while registering. Check bot logs."
+      ),
+    });
     await appendCommandLog({
       interaction,
       status: "ERROR",
@@ -82,15 +95,15 @@ client.on("interactionCreate", async (interaction) => {
 
     if (interaction.replied) {
       return interaction.followUp({
-        content: errorMsg,
+        ...errorReply,
         ephemeral: true,
       });
     }
     if (hasDeferred || interaction.deferred) {
-      return interaction.editReply(errorMsg);
+      return interaction.editReply(errorReply);
     }
     return interaction.reply({
-      content: errorMsg,
+      ...errorReply,
       ephemeral: true,
     });
   }

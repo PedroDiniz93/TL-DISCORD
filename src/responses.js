@@ -3,51 +3,29 @@ const { getItemImage } = require("./item-assets");
 const { tr } = require("./utils");
 
 function buildRegisteredItemReply({ interaction, nick, itemName, itemLabel }) {
-  const image = getItemImage(itemName);
-
-  if (!image) {
-    return tr(
+  return buildItemStatusReply({
+    interaction,
+    itemName,
+    color: 0xf2dd92,
+    title: tr(interaction, "✅ Registro confirmado", "✅ Registration confirmed"),
+    description: tr(
       interaction,
-      `✅ Registrado!\nNick: **${nick}**\n${itemLabel.pt}: **${itemName}**`,
-      `✅ Registered!\nNickname: **${nick}**\n${itemLabel.en}: **${itemName}**`
-    );
-  }
-
-  const attachment = new AttachmentBuilder(image.path, {
-    name: image.attachmentName,
-  });
-  const embed = new EmbedBuilder()
-    .setColor(0xf2dd92)
-    .setTitle(tr(interaction, "✅ Registro confirmado", "✅ Registration confirmed"))
-    .setDescription(
-      tr(
-        interaction,
-        `**${itemName}** foi adicionado à sua lista de desejos.`,
-        `**${itemName}** was added to your wishlist.`
-      )
-    )
-    .addFields(
+      `**${itemName}** foi adicionado à sua lista de desejos.`,
+      `**${itemName}** was added to your wishlist.`
+    ),
+    fields: [
       {
         name: tr(interaction, "Nick", "Nickname"),
         value: nick,
         inline: true,
       },
       {
-        name: itemLabel.pt,
+        name: tr(interaction, itemLabel.pt, itemLabel.en),
         value: itemName,
         inline: false,
-      }
-    )
-    .setThumbnail(`attachment://${image.attachmentName}`)
-    .setFooter({
-      text: tr(interaction, "Lista de desejos TL", "TL wishlist"),
-    })
-    .setTimestamp();
-
-  return {
-    embeds: [embed],
-    files: [attachment],
-  };
+      },
+    ],
+  });
 }
 
 function createItemAttachmentAndThumbnail(itemName) {
@@ -114,6 +92,77 @@ function buildArchWishlistReply({ interaction, rows }) {
       inline: false,
     });
   }
+
+  return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+}
+
+function buildRemovedItemReply({ interaction, nick, itemName, itemLabel }) {
+  return buildItemStatusReply({
+    interaction,
+    itemName,
+    color: 0xd9826b,
+    title: tr(interaction, "🗑️ Registro removido", "🗑️ Registration removed"),
+    description: tr(
+      interaction,
+      `**${itemName}** foi removido da sua lista de desejos.`,
+      `**${itemName}** was removed from your wishlist.`
+    ),
+    fields: [
+      {
+        name: tr(interaction, "Nick", "Nickname"),
+        value: nick,
+        inline: true,
+      },
+      {
+        name: tr(interaction, itemLabel.pt, itemLabel.en),
+        value: itemName,
+        inline: false,
+      },
+    ],
+  });
+}
+
+function buildEmptyItemReply({ interaction, itemName, title, description }) {
+  return buildItemStatusReply({
+    interaction,
+    itemName,
+    color: 0x8a95a8,
+    title,
+    description,
+  });
+}
+
+function buildWarningItemReply({ interaction, itemName, title, description, fields = [] }) {
+  return buildItemStatusReply({
+    interaction,
+    itemName,
+    color: 0xf2b84b,
+    title,
+    description,
+    fields,
+  });
+}
+
+function buildItemStatusReply({
+  interaction,
+  itemName,
+  color,
+  title,
+  description,
+  fields = [],
+}) {
+  const { attachment, thumbnailUrl } = createItemAttachmentAndThumbnail(itemName);
+  const embed = new EmbedBuilder()
+    .setColor(color)
+    .setTitle(title)
+    .setDescription(description)
+    .setFooter({
+      text: tr(interaction, "Lista de desejos TL", "TL wishlist"),
+    })
+    .setTimestamp();
+
+  if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
+  if (fields.length) embed.addFields(fields);
 
   return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
 }
@@ -199,6 +248,9 @@ function buildItemQueueReply({ interaction, itemName, rows, title, description }
 module.exports = {
   buildArchQueueReply,
   buildArchWishlistReply,
+  buildEmptyItemReply,
   buildRareItemQueueReply,
   buildRegisteredItemReply,
+  buildRemovedItemReply,
+  buildWarningItemReply,
 };
