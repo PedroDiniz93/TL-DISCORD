@@ -37,7 +37,7 @@ function buildRegisteredItemReply({ interaction, nick, itemName, itemLabel, type
 
   return {
     ...reply,
-    components: [buildRegisteredItemActions(type)],
+    components: [buildRegisteredItemActions(interaction, type)],
   };
 }
 
@@ -158,6 +158,101 @@ function buildRareItemWishlistReply({ interaction, rows }) {
   }
 
   return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+}
+
+function buildMyItemsReply({ interaction, archRows, rareItemRows }) {
+  const firstItemWithImage =
+    archRows.find((row) => row.Arma)?.Arma ||
+    rareItemRows.find((row) => row.Item)?.Item;
+  const { attachment, thumbnailUrl } =
+    createItemAttachmentAndThumbnail(firstItemWithImage);
+  const total = archRows.length + rareItemRows.length;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x65b0fc)
+    .setTitle(tr(interaction, "📋 Meus itens", "📋 My items"))
+    .setDescription(
+      total
+        ? tr(
+            interaction,
+            `Você tem **${archRows.length}** arma(s) Archboss e **${rareItemRows.length}** item(ns) raro(s) registrados.`,
+            `You have **${archRows.length}** Archboss weapon(s) and **${rareItemRows.length}** rare item(s) registered.`
+          )
+        : tr(
+            interaction,
+            "Você ainda não tem itens registrados na lista de desejos.",
+            "You don't have any wishlist items registered yet."
+          )
+    )
+    .setFooter({
+      text: tr(interaction, "Lista de desejos TL", "TL wishlist"),
+    })
+    .setTimestamp();
+
+  if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
+
+  embed.addFields(
+    {
+      name: tr(interaction, "Arma Archboss", "Archboss weapon"),
+      value: formatMyItemsRows({
+        interaction,
+        rows: archRows,
+        itemKey: "Arma",
+        emptyText: tr(
+          interaction,
+          "Nenhuma arma Archboss registrada.",
+          "No Archboss weapon registered."
+        ),
+      }),
+      inline: false,
+    },
+    {
+      name: tr(interaction, "Itens raros", "Rare items"),
+      value: formatMyItemsRows({
+        interaction,
+        rows: rareItemRows,
+        itemKey: "Item",
+        emptyText: tr(
+          interaction,
+          "Nenhum item raro registrado.",
+          "No rare items registered."
+        ),
+      }),
+      inline: false,
+    }
+  );
+
+  return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+}
+
+function formatMyItemsRows({ interaction, rows, itemKey, emptyText }) {
+  if (!rows.length) return emptyText;
+
+  const lines = rows.slice(0, 8).map((row, idx) => {
+    const itemName =
+      row[itemKey] || tr(interaction, "Item não informado", "Unknown item");
+    const nick = row.Nick || tr(interaction, "Não informado", "Unknown");
+    const dateLine = row.Data
+      ? `\n${tr(interaction, "Registrado em", "Registered at")}: ${row.Data}`
+      : "";
+    return `${idx + 1}. **${itemName}**\n${tr(
+      interaction,
+      "Nick",
+      "Nickname"
+    )}: ${nick}${dateLine}`;
+  });
+
+  if (rows.length > 8) {
+    lines.push(
+      tr(
+        interaction,
+        `... e mais ${rows.length - 8} registro(s).`,
+        `... and ${rows.length - 8} more record(s).`
+      )
+    );
+  }
+
+  return lines.join("\n\n");
 }
 
 function buildRemovedItemReply({ interaction, nick, itemName, itemLabel }) {
@@ -309,19 +404,21 @@ function buildItemQueueReply({ interaction, itemName, rows, title, description }
   return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
 }
 
-function buildRegisteredItemActions(type) {
+function buildRegisteredItemActions(interaction, type) {
+  const lang = tr(interaction, "pt", "en");
+
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`wishlist:${type}:queue`)
-      .setLabel("Ver fila")
+      .setCustomId(`wishlist:${type}:queue:${lang}`)
+      .setLabel(tr(interaction, "Ver fila", "View queue"))
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId(`wishlist:${type}:remove`)
-      .setLabel("Remover")
+      .setCustomId(`wishlist:${type}:remove:${lang}`)
+      .setLabel(tr(interaction, "Remover", "Remove"))
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
-      .setCustomId(`wishlist:${type}:mine`)
-      .setLabel("Meus itens")
+      .setCustomId(`wishlist:${type}:mine:${lang}`)
+      .setLabel(tr(interaction, "Meus itens", "My items"))
       .setStyle(ButtonStyle.Secondary)
   );
 }
@@ -332,6 +429,7 @@ module.exports = {
   buildEmptyItemReply,
   buildRareItemQueueReply,
   buildRareItemWishlistReply,
+  buildMyItemsReply,
   buildRegisteredItemReply,
   buildRemovedItemReply,
   buildWarningItemReply,

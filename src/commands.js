@@ -149,6 +149,14 @@ function buildCommands() {
         .setAutocomplete(true)
     );
 
+  const myItemsCmd = new SlashCommandBuilder()
+    .setName("my_items")
+    .setDescription("Show your Archboss weapon and rare item wishlist");
+
+  const meusItensCmd = new SlashCommandBuilder()
+    .setName("meus_itens")
+    .setDescription("Mostra sua arma Archboss e seus itens raros");
+
   return [
     weaponArchCmdEn,
     weaponArchCmdPt,
@@ -164,6 +172,8 @@ function buildCommands() {
     removerItemRaroCmdPt,
     filaItemCmd,
     filaItemCmdPt,
+    myItemsCmd,
+    meusItensCmd,
   ];
 }
 

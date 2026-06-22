@@ -9,6 +9,7 @@ const {
   handleItemRaro,
   handleRemoverItemRaro,
 } = require("./rare-items");
+const { handleMyItems } = require("./my-items");
 
 const commandHandlers = {
   weapon_arch: handleArmaArch,
@@ -25,6 +26,8 @@ const commandHandlers = {
   remover_item_raro: handleRemoverItemRaro,
   rare_item_queue: handleFilaItemRaro,
   fila_item_raro: handleFilaItemRaro,
+  my_items: handleMyItems,
+  meus_itens: handleMyItems,
 };
 
 module.exports = {

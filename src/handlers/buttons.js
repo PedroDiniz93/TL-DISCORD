@@ -1,29 +1,29 @@
 const {
   buildFilaArchReply,
-  buildListarArchReply,
   buildRemoverArchReply,
 } = require("./arch");
 const {
   buildFilaItemRaroReply,
-  buildListarItemRaroReply,
   buildRemoverItemRaroReply,
 } = require("./rare-items");
+const { buildMyItemsForInteraction } = require("./my-items");
 const { buildWarningItemReply } = require("../responses");
 const { tr } = require("../utils");
 
 async function handleWishlistButton(interaction) {
-  const [scope, type, action] = String(interaction.customId || "").split(":");
+  const [scope, type, action, lang] = String(interaction.customId || "").split(":");
   if (scope !== "wishlist") return false;
 
+  const displayInteraction = withButtonLanguage(interaction, lang);
   const itemName = extractItemNameFromMessage(interaction);
 
   if ((action === "queue" || action === "remove") && !itemName) {
     await interaction.editReply(
       buildWarningItemReply({
-        interaction,
-        title: tr(interaction, "⚠️ Item não identificado", "⚠️ Item not identified"),
+        interaction: displayInteraction,
+        title: tr(displayInteraction, "⚠️ Item não identificado", "⚠️ Item not identified"),
         description: tr(
-          interaction,
+          displayInteraction,
           "Não consegui identificar o item desse registro.",
           "I couldn't identify the item from this registration."
         ),
@@ -33,21 +33,21 @@ async function handleWishlistButton(interaction) {
   }
 
   if (type === "arch") {
-    await handleArchButtonAction(interaction, action, itemName);
+    await handleArchButtonAction(interaction, displayInteraction, action, itemName);
     return true;
   }
 
   if (type === "rare") {
-    await handleRareItemButtonAction(interaction, action, itemName);
+    await handleRareItemButtonAction(interaction, displayInteraction, action, itemName);
     return true;
   }
 
   await interaction.editReply(
     buildWarningItemReply({
-      interaction,
-      title: tr(interaction, "⚠️ Ação inválida", "⚠️ Invalid action"),
+      interaction: displayInteraction,
+      title: tr(displayInteraction, "⚠️ Ação inválida", "⚠️ Invalid action"),
       description: tr(
-        interaction,
+        displayInteraction,
         "Esse botão não é mais suportado.",
         "This button is no longer supported."
       ),
@@ -56,44 +56,67 @@ async function handleWishlistButton(interaction) {
   return true;
 }
 
-async function handleArchButtonAction(interaction, action, itemName) {
+async function handleArchButtonAction(interaction, displayInteraction, action, itemName) {
   if (action === "queue") {
-    return interaction.editReply(await buildFilaArchReply(interaction, itemName));
+    return interaction.editReply(await buildFilaArchReply(displayInteraction, itemName));
   }
   if (action === "remove") {
-    return interaction.editReply(await buildRemoverArchReply(interaction, itemName));
+    return interaction.editReply(await buildRemoverArchReply(displayInteraction, itemName));
   }
   if (action === "mine") {
-    return interaction.editReply(await buildListarArchReply(interaction));
+    return interaction.editReply(await buildMyItemsForInteraction(displayInteraction));
   }
-  return sendUnsupportedAction(interaction);
+  return sendUnsupportedAction(interaction, displayInteraction);
 }
 
-async function handleRareItemButtonAction(interaction, action, itemName) {
+async function handleRareItemButtonAction(
+  interaction,
+  displayInteraction,
+  action,
+  itemName
+) {
   if (action === "queue") {
-    return interaction.editReply(await buildFilaItemRaroReply(interaction, itemName));
+    return interaction.editReply(await buildFilaItemRaroReply(displayInteraction, itemName));
   }
   if (action === "remove") {
-    return interaction.editReply(await buildRemoverItemRaroReply(interaction, itemName));
+    return interaction.editReply(
+      await buildRemoverItemRaroReply(displayInteraction, itemName)
+    );
   }
   if (action === "mine") {
-    return interaction.editReply(await buildListarItemRaroReply(interaction));
+    return interaction.editReply(await buildMyItemsForInteraction(displayInteraction));
   }
-  return sendUnsupportedAction(interaction);
+  return sendUnsupportedAction(interaction, displayInteraction);
 }
 
-function sendUnsupportedAction(interaction) {
+function sendUnsupportedAction(interaction, displayInteraction = interaction) {
   return interaction.editReply(
     buildWarningItemReply({
-      interaction,
-      title: tr(interaction, "⚠️ Ação inválida", "⚠️ Invalid action"),
+      interaction: displayInteraction,
+      title: tr(displayInteraction, "⚠️ Ação inválida", "⚠️ Invalid action"),
       description: tr(
-        interaction,
+        displayInteraction,
         "Esse botão não é mais suportado.",
         "This button is no longer supported."
       ),
     })
   );
+}
+
+function withButtonLanguage(interaction, lang) {
+  const commandNameByLang = {
+    pt: "meus_itens",
+    en: "my_items",
+  };
+  const commandName = commandNameByLang[lang];
+  if (!commandName) return interaction;
+
+  return new Proxy(interaction, {
+    get(target, prop, receiver) {
+      if (prop === "commandName") return commandName;
+      return Reflect.get(target, prop, receiver);
+    },
+  });
 }
 
 function extractItemNameFromMessage(interaction) {
