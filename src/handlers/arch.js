@@ -71,11 +71,12 @@ async function handleArmaArch(interaction) {
         pt: "Arma Archboss",
         en: "Archboss weapon",
       },
+      type: "arch",
     })
   );
 }
 
-async function handleListarArch(interaction) {
+async function buildListarArchReply(interaction) {
   const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   const rows = await sheet.getRows();
   const userRows = rows.filter(
@@ -83,25 +84,21 @@ async function handleListarArch(interaction) {
   );
 
   if (!userRows.length) {
-    return interaction.editReply(
-      buildEmptyItemReply({
+    return buildEmptyItemReply({
+      interaction,
+      title: tr(interaction, "📭 Lista vazia", "📭 Empty wishlist"),
+      description: tr(
         interaction,
-        title: tr(interaction, "📭 Lista vazia", "📭 Empty wishlist"),
-        description: tr(
-          interaction,
-          "Você ainda não tem armas de Archboss registradas.",
-          "You don't have any registered Archboss weapons yet."
-        ),
-      })
-    );
+        "Você ainda não tem armas de Archboss registradas.",
+        "You don't have any registered Archboss weapons yet."
+      ),
+    });
   }
 
-  return interaction.editReply(buildArchWishlistReply({ interaction, rows: userRows }));
+  return buildArchWishlistReply({ interaction, rows: userRows });
 }
 
-async function handleRemoverArch(interaction) {
-  const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
-
+async function buildRemoverArchReply(interaction, arma) {
   const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   const rows = await sheet.getRows();
   const targetRow = rows.find(
@@ -111,39 +108,33 @@ async function handleRemoverArch(interaction) {
   );
 
   if (!targetRow) {
-    return interaction.editReply(
-      buildWarningItemReply({
+    return buildWarningItemReply({
+      interaction,
+      itemName: arma,
+      title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+      description: tr(
         interaction,
-        itemName: arma,
-        title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
-        description: tr(
-          interaction,
-          "Não encontrei essa arma na sua lista de desejos.",
-          "I couldn't find this weapon in your wishlist."
-        ),
-      })
-    );
+        "Não encontrei essa arma na sua lista de desejos.",
+        "I couldn't find this weapon in your wishlist."
+      ),
+    });
   }
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
 
-  return interaction.editReply(
-    buildRemovedItemReply({
-      interaction,
-      nick,
-      itemName: arma,
-      itemLabel: {
-        pt: "Arma removida",
-        en: "Removed weapon",
-      },
-    })
-  );
+  return buildRemovedItemReply({
+    interaction,
+    nick,
+    itemName: arma,
+    itemLabel: {
+      pt: "Arma removida",
+      en: "Removed weapon",
+    },
+  });
 }
 
-async function handleFilaArch(interaction) {
-  const item = getRequiredOptionAny(interaction, ["arch_weapon", "item"]);
-
+async function buildFilaArchReply(interaction, item) {
   const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   const rows = await sheet.getRows();
   const targetItem = normalizeQueueItemName(item);
@@ -161,30 +152,43 @@ async function handleFilaArch(interaction) {
     });
 
   if (!filtered.length) {
-    return interaction.editReply(
-      buildEmptyItemReply({
-        interaction,
-        itemName: item,
-        title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
-        description: tr(
-          interaction,
-          `Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET.title}.`,
-          `No players in queue for **${item}** in sheet ${ARCH_SHEET.title}.`
-        ),
-      })
-    );
-  }
-
-  return interaction.editReply(
-    buildArchQueueReply({
+    return buildEmptyItemReply({
       interaction,
       itemName: item,
-      rows: filtered,
-    })
-  );
+      title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
+      description: tr(
+        interaction,
+        `Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET.title}.`,
+        `No players in queue for **${item}** in sheet ${ARCH_SHEET.title}.`
+      ),
+    });
+  }
+
+  return buildArchQueueReply({
+    interaction,
+    itemName: item,
+    rows: filtered,
+  });
+}
+
+async function handleListarArch(interaction) {
+  return interaction.editReply(await buildListarArchReply(interaction));
+}
+
+async function handleRemoverArch(interaction) {
+  const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
+  return interaction.editReply(await buildRemoverArchReply(interaction, arma));
+}
+
+async function handleFilaArch(interaction) {
+  const item = getRequiredOptionAny(interaction, ["arch_weapon", "item"]);
+  return interaction.editReply(await buildFilaArchReply(interaction, item));
 }
 
 module.exports = {
+  buildFilaArchReply,
+  buildListarArchReply,
+  buildRemoverArchReply,
   handleArmaArch,
   handleFilaArch,
   handleListarArch,

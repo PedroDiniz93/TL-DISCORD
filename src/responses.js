@@ -1,9 +1,15 @@
-const { AttachmentBuilder, EmbedBuilder } = require("discord.js");
+const {
+  ActionRowBuilder,
+  AttachmentBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+} = require("discord.js");
 const { getItemImage } = require("./item-assets");
 const { tr } = require("./utils");
 
-function buildRegisteredItemReply({ interaction, nick, itemName, itemLabel }) {
-  return buildItemStatusReply({
+function buildRegisteredItemReply({ interaction, nick, itemName, itemLabel, type }) {
+  const reply = buildItemStatusReply({
     interaction,
     itemName,
     color: 0xf2dd92,
@@ -26,6 +32,13 @@ function buildRegisteredItemReply({ interaction, nick, itemName, itemLabel }) {
       },
     ],
   });
+
+  if (!type) return reply;
+
+  return {
+    ...reply,
+    components: [buildRegisteredItemActions(type)],
+  };
 }
 
 function createItemAttachmentAndThumbnail(itemName) {
@@ -69,6 +82,57 @@ function buildArchWishlistReply({ interaction, rows }) {
   rows.slice(0, 10).forEach((row, idx) => {
     embed.addFields({
       name: `${idx + 1}. ${row.Arma || tr(interaction, "Arma não informada", "Unknown weapon")}`,
+      value: [
+        `**${tr(interaction, "Nick", "Nickname")}:** ${row.Nick || tr(interaction, "Não informado", "Unknown")}`,
+        row.Data
+          ? `**${tr(interaction, "Registrado em", "Registered at")}:** ${row.Data}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      inline: false,
+    });
+  });
+
+  if (rows.length > 10) {
+    embed.addFields({
+      name: tr(interaction, "Mais registros", "More records"),
+      value: tr(
+        interaction,
+        `... e mais ${rows.length - 10} registro(s).`,
+        `... and ${rows.length - 10} more record(s).`
+      ),
+      inline: false,
+    });
+  }
+
+  return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+}
+
+function buildRareItemWishlistReply({ interaction, rows }) {
+  const firstItem = rows.find((row) => row.Item)?.Item;
+  const { attachment, thumbnailUrl } = createItemAttachmentAndThumbnail(firstItem);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x65b0fc)
+    .setTitle(tr(interaction, "📋 Seus itens raros", "📋 Your rare item wishlist"))
+    .setDescription(
+      tr(
+        interaction,
+        `Você tem **${rows.length}** registro(s) de item raro.`,
+        `You have **${rows.length}** rare item record(s).`
+      )
+    )
+    .setFooter({
+      text: tr(interaction, "Lista de desejos TL", "TL wishlist"),
+    })
+    .setTimestamp();
+
+  if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
+
+  rows.slice(0, 10).forEach((row, idx) => {
+    embed.addFields({
+      name: `${idx + 1}. ${row.Item || tr(interaction, "Item não informado", "Unknown item")}`,
       value: [
         `**${tr(interaction, "Nick", "Nickname")}:** ${row.Nick || tr(interaction, "Não informado", "Unknown")}`,
         row.Data
@@ -245,11 +309,29 @@ function buildItemQueueReply({ interaction, itemName, rows, title, description }
   return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
 }
 
+function buildRegisteredItemActions(type) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`wishlist:${type}:queue`)
+      .setLabel("Ver fila")
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`wishlist:${type}:remove`)
+      .setLabel("Remover")
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`wishlist:${type}:mine`)
+      .setLabel("Meus itens")
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
 module.exports = {
   buildArchQueueReply,
   buildArchWishlistReply,
   buildEmptyItemReply,
   buildRareItemQueueReply,
+  buildRareItemWishlistReply,
   buildRegisteredItemReply,
   buildRemovedItemReply,
   buildWarningItemReply,

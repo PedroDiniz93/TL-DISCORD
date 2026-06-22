@@ -8,6 +8,7 @@ const {
 const {
   buildEmptyItemReply,
   buildRareItemQueueReply,
+  buildRareItemWishlistReply,
   buildRegisteredItemReply,
   buildRemovedItemReply,
   buildWarningItemReply,
@@ -116,13 +117,12 @@ async function handleItemRaro(interaction) {
         pt: "Item raro",
         en: "Rare item",
       },
+      type: "rare",
     })
   );
 }
 
-async function handleRemoverItemRaro(interaction) {
-  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
-
+async function buildRemoverItemRaroReply(interaction, item) {
   const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const rows = await sheet.getRows();
   const targetRow = rows.find(
@@ -132,39 +132,33 @@ async function handleRemoverItemRaro(interaction) {
   );
 
   if (!targetRow) {
-    return interaction.editReply(
-      buildWarningItemReply({
+    return buildWarningItemReply({
+      interaction,
+      itemName: item,
+      title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+      description: tr(
         interaction,
-        itemName: item,
-        title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
-        description: tr(
-          interaction,
-          "Não encontrei esse item raro na sua lista de desejos.",
-          "I couldn't find this rare item in your wishlist."
-        ),
-      })
-    );
+        "Não encontrei esse item raro na sua lista de desejos.",
+        "I couldn't find this rare item in your wishlist."
+      ),
+    });
   }
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
 
-  return interaction.editReply(
-    buildRemovedItemReply({
-      interaction,
-      nick,
-      itemName: item,
-      itemLabel: {
-        pt: "Item raro removido",
-        en: "Removed rare item",
-      },
-    })
-  );
+  return buildRemovedItemReply({
+    interaction,
+    nick,
+    itemName: item,
+    itemLabel: {
+      pt: "Item raro removido",
+      en: "Removed rare item",
+    },
+  });
 }
 
-async function handleFilaItemRaro(interaction) {
-  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
-
+async function buildFilaItemRaroReply(interaction, item) {
   const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const rows = await sheet.getRows();
   const targetItem = normalizeQueueItemName(item);
@@ -182,30 +176,61 @@ async function handleFilaItemRaro(interaction) {
     });
 
   if (!filtered.length) {
-    return interaction.editReply(
-      buildEmptyItemReply({
-        interaction,
-        itemName: item,
-        title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
-        description: tr(
-          interaction,
-          `Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET.title}.`,
-          `No players in queue for rare item **${item}** in sheet ${RARE_ITEM_SHEET.title}.`
-        ),
-      })
-    );
-  }
-
-  return interaction.editReply(
-    buildRareItemQueueReply({
+    return buildEmptyItemReply({
       interaction,
       itemName: item,
-      rows: filtered,
-    })
+      title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
+      description: tr(
+        interaction,
+        `Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET.title}.`,
+        `No players in queue for rare item **${item}** in sheet ${RARE_ITEM_SHEET.title}.`
+      ),
+    });
+  }
+
+  return buildRareItemQueueReply({
+    interaction,
+    itemName: item,
+    rows: filtered,
+  });
+}
+
+async function buildListarItemRaroReply(interaction) {
+  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
+  const rows = await sheet.getRows();
+  const userRows = rows.filter(
+    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
+
+  if (!userRows.length) {
+    return buildEmptyItemReply({
+      interaction,
+      title: tr(interaction, "📭 Lista vazia", "📭 Empty wishlist"),
+      description: tr(
+        interaction,
+        "Você ainda não tem itens raros registrados.",
+        "You don't have any registered rare items yet."
+      ),
+    });
+  }
+
+  return buildRareItemWishlistReply({ interaction, rows: userRows });
+}
+
+async function handleRemoverItemRaro(interaction) {
+  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
+  return interaction.editReply(await buildRemoverItemRaroReply(interaction, item));
+}
+
+async function handleFilaItemRaro(interaction) {
+  const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
+  return interaction.editReply(await buildFilaItemRaroReply(interaction, item));
 }
 
 module.exports = {
+  buildFilaItemRaroReply,
+  buildListarItemRaroReply,
+  buildRemoverItemRaroReply,
   handleFilaItemRaro,
   handleItemRaro,
   handleRemoverItemRaro,

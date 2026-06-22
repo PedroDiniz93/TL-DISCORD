@@ -30,7 +30,10 @@ function getRequiredOptionAny(interaction, names) {
 }
 
 function isPtBrCommand(interaction) {
-  return PT_BR_COMMANDS.has(interaction?.commandName);
+  return (
+    PT_BR_COMMANDS.has(interaction?.commandName) ||
+    String(interaction?.locale || "").toLowerCase().startsWith("pt")
+  );
 }
 
 function tr(interaction, ptBr, en) {

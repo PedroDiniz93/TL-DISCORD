@@ -2,6 +2,7 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 const { ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
+const { handleWishlistButton } = require("./src/handlers/buttons");
 const { commandHandlers } = require("./src/handlers");
 const { appendCommandLog } = require("./src/logging");
 const { buildWarningItemReply } = require("./src/responses");
@@ -19,6 +20,64 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isAutocomplete()) {
     await handleAutocomplete(interaction);
     return;
+  }
+
+  if (interaction.isButton()) {
+    let hasDeferred = false;
+    try {
+      await interaction.deferReply({ ephemeral: true });
+      hasDeferred = true;
+
+      const handled = await handleWishlistButton(interaction);
+      await appendCommandLog({
+        interaction,
+        status: handled ? "OK" : "UNKNOWN_BUTTON",
+        err: null,
+      });
+      if (handled) return true;
+
+      return interaction.editReply(
+        buildWarningItemReply({
+          interaction,
+          title: tr(interaction, "⚠️ Botão não suportado", "⚠️ Unsupported button"),
+          description: tr(
+            interaction,
+            "Esse botão não é suportado por este bot.",
+            "This button is not supported by this bot."
+          ),
+        })
+      );
+    } catch (err) {
+      console.error("❌ Error while processing button:", err);
+      const errorReply = buildWarningItemReply({
+        interaction,
+        title: tr(interaction, "❌ Erro ao processar", "❌ Processing error"),
+        description: tr(
+          interaction,
+          "Erro ao processar o botão. Veja os logs do bot.",
+          "Error while processing the button. Check bot logs."
+        ),
+      });
+      await appendCommandLog({
+        interaction,
+        status: "ERROR",
+        err,
+      });
+
+      if (interaction.replied) {
+        return interaction.followUp({
+          ...errorReply,
+          ephemeral: true,
+        });
+      }
+      if (hasDeferred || interaction.deferred) {
+        return interaction.editReply(errorReply);
+      }
+      return interaction.reply({
+        ...errorReply,
+        ephemeral: true,
+      });
+    }
   }
 
   if (!interaction.isChatInputCommand()) return;
