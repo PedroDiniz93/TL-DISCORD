@@ -5,10 +5,9 @@ const {
   isKnownRareItem,
   isRareArmor,
 } = require("../items");
-const { buildRegisteredItemReply } = require("../responses");
+const { buildRareItemQueueReply, buildRegisteredItemReply } = require("../responses");
 const { getSheet } = require("../sheets");
 const {
-  buildPreview,
   getRequiredOptionAny,
   normalizeQueueItemName,
   nowBrasilia,
@@ -148,27 +147,12 @@ async function handleFilaItemRaro(interaction) {
     );
   }
 
-  const lines = filtered.map(({ row }) => {
-    const nick = row.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
-    const registro = row.Data
-      ? tr(interaction, ` • Registrado em ${row.Data}`, ` • Registered at ${row.Data}`)
-      : "";
-    const mention =
-      row.DiscordUserId && String(row.DiscordUserId).trim()
-        ? ` (<@${String(row.DiscordUserId).trim()}>)`
-        : "";
-    return `- ${nick}${mention}${registro}`;
-  });
-  const { preview, suffix } = buildPreview(lines, 25, (extra) =>
-    tr(interaction, `\n... e mais ${extra} jogador(es).`, `\n... and ${extra} more player(s).`)
-  );
-
   return interaction.editReply(
-    tr(
+    buildRareItemQueueReply({
       interaction,
-      `📜 Fila do item raro **${item}** (${filtered.length} jogadores):\n${preview}${suffix}\n\n⚠️ Essa lista mostra apenas quem colocou o item raro na wishlist; não é necessariamente a ordem de prioridade. ⚠️`,
-      `📜 Queue for rare item **${item}** (${filtered.length} players):\n${preview}${suffix}\n\n⚠️ This list only shows who added the rare item to the wishlist; it is not necessarily the priority order. ⚠️`
-    )
+      itemName: item,
+      rows: filtered,
+    })
   );
 }
 

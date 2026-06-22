@@ -99,16 +99,8 @@ function parseBrazilianDateTime(value) {
   return Number.isNaN(ts) ? null : new Date(ts);
 }
 
-function buildPreview(lines, previewLimit, suffixTemplate) {
-  const preview = lines.slice(0, previewLimit).join("\n");
-  const extra = lines.length - previewLimit;
-  const suffix = extra > 0 ? suffixTemplate(extra) : "";
-  return { preview, suffix };
-}
-
 module.exports = {
   MS_PER_DAY,
-  buildPreview,
   getRequiredOptionAny,
   getUserDisplayName,
   interactionOptionsToSimpleArray,

@@ -119,17 +119,39 @@ function buildArchWishlistReply({ interaction, rows }) {
 }
 
 function buildArchQueueReply({ interaction, itemName, rows }) {
+  return buildItemQueueReply({
+    interaction,
+    itemName,
+    rows,
+    title: tr(interaction, "📜 Fila Archboss", "📜 Archboss queue"),
+    description: tr(
+      interaction,
+      `**${itemName}**\n${rows.length} jogador(es) na fila.`,
+      `**${itemName}**\n${rows.length} player(s) in queue.`
+    ),
+  });
+}
+
+function buildRareItemQueueReply({ interaction, itemName, rows }) {
+  return buildItemQueueReply({
+    interaction,
+    itemName,
+    rows,
+    title: tr(interaction, "📜 Fila Item Raro", "📜 Rare item queue"),
+    description: tr(
+      interaction,
+      `**${itemName}**\n${rows.length} jogador(es) na fila.`,
+      `**${itemName}**\n${rows.length} player(s) in queue.`
+    ),
+  });
+}
+
+function buildItemQueueReply({ interaction, itemName, rows, title, description }) {
   const { attachment, thumbnailUrl } = createItemAttachmentAndThumbnail(itemName);
   const embed = new EmbedBuilder()
     .setColor(0xf2dd92)
-    .setTitle(tr(interaction, "📜 Fila Archboss", "📜 Archboss queue"))
-    .setDescription(
-      tr(
-        interaction,
-        `**${itemName}**\n${rows.length} jogador(es) na fila.`,
-        `**${itemName}**\n${rows.length} player(s) in queue.`
-      )
-    )
+    .setTitle(title)
+    .setDescription(description)
     .setFooter({
       text: tr(
         interaction,
@@ -141,7 +163,7 @@ function buildArchQueueReply({ interaction, itemName, rows }) {
 
   if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
 
-  const queueLines = rows.slice(0, 20).map(({ row }, idx) => {
+  const queueLines = rows.slice(0, 20).map(({ row }) => {
     const nick = row.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
     const mention =
       row.DiscordUserId && String(row.DiscordUserId).trim()
@@ -150,7 +172,7 @@ function buildArchQueueReply({ interaction, itemName, rows }) {
     const registeredAt = row.Data
       ? tr(interaction, `\nRegistrado em ${row.Data}`, `\nRegistered at ${row.Data}`)
       : "";
-    return `**${idx + 1}.** ${nick}${mention}${registeredAt}`;
+    return `${nick}${mention}${registeredAt}`;
   });
 
   embed.addFields({
@@ -177,5 +199,6 @@ function buildArchQueueReply({ interaction, itemName, rows }) {
 module.exports = {
   buildArchQueueReply,
   buildArchWishlistReply,
+  buildRareItemQueueReply,
   buildRegisteredItemReply,
 };

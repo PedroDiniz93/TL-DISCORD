@@ -24,8 +24,25 @@ const ITEM_IMAGES = {
   "🔮 Orb do Tevent (Tevent Orb)": "assets/items/tevent-orb.webp",
 };
 
+function getDisplayItemName(itemName) {
+  const value = String(itemName || "").trim();
+  const parenMatch = value.match(/\(([^)]+)\)/);
+  const beforeParen = value.replace(/\s*\([^)]+\)\s*$/, "").replace(/^[^\p{L}\p{N}]+/u, "").trim();
+
+  if (beforeParen && !/[^\x00-\x7F]/.test(beforeParen)) return beforeParen;
+  return parenMatch ? parenMatch[1].trim() : beforeParen || value;
+}
+
+function slugifyItemName(itemName) {
+  return getDisplayItemName(itemName)
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function getItemImage(itemName) {
-  const relativePath = ITEM_IMAGES[itemName];
+  const relativePath = ITEM_IMAGES[itemName] || `assets/items/${slugifyItemName(itemName)}.webp`;
   if (!relativePath) return null;
 
   const absolutePath = path.join(__dirname, "..", relativePath);
@@ -39,4 +56,5 @@ function getItemImage(itemName) {
 
 module.exports = {
   getItemImage,
+  slugifyItemName,
 };
