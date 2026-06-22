@@ -7,6 +7,7 @@ const { commandHandlers } = require("./src/handlers");
 const {
   ensureControlPanel,
   handleControlPanelButton,
+  handleControlPanelSelect,
   handleControlPanelModal,
 } = require("./src/handlers/panel");
 const { appendCommandLog } = require("./src/logging");
@@ -28,6 +29,38 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isAutocomplete()) {
     await handleAutocomplete(interaction);
     return;
+  }
+
+  if (interaction.isStringSelectMenu()) {
+    try {
+      const handled = await handleControlPanelSelect(interaction);
+      if (handled) {
+        await appendCommandLog({
+          interaction,
+          status: "OK",
+          err: null,
+        });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("❌ Error while processing select menu:", err);
+      await appendCommandLog({
+        interaction,
+        status: "ERROR",
+        err,
+      });
+      if (!interaction.replied && !interaction.deferred) {
+        return interaction.reply({
+          content: "Erro ao processar a seleção.",
+          ephemeral: true,
+        });
+      }
+      return interaction.followUp({
+        content: "Erro ao processar a seleção.",
+        ephemeral: true,
+      });
+    }
   }
 
   if (interaction.isButton()) {
