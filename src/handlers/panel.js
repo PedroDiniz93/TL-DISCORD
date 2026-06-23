@@ -195,7 +195,7 @@ async function ensureControlPanel(client, channelName) {
     return false;
   }
 
-  const pinned = await channel.messages.fetchPinned().catch(() => null);
+  const pinned = await channel.messages.fetchPins().catch(() => null);
   const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
   const existing =
     findPanelMessage(pinned, client.user.id) || findPanelMessage(recent, client.user.id);

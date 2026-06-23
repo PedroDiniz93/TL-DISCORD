@@ -55,7 +55,7 @@ function shutdown(signal) {
   });
 }
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
   await ensureControlPanel(client, ALLOWED_CHANNEL_NAME).catch((err) => {
     console.error("❌ Failed to ensure control panel:", err);
