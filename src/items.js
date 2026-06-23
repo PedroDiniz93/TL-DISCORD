@@ -22,27 +22,27 @@ const weapons = [
 ];
 
 const worldBossWeaponT4Items = [
-  "Coldblooded Wand",
-  "Coldblooded Commander Declaration Sword",
-  "Coldblooded Commander Charging Spear",
-  "Coldblooded Commander Deception Daggers",
-  "Arctic Roar Charging Gauntlets",
-  "Ahzreil's Flying Strike Gauntlets",
-  "Ascended Leviathan's Gauntlets",
-  "Crimson Valley's Gauntlets of Brutality",
-  "Ascended Pakilo Naru's Spear",
-  "Ascended Deckman's Wand",
-  "Arctic Roar Staff",
-  "Ascended Daigon's Staff",
-  "Arctic Roar Sniping Bow",
-  "Ascended Leviathan's Bow",
-  "Arctic Roar Tracking Crossbows",
-  "Ascended Akman's Crossbows",
-  "Ascended Leviathan's Daggers",
-  "Ascended Daigon's Sword",
-  "Ascended Pakilo Naru's Greatsword",
-  "Arctic Roar Resonating Orb",
-  "Ascended Primal Brothers' Core",
+  "🗡️ Ascended Pakilo Naru's Greatsword",
+  "🛡️ Ascended Daigon's Sword",
+  "🛡️ Coldblooded Commander Declaration Sword",
+  "⚔️ Ascended Leviathan's Daggers",
+  "⚔️ Coldblooded Commander Deception Daggers",
+  "🎯 Arctic Roar Tracking Crossbows",
+  "🎯 Ascended Akman's Crossbows",
+  "🏹 Arctic Roar Sniping Bow",
+  "🏹 Ascended Leviathan's Bow",
+  "⚡ Arctic Roar Staff",
+  "⚡ Ascended Daigon's Staff",
+  "🪄 Ascended Deckman's Wand",
+  "🪄 Coldblooded Wand",
+  "🗡️ Ascended Pakilo Naru's Spear",
+  "🗡️ Coldblooded Commander Charging Spear",
+  "🔮 Arctic Roar Resonating Orb",
+  "🔮 Ascended Primal Brothers' Core",
+  "🥊 Ahzreil's Flying Strike Gauntlets",
+  "🥊 Arctic Roar Charging Gauntlets",
+  "🥊 Ascended Leviathan's Gauntlets",
+  "🥊 Crimson Valley's Gauntlets of Brutality",
 ];
 
 const rareItems = [
@@ -85,8 +85,14 @@ const RARE_ARMOR_ITEMS = new Set([
   "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
 ]);
 
-const RARE_ITEM_SET = new Set(rareItems);
-const WORLD_BOSS_WEAPON_T4_ITEM_SET = new Set(worldBossWeaponT4Items);
+const RARE_ITEM_SET = new Set([
+  ...rareItems,
+  ...worldBossWeaponT4Items.map(stripLeadingItemEmoji),
+]);
+const WORLD_BOSS_WEAPON_T4_ITEM_SET = new Set([
+  ...worldBossWeaponT4Items,
+  ...worldBossWeaponT4Items.map(stripLeadingItemEmoji),
+]);
 
 const MAX_RARE_ACCESSORIES_PER_USER = 3;
 const MAX_RARE_ARMORS_PER_USER = 1;
@@ -104,6 +110,12 @@ function isWorldBossWeaponT4(itemName) {
   return WORLD_BOSS_WEAPON_T4_ITEM_SET.has(itemName);
 }
 
+function stripLeadingItemEmoji(itemName) {
+  return String(itemName || "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .trim();
+}
+
 module.exports = {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_ARMORS_PER_USER,
@@ -112,6 +124,7 @@ module.exports = {
   isKnownRareItem,
   isWorldBossWeaponT4,
   rareItems,
+  stripLeadingItemEmoji,
   worldBossWeaponT4Items,
   weapons,
 };

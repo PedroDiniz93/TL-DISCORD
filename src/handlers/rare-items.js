@@ -6,6 +6,7 @@ const {
   isKnownRareItem,
   isRareArmor,
   isWorldBossWeaponT4,
+  stripLeadingItemEmoji,
 } = require("../items");
 const {
   buildEmptyItemReply,
@@ -52,6 +53,7 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
+  const itemForSheet = stripLeadingItemEmoji(item);
   const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const userRows = rows.filter(
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
@@ -152,7 +154,7 @@ async function registerRareItem({ interaction, nick, item }) {
   await sheet.addRow({
     Data: nowBrasilia(),
     Nick: nick,
-    Item: item,
+    Item: itemForSheet,
     DiscordUserId: interaction.user.id,
   });
   invalidateSheetRows(RARE_ITEM_SHEET.title);
@@ -160,14 +162,14 @@ async function registerRareItem({ interaction, nick, item }) {
     interaction,
     action: "add",
     itemType: "rare",
-    item,
+    item: itemForSheet,
     nick,
   });
 
   return buildRegisteredItemReply({
     interaction,
     nick,
-    itemName: item,
+    itemName: itemForSheet,
     itemLabel: {
       pt: "Item raro",
       en: "Rare item",
@@ -178,10 +180,11 @@ async function registerRareItem({ interaction, nick, item }) {
 
 async function buildRemoverItemRaroReply(interaction, item) {
   const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
+  const targetItem = normalizeQueueItemName(item);
   const targetRow = rows.find(
     (row) =>
       (row.DiscordUserId || "").trim() === interaction.user.id &&
-      (row.Item || "").trim() === item
+      normalizeQueueItemName(row.Item) === targetItem
   );
 
   if (!targetRow) {
