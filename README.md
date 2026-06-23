@@ -36,6 +36,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 | `/rare_item_queue` ou `/fila_item_raro` | Mostra a fila de jogadores para um item raro. |
 | `/my_items` ou `/meus_itens` | Mostra sua arma Archboss e seus itens raros. |
 | `/help` ou `/ajuda` | Mostra regras resumidas e a lista de comandos. |
+| `/baixar_logs` | Envia os arquivos de log em resposta privada para administradores. |
 
 ## Google Sheets
 

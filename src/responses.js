@@ -371,6 +371,7 @@ function buildHelpReply({ interaction }) {
           "`/remover_item_raro` / `/remove_rare_item`",
           "`/listar_arch` / `/list_arch`",
           "`/ajuda` / `/help`",
+          "`/baixar_logs`",
         ].join("\n"),
         inline: false,
       },

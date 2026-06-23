@@ -25,6 +25,7 @@ const PT_BR_COMMANDS = new Set([
   "fila_item_raro",
   "meus_itens",
   "ajuda",
+  "baixar_logs",
 ]);
 
 const LOG_DIR =

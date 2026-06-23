@@ -10,6 +10,7 @@ const {
   handleRemoverItemRaro,
 } = require("./rare-items");
 const { handleHelp } = require("./help");
+const { handleBaixarLogs } = require("./logs");
 const { handleMyItems } = require("./my-items");
 
 const commandHandlers = {
@@ -31,6 +32,7 @@ const commandHandlers = {
   meus_itens: handleMyItems,
   help: handleHelp,
   ajuda: handleHelp,
+  baixar_logs: handleBaixarLogs,
 };
 
 module.exports = {
