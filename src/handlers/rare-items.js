@@ -2,8 +2,10 @@ const { RARE_ITEM_SHEET } = require("../config");
 const {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_ARMORS_PER_USER,
+  MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
   isKnownRareItem,
   isRareArmor,
+  isWorldBossWeaponT4,
 } = require("../items");
 const {
   buildEmptyItemReply,
@@ -55,12 +57,21 @@ async function registerRareItem({ interaction, nick, item }) {
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
   const targetIsArmor = isRareArmor(item);
+  const targetIsWorldBossWeaponT4 = isWorldBossWeaponT4(item);
   const userArmors = userRows
     .map((row) => (row.Item || "").trim())
     .filter((name) => isRareArmor(name));
+  const userWorldBossWeaponsT4 = userRows
+    .map((row) => (row.Item || "").trim())
+    .filter((name) => isWorldBossWeaponT4(name));
   const userAccessories = userRows
     .map((row) => (row.Item || "").trim())
-    .filter((name) => isKnownRareItem(name) && !isRareArmor(name));
+    .filter(
+      (name) =>
+        isKnownRareItem(name) &&
+        !isRareArmor(name) &&
+        !isWorldBossWeaponT4(name)
+    );
 
   if (targetIsArmor && userArmors.length >= MAX_RARE_ARMORS_PER_USER) {
     return buildWarningItemReply({
@@ -83,7 +94,39 @@ async function registerRareItem({ interaction, nick, item }) {
   }
 
   if (
+    targetIsWorldBossWeaponT4 &&
+    userWorldBossWeaponsT4.length >= MAX_WORLD_BOSS_WEAPONS_T4_PER_USER
+  ) {
+    return buildWarningItemReply({
+      interaction,
+      itemName: userWorldBossWeaponsT4[0],
+      title: tr(
+        interaction,
+        "⚠️ Limite de arma Boss Mundo T4",
+        "⚠️ World Boss Weapon T4 limit reached"
+      ),
+      description: tr(
+        interaction,
+        "Você já possui 1 arma Boss Mundo T4 registrada. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outra.",
+        "You already have 1 registered World Boss Weapon T4. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+      ),
+      fields: [
+        {
+          name: tr(
+            interaction,
+            "Arma Boss Mundo T4 registrada",
+            "Registered World Boss Weapon T4"
+          ),
+          value: userWorldBossWeaponsT4[0],
+          inline: false,
+        },
+      ],
+    });
+  }
+
+  if (
     !targetIsArmor &&
+    !targetIsWorldBossWeaponT4 &&
     userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER
   ) {
     return buildWarningItemReply({

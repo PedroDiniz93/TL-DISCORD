@@ -42,12 +42,18 @@ function slugifyItemName(itemName) {
 }
 
 function getItemImage(itemName) {
-  const relativePath = ITEM_IMAGES[itemName] || `assets/items/${slugifyItemName(itemName)}.webp`;
+  const relativePaths = [
+    ITEM_IMAGES[itemName],
+    `assets/items/${slugifyItemName(itemName)}.webp`,
+    `assets/items/${getDisplayItemName(itemName)}.webp`,
+  ].filter(Boolean);
+
+  const relativePath = relativePaths.find((candidate) =>
+    fs.existsSync(path.join(__dirname, "..", candidate))
+  );
   if (!relativePath) return null;
 
   const absolutePath = path.join(__dirname, "..", relativePath);
-  if (!fs.existsSync(absolutePath)) return null;
-
   return {
     attachmentName: path.basename(relativePath),
     path: absolutePath,

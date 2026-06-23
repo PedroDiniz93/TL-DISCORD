@@ -17,6 +17,32 @@ const weapons = [
   "🗡️ Lança da Belandir (Belandir Spear)",
   "🔮 Orb do Tevent (Tevent Orb)",
   "🔮 Orb do Cordy (Cordy Orb)",
+  "Deluzhnoa's Icy Grasp",
+  "Queen Bellandir's Gauntlet",
+];
+
+const worldBossWeaponT4Items = [
+  "Coldblooded Wand",
+  "Coldblooded Commander Declaration Sword",
+  "Coldblooded Commander Charging Spear",
+  "Coldblooded Commander Deception Daggers",
+  "Arctic Roar Charging Gauntlets",
+  "Ahzreil's Flying Strike Gauntlets",
+  "Ascended Leviathan's Gauntlets",
+  "Crimson Valley's Gauntlets of Brutality",
+  "Ascended Pakilo Naru's Spear",
+  "Ascended Deckman's Wand",
+  "Arctic Roar Staff",
+  "Ascended Daigon's Staff",
+  "Arctic Roar Sniping Bow",
+  "Ascended Leviathan's Bow",
+  "Arctic Roar Tracking Crossbows",
+  "Ascended Akman's Crossbows",
+  "Ascended Leviathan's Daggers",
+  "Ascended Daigon's Sword",
+  "Ascended Pakilo Naru's Greatsword",
+  "Arctic Roar Resonating Orb",
+  "Ascended Primal Brothers' Core",
 ];
 
 const rareItems = [
@@ -48,6 +74,7 @@ const rareItems = [
   "Sash of Rustling Leaves (Faixa das Folhas Farfalhantes)",
   "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
   "Signet of the Alpha (Sinete do alfa)",
+  ...worldBossWeaponT4Items,
 ];
 
 const RARE_ARMOR_ITEMS = new Set([
@@ -59,9 +86,11 @@ const RARE_ARMOR_ITEMS = new Set([
 ]);
 
 const RARE_ITEM_SET = new Set(rareItems);
+const WORLD_BOSS_WEAPON_T4_ITEM_SET = new Set(worldBossWeaponT4Items);
 
 const MAX_RARE_ACCESSORIES_PER_USER = 3;
 const MAX_RARE_ARMORS_PER_USER = 1;
+const MAX_WORLD_BOSS_WEAPONS_T4_PER_USER = 1;
 
 function isRareArmor(itemName) {
   return RARE_ARMOR_ITEMS.has(itemName);
@@ -71,11 +100,18 @@ function isKnownRareItem(itemName) {
   return RARE_ITEM_SET.has(itemName);
 }
 
+function isWorldBossWeaponT4(itemName) {
+  return WORLD_BOSS_WEAPON_T4_ITEM_SET.has(itemName);
+}
+
 module.exports = {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_ARMORS_PER_USER,
+  MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
   isRareArmor,
   isKnownRareItem,
+  isWorldBossWeaponT4,
   rareItems,
+  worldBossWeaponT4Items,
   weapons,
 };

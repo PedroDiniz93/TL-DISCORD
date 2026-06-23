@@ -9,7 +9,7 @@ const { buildControlPanelReply, buildWarningItemReply } = require("../responses"
 const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
 const { buildMyItemsForInteraction } = require("./my-items");
-const { rareItems, weapons, isRareArmor } = require("../items");
+const { rareItems, weapons, isRareArmor, isWorldBossWeaponT4 } = require("../items");
 const { tr } = require("../utils");
 
 const PANEL_MESSAGE_TITLE = "Painel Archboss";
@@ -326,14 +326,16 @@ function buildRareCategorySelectReply(interaction, action) {
         label: "Acessório raro",
         value: "accessory",
       },
+      {
+        label: "Arma Boss Mundo T4 (World Boss Weapon T4)",
+        value: "world_boss_weapon_t4",
+      },
     ],
   });
 }
 
 function buildRareItemSelectReply(interaction, action, category) {
-  const filtered = rareItems.filter((item) =>
-    category === "armor" ? isRareArmor(item) : !isRareArmor(item)
-  );
+  const filtered = rareItems.filter((item) => isRareItemInCategory(item, category));
 
   return buildSelectReply({
     interaction,
@@ -351,6 +353,12 @@ function buildRareItemSelectReply(interaction, action, category) {
       value: item,
     })),
   });
+}
+
+function isRareItemInCategory(item, category) {
+  if (category === "armor") return isRareArmor(item);
+  if (category === "world_boss_weapon_t4") return isWorldBossWeaponT4(item);
+  return !isRareArmor(item) && !isWorldBossWeaponT4(item);
 }
 
 function buildSelectReply({ interaction, title, description, customId, options }) {
