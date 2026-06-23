@@ -79,6 +79,14 @@ function getRequiredOptionAny(interaction, names) {
   throw new Error(`Missing required option. Tried: ${names.join(", ")}`);
 }
 
+function getOptionalOptionAny(interaction, names) {
+  for (const name of names) {
+    const value = interaction.options.getString(name, false);
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 function isPtBrCommand(interaction) {
   if (interaction?.locale) return String(interaction.locale).toLowerCase().startsWith("pt");
   return PT_BR_COMMANDS.has(interaction?.commandName);
@@ -152,6 +160,7 @@ function parseBrazilianDateTime(value) {
 
 module.exports = {
   MS_PER_DAY,
+  getOptionalOptionAny,
   getRequiredOptionAny,
   getUserDisplayName,
   interactionOptionsToSimpleArray,

@@ -19,7 +19,9 @@ const {
 } = require("../responses");
 const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog } = require("../logging");
+const { resolveNicknameForRegistration } = require("../nicknames");
 const {
+  getOptionalOptionAny,
   getRequiredOptionAny,
   normalizeQueueItemName,
   nowBrasilia,
@@ -28,7 +30,7 @@ const {
 } = require("../utils");
 
 async function handleItemRaro(interaction) {
-  const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
+  const nick = getOptionalOptionAny(interaction, ["nickname", "nick"]);
   const item = getRequiredOptionAny(interaction, ["rare_item", "item_raro"]);
 
   return interaction.editReply(
@@ -155,10 +157,13 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
+  const nickname = await resolveNicknameForRegistration(interaction, nick);
+  if (nickname.reply) return nickname.reply;
+
   const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   await sheet.addRow({
     Data: nowBrasilia(),
-    Nick: nick,
+    Nick: nickname.nick,
     Item: itemForSheet,
     DiscordUserId: interaction.user.id,
   });
@@ -168,12 +173,12 @@ async function registerRareItem({ interaction, nick, item }) {
     action: "add",
     itemType: "rare",
     item: itemForSheet,
-    nick,
+    nick: nickname.nick,
   });
 
   return buildRegisteredItemReply({
     interaction,
-    nick,
+    nick: nickname.nick,
     itemName: itemForSheet,
     itemLabel: {
       pt: "Item raro",

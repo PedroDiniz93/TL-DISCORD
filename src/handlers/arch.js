@@ -9,7 +9,9 @@ const {
 } = require("../responses");
 const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
+const { resolveNicknameForRegistration } = require("../nicknames");
 const {
+  getOptionalOptionAny,
   getRequiredOptionAny,
   normalizeQueueItemName,
   nowBrasilia,
@@ -18,7 +20,7 @@ const {
 } = require("../utils");
 
 async function handleArmaArch(interaction) {
-  const nick = getRequiredOptionAny(interaction, ["nickname", "nick"]);
+  const nick = getOptionalOptionAny(interaction, ["nickname", "nick"]);
   const arma = getRequiredOptionAny(interaction, ["arch_weapon", "arma_arch"]);
 
   return interaction.editReply(
@@ -59,14 +61,17 @@ async function registerArchWeapon({ interaction, nick, arma }) {
               inline: false,
             },
           ]
-        : [],
+      : [],
     });
   }
+
+  const nickname = await resolveNicknameForRegistration(interaction, nick);
+  if (nickname.reply) return nickname.reply;
 
   const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   await sheet.addRow({
     Data: nowBrasilia(),
-    Nick: nick,
+    Nick: nickname.nick,
     Arma: arma,
     DiscordUserId: interaction.user.id,
   });
@@ -76,12 +81,12 @@ async function registerArchWeapon({ interaction, nick, arma }) {
     action: "add",
     itemType: "arch",
     item: arma,
-    nick,
+    nick: nickname.nick,
   });
 
   return buildRegisteredItemReply({
     interaction,
-    nick,
+    nick: nickname.nick,
     itemName: arma,
     itemLabel: {
       pt: "Arma Archboss",

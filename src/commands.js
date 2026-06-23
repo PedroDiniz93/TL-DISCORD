@@ -5,26 +5,34 @@ function buildCommands() {
     .setName("weapon_arch")
     .setDescription("Register an Archboss weapon in your wishlist")
     .addStringOption((o) =>
-      o.setName("nickname").setDescription("Character nickname").setRequired(true)
-    )
-    .addStringOption((o) =>
       o
         .setName("arch_weapon")
         .setDescription("Archboss weapon")
         .setRequired(true)
         .setAutocomplete(true)
+    )
+    .addStringOption((o) =>
+      o
+        .setName("nickname")
+        .setDescription("Character nickname (optional after first registration)")
+        .setRequired(false)
     );
 
   const weaponArchCmdPt = new SlashCommandBuilder()
     .setName("arma_arch")
     .setDescription("Registrar arma Archboss na lista de desejo")
-    .addStringOption((o) => o.setName("nick").setDescription("Nick").setRequired(true))
     .addStringOption((o) =>
       o
         .setName("arma_arch")
         .setDescription("Arma Archboss")
         .setRequired(true)
         .setAutocomplete(true)
+    )
+    .addStringOption((o) =>
+      o
+        .setName("nick")
+        .setDescription("Nick (opcional após o primeiro registro)")
+        .setRequired(false)
     );
 
   const listarArchCmd = new SlashCommandBuilder()
@@ -83,26 +91,34 @@ function buildCommands() {
     .setName("rare_item")
     .setDescription("Register a rare item in your wishlist")
     .addStringOption((o) =>
-      o.setName("nickname").setDescription("Character nickname").setRequired(true)
-    )
-    .addStringOption((o) =>
       o
         .setName("rare_item")
         .setDescription("Rare item")
         .setRequired(true)
         .setAutocomplete(true)
+    )
+    .addStringOption((o) =>
+      o
+        .setName("nickname")
+        .setDescription("Character nickname (optional after first registration)")
+        .setRequired(false)
     );
 
   const itemRaroCmdPt = new SlashCommandBuilder()
     .setName("item_raro")
     .setDescription("Registrar item raro na lista de desejo")
-    .addStringOption((o) => o.setName("nick").setDescription("Nick").setRequired(true))
     .addStringOption((o) =>
       o
         .setName("item_raro")
         .setDescription("Item raro")
         .setRequired(true)
         .setAutocomplete(true)
+    )
+    .addStringOption((o) =>
+      o
+        .setName("nick")
+        .setDescription("Nick (opcional após o primeiro registro)")
+        .setRequired(false)
     );
 
   const removerItemRaroCmd = new SlashCommandBuilder()

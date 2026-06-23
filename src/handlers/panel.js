@@ -11,6 +11,7 @@ const { buildControlPanelReply, buildWarningItemReply } = require("../responses"
 const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
 const { buildMyItemsForInteraction } = require("./my-items");
+const { getLastNicknameForDiscordUser } = require("../nicknames");
 const {
   rareItems,
   weapons,
@@ -101,7 +102,7 @@ async function handleControlPanelSelect(interaction) {
   if (kind === "arch") {
     if (action === "register") {
       await interaction.showModal(
-        buildRegisterArchModal({ interaction: panelInteraction, value })
+        await buildRegisterArchModal({ interaction: panelInteraction, value })
       );
       return true;
     }
@@ -123,7 +124,7 @@ async function handleControlPanelSelect(interaction) {
 
     if (action === "register") {
       await interaction.showModal(
-        buildRegisterRareModal({ interaction: panelInteraction, value })
+        await buildRegisterRareModal({ interaction: panelInteraction, value })
       );
       return true;
     }
@@ -224,9 +225,10 @@ async function ensureControlPanel(client, channelName) {
   return Boolean(sent);
 }
 
-function buildRegisterArchModal(item) {
+async function buildRegisterArchModal(item) {
   const interaction = item.interaction;
   const value = item.value;
+  const lastNick = await getLastNicknameForDiscordUser(interaction.user?.id);
 
   return new ModalBuilder()
     .setCustomId(`panel:register_arch:${encodePanelValue(value)}`)
@@ -237,14 +239,16 @@ function buildRegisterArchModal(item) {
           .setCustomId("nick")
           .setLabel("Nick")
           .setStyle(TextInputStyle.Short)
+          .setValue(lastNick.slice(0, 100))
           .setRequired(true)
       )
     );
 }
 
-function buildRegisterRareModal(item) {
+async function buildRegisterRareModal(item) {
   const interaction = item.interaction;
   const value = item.value;
+  const lastNick = await getLastNicknameForDiscordUser(interaction.user?.id);
 
   return new ModalBuilder()
     .setCustomId(`panel:register_rare:${encodePanelValue(value)}`)
@@ -255,6 +259,7 @@ function buildRegisterRareModal(item) {
           .setCustomId("nick")
           .setLabel("Nick")
           .setStyle(TextInputStyle.Short)
+          .setValue(lastNick.slice(0, 100))
           .setRequired(true)
       )
     );
