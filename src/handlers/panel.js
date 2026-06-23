@@ -319,15 +319,15 @@ function buildRareCategorySelectReply(interaction, action) {
     customId: `panel-select:rare:category:${action}`,
     options: [
       {
-        label: "Armadura rara",
+        label: "Armadura Rara T3 - (Rare Armor T3)",
         value: "armor",
       },
       {
-        label: "Acessório raro",
+        label: "Acessório Raro T3 -(Rare Accessory T3)",
         value: "accessory",
       },
       {
-        label: "Arma Boss Mundo T4 (World Boss Weapon T4)",
+        label: "Arma Boss Mundo T4 - (World Boss Weapon T4)",
         value: "world_boss_weapon_t4",
       },
     ],

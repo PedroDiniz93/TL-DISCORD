@@ -10,8 +10,10 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - Registra itens raros por jogador, respeitando os limites configurados:
   - 1 armadura rara.
   - 3 acessórios raros.
+  - 1 arma Boss Mundo T4.
 - Remove registros feitos pelo próprio jogador.
 - Lista os registros de Archboss do jogador.
+- Mostra botões para remover itens diretamente em `/meus_itens`.
 - Mostra a fila de jogadores interessados em uma arma ou item raro.
 - Permite que membros com cargo `ADM` marquem itens como entregues.
 - Usa autocomplete nos comandos para facilitar a escolha dos itens.
@@ -136,4 +138,4 @@ npm test
 
 - As respostas dos comandos são privadas para quem executou o comando.
 - O canal permitido atualmente é `🎢planilha-arch-boss`.
-- Armas raras de mundo foram removidas da lista de itens raros.
+- Armas Boss Mundo T4 ficam disponíveis em `item_raro` com limite próprio de 1 registro por jogador.

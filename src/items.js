@@ -17,8 +17,8 @@ const weapons = [
   "🗡️ Lança da Belandir (Belandir Spear)",
   "🔮 Orb do Tevent (Tevent Orb)",
   "🔮 Orb do Cordy (Cordy Orb)",
-  "Deluzhnoa's Icy Grasp",
-  "Queen Bellandir's Gauntlet",
+  "🥊 Deluzhnoa's Icy Grasp",
+  "🥊 Queen Bellandir's Gauntlet",
 ];
 
 const worldBossWeaponT4Items = [
