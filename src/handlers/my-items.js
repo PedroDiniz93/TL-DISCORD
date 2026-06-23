@@ -1,15 +1,11 @@
 const { ARCH_SHEET, RARE_ITEM_SHEET } = require("../config");
 const { buildMyItemsReply } = require("../responses");
-const { getSheet } = require("../sheets");
+const { getSheetRows } = require("../sheets");
 
 async function buildMyItemsForInteraction(interaction) {
-  const [archSheet, rareItemSheet] = await Promise.all([
-    getSheet(ARCH_SHEET.title, ARCH_SHEET.headers),
-    getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers),
-  ]);
   const [archRows, rareItemRows] = await Promise.all([
-    archSheet.getRows(),
-    rareItemSheet.getRows(),
+    getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers),
+    getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers),
   ]);
   const userId = interaction.user.id;
 

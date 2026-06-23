@@ -13,7 +13,7 @@ const {
   buildRemovedItemReply,
   buildWarningItemReply,
 } = require("../responses");
-const { getSheet } = require("../sheets");
+const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog } = require("../logging");
 const {
   getRequiredOptionAny,
@@ -50,8 +50,7 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
-  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const userRows = rows.filter(
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
@@ -106,12 +105,14 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
+  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   await sheet.addRow({
     Data: nowBrasilia(),
     Nick: nick,
     Item: item,
     DiscordUserId: interaction.user.id,
   });
+  invalidateSheetRows(RARE_ITEM_SHEET.title);
   await appendLootHistoryLog({
     interaction,
     action: "add",
@@ -133,8 +134,7 @@ async function registerRareItem({ interaction, nick, item }) {
 }
 
 async function buildRemoverItemRaroReply(interaction, item) {
-  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const targetRow = rows.find(
     (row) =>
       (row.DiscordUserId || "").trim() === interaction.user.id &&
@@ -156,6 +156,7 @@ async function buildRemoverItemRaroReply(interaction, item) {
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
+  invalidateSheetRows(RARE_ITEM_SHEET.title);
   await appendLootHistoryLog({
     interaction,
     action: "remove",
@@ -176,8 +177,7 @@ async function buildRemoverItemRaroReply(interaction, item) {
 }
 
 async function buildFilaItemRaroReply(interaction, item) {
-  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const targetItem = normalizeQueueItemName(item);
   const filtered = rows
     .filter((row) => normalizeQueueItemName(row.Item) === targetItem)
@@ -213,8 +213,7 @@ async function buildFilaItemRaroReply(interaction, item) {
 }
 
 async function buildListarItemRaroReply(interaction) {
-  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
   const userRows = rows.filter(
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );

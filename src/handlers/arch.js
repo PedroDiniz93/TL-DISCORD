@@ -7,7 +7,7 @@ const {
   buildRemovedItemReply,
   buildWarningItemReply,
 } = require("../responses");
-const { getSheet } = require("../sheets");
+const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
 const {
   getRequiredOptionAny,
@@ -31,8 +31,7 @@ async function handleArmaArch(interaction) {
 }
 
 async function registerArchWeapon({ interaction, nick, arma }) {
-  const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
   const userRows = rows.filter(
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
@@ -64,12 +63,14 @@ async function registerArchWeapon({ interaction, nick, arma }) {
     });
   }
 
+  const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   await sheet.addRow({
     Data: nowBrasilia(),
     Nick: nick,
     Arma: arma,
     DiscordUserId: interaction.user.id,
   });
+  invalidateSheetRows(ARCH_SHEET.title);
   await appendLootHistoryLog({
     interaction,
     action: "add",
@@ -91,8 +92,7 @@ async function registerArchWeapon({ interaction, nick, arma }) {
 }
 
 async function buildListarArchReply(interaction) {
-  const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
   const userRows = rows.filter(
     (row) => (row.DiscordUserId || "").trim() === interaction.user.id
   );
@@ -113,8 +113,7 @@ async function buildListarArchReply(interaction) {
 }
 
 async function buildRemoverArchReply(interaction, arma) {
-  const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
   const targetRow = rows.find(
     (row) =>
       (row.DiscordUserId || "").trim() === interaction.user.id &&
@@ -136,6 +135,7 @@ async function buildRemoverArchReply(interaction, arma) {
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
+  invalidateSheetRows(ARCH_SHEET.title);
   await appendLootHistoryLog({
     interaction,
     action: "remove",
@@ -156,8 +156,7 @@ async function buildRemoverArchReply(interaction, arma) {
 }
 
 async function buildFilaArchReply(interaction, item) {
-  const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const rows = await sheet.getRows();
+  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
   const targetItem = normalizeQueueItemName(item);
   await appendQueueViewLog({
     interaction,

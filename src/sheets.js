@@ -1,6 +1,10 @@
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 const { HEADER_BG, HEADER_FG } = require("./config");
 
+const SHEET_ROWS_CACHE_TTL_MS = 30 * 60 * 1000;
+const sheetRowsCache = new Map();
+const sheetRowsCacheVersions = new Map();
+
 function getGoogleCredsFromEnv() {
   const b64 = process.env.GOOGLE_CREDS_B64;
   if (!b64) {
@@ -50,6 +54,59 @@ async function getSheet(title, headers) {
   return sheet;
 }
 
+function getSheetRowsCacheKey(title) {
+  return `${process.env.SHEET_ID || ""}:${title}`;
+}
+
+async function getSheetRows(title, headers) {
+  const key = getSheetRowsCacheKey(title);
+  const cached = sheetRowsCache.get(key);
+  const now = Date.now();
+
+  if (cached?.rows && cached.expiresAt > now) {
+    return cached.rows;
+  }
+
+  if (cached?.promise) {
+    return cached.promise;
+  }
+
+  const cacheVersion = sheetRowsCacheVersions.get(key) || 0;
+  const promise = (async () => {
+    const sheet = await getSheet(title, headers);
+    const rows = await sheet.getRows();
+    if ((sheetRowsCacheVersions.get(key) || 0) === cacheVersion) {
+      sheetRowsCache.set(key, {
+        rows,
+        expiresAt: Date.now() + SHEET_ROWS_CACHE_TTL_MS,
+        promise: null,
+      });
+    }
+    return rows;
+  })();
+
+  sheetRowsCache.set(key, {
+    rows: cached?.rows || null,
+    expiresAt: cached?.expiresAt || 0,
+    promise,
+  });
+
+  try {
+    return await promise;
+  } catch (err) {
+    sheetRowsCache.delete(key);
+    throw err;
+  }
+}
+
+function invalidateSheetRows(title) {
+  const key = getSheetRowsCacheKey(title);
+  sheetRowsCache.delete(key);
+  sheetRowsCacheVersions.set(key, (sheetRowsCacheVersions.get(key) || 0) + 1);
+}
+
 module.exports = {
   getSheet,
+  getSheetRows,
+  invalidateSheetRows,
 };
