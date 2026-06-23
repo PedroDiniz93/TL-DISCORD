@@ -33,6 +33,8 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 | `/rare_item` ou `/item_raro` | Registra um item raro na lista de desejo. |
 | `/remove_rare_item` ou `/remover_item_raro` | Remove um item raro registrado. |
 | `/rare_item_queue` ou `/fila_item_raro` | Mostra a fila de jogadores para um item raro. |
+| `/my_items` ou `/meus_itens` | Mostra sua arma Archboss e seus itens raros. |
+| `/help` ou `/ajuda` | Mostra regras resumidas e a lista de comandos. |
 
 ## Google Sheets
 
