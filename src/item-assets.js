@@ -41,6 +41,21 @@ function slugifyItemName(itemName) {
     .replace(/^-+|-+$/g, "");
 }
 
+function getSafeAttachmentName(itemName, relativePath) {
+  const extension = path.extname(relativePath) || ".webp";
+  const slug =
+    slugifyItemName(itemName) ||
+    path
+      .basename(relativePath, extension)
+      .toLowerCase()
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") ||
+    "item-image";
+
+  return `${slug}${extension.toLowerCase()}`;
+}
+
 function getItemImage(itemName) {
   const relativePaths = [
     ITEM_IMAGES[itemName],
@@ -55,12 +70,13 @@ function getItemImage(itemName) {
 
   const absolutePath = path.join(__dirname, "..", relativePath);
   return {
-    attachmentName: path.basename(relativePath),
+    attachmentName: getSafeAttachmentName(itemName, relativePath),
     path: absolutePath,
   };
 }
 
 module.exports = {
+  getSafeAttachmentName,
   getItemImage,
   slugifyItemName,
 };
