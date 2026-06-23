@@ -18,7 +18,7 @@ async function appendCommandLog({ interaction, status, err }) {
       timestamp: nowBrasilia(),
       discordUserId: interaction.user?.id ?? "",
       name: getUserDisplayName(interaction.user),
-      command: interaction.commandName ?? "",
+      command: getInteractionSource(interaction),
       guildId: interaction.guildId ?? "",
       channelId: interaction.channelId ?? "",
       options: interactionOptionsToSimpleArray(interaction),
