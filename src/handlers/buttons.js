@@ -7,11 +7,18 @@ const {
   buildRemoverItemRaroReply,
 } = require("./rare-items");
 const { buildMyItemsForInteraction } = require("./my-items");
+const { ARCH_SHEET, RARE_ITEM_SHEET } = require("../config");
 const { buildWarningItemReply } = require("../responses");
-const { tr } = require("../utils");
+const { getSheetRows } = require("../sheets");
+const { shortStableHash, tr } = require("../utils");
 
 async function handleWishlistButton(interaction) {
   const [scope, type, action, lang] = String(interaction.customId || "").split(":");
+  if (scope === "myitems") {
+    await handleMyItemsRemoveButton(interaction, type, action, lang);
+    return true;
+  }
+
   if (scope !== "wishlist") return false;
 
   const displayInteraction = withButtonLanguage(interaction, lang);
@@ -54,6 +61,68 @@ async function handleWishlistButton(interaction) {
     })
   );
   return true;
+}
+
+async function handleMyItemsRemoveButton(interaction, type, itemHash, lang) {
+  const displayInteraction = withButtonLanguage(interaction, lang);
+  const itemName = await findMyItemNameByHash(interaction, type, itemHash);
+
+  if (!itemName) {
+    await interaction.editReply(
+      buildWarningItemReply({
+        interaction: displayInteraction,
+        title: tr(displayInteraction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+        description: tr(
+          displayInteraction,
+          "Não encontrei esse item na sua lista atual.",
+          "I couldn't find this item in your current wishlist."
+        ),
+      })
+    );
+    return;
+  }
+
+  if (type === "arch") {
+    await interaction.editReply(
+      await buildRemoverArchReply(displayInteraction, itemName)
+    );
+    return;
+  }
+
+  if (type === "rare") {
+    await interaction.editReply(
+      await buildRemoverItemRaroReply(displayInteraction, itemName)
+    );
+    return;
+  }
+
+  await sendUnsupportedAction(interaction, displayInteraction);
+}
+
+async function findMyItemNameByHash(interaction, type, itemHash) {
+  const userId = interaction.user.id;
+
+  if (type === "arch") {
+    const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
+    const row = rows.find(
+      (currentRow) =>
+        String(currentRow.DiscordUserId || "").trim() === userId &&
+        shortStableHash(currentRow.Arma) === itemHash
+    );
+    return String(row?.Arma || "").trim();
+  }
+
+  if (type === "rare") {
+    const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
+    const row = rows.find(
+      (currentRow) =>
+        String(currentRow.DiscordUserId || "").trim() === userId &&
+        shortStableHash(currentRow.Item) === itemHash
+    );
+    return String(row?.Item || "").trim();
+  }
+
+  return "";
 }
 
 async function handleArchButtonAction(interaction, displayInteraction, action, itemName) {

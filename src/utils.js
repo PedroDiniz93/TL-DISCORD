@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { ALLOWED_CHANNEL_NAME, PT_BR_COMMANDS } = require("./config");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -8,6 +9,14 @@ function safeJsonStringify(obj) {
   } catch {
     return "";
   }
+}
+
+function shortStableHash(value) {
+  return crypto
+    .createHash("sha1")
+    .update(String(value || ""))
+    .digest("hex")
+    .slice(0, 12);
 }
 
 function normalizeQueueItemName(value) {
@@ -153,6 +162,7 @@ module.exports = {
   respondAutocompleteOnce,
   safeJsonStringify,
   scoreSearchMatch,
+  shortStableHash,
   tokenizeSearchQuery,
   tr,
 };

@@ -6,7 +6,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const { getItemImage } = require("./item-assets");
-const { tr } = require("./utils");
+const { shortStableHash, tr } = require("./utils");
 
 function buildRegisteredItemReply({ interaction, nick, itemName, itemLabel, type }) {
   const reply = buildItemStatusReply({
@@ -222,7 +222,17 @@ function buildMyItemsReply({ interaction, archRows, rareItemRows }) {
     }
   );
 
-  return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+  const reply = attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+  const components = buildMyItemsRemoveActions({ interaction, archRows, rareItemRows });
+
+  if (components.length) {
+    return {
+      ...reply,
+      components,
+    };
+  }
+
+  return reply;
 }
 
 function formatMyItemsRows({ interaction, rows, itemKey, emptyText }) {
@@ -488,6 +498,38 @@ function buildRegisteredItemActions(interaction, type) {
       .setLabel(tr(interaction, "Meus itens", "My items"))
       .setStyle(ButtonStyle.Secondary)
   );
+}
+
+function buildMyItemsRemoveActions({ interaction, archRows, rareItemRows }) {
+  const lang = tr(interaction, "pt", "en");
+  const buttons = [];
+
+  archRows.slice(0, 1).forEach((row) => {
+    const itemName = String(row.Arma || "").trim();
+    if (!itemName) return;
+
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`myitems:arch:${shortStableHash(itemName)}:${lang}`)
+        .setLabel(tr(interaction, "Remover Archboss", "Remove Archboss"))
+        .setStyle(ButtonStyle.Danger)
+    );
+  });
+
+  rareItemRows.slice(0, 4).forEach((row, index) => {
+    const itemName = String(row.Item || "").trim();
+    if (!itemName) return;
+
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`myitems:rare:${shortStableHash(itemName)}:${lang}`)
+        .setLabel(tr(interaction, `Remover item ${index + 1}`, `Remove item ${index + 1}`))
+        .setStyle(ButtonStyle.Danger)
+    );
+  });
+
+  if (!buttons.length) return [];
+  return [new ActionRowBuilder().addComponents(buttons.slice(0, 5))];
 }
 
 function buildControlPanelReply() {
