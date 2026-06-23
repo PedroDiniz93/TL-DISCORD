@@ -14,6 +14,7 @@ const {
   weapons,
   isRareArmor,
   isWorldBossEquipT4,
+  isWorldBossJewelryT4,
   isWorldBossWeaponT4,
 } = require("../items");
 const { tr } = require("../utils");
@@ -351,6 +352,10 @@ function buildRareCategorySelectReply(interaction, action) {
         label: "Equipamentos Boss Mundo T4 - (World Boss Equips T4)",
         value: "world_boss_equip_t4",
       },
+      {
+        label: "Joias Boss Mundo T4 - (World Boss Jewelry T4)",
+        value: "world_boss_jewelry_t4",
+      },
     ],
   });
 }
@@ -380,10 +385,12 @@ function isRareItemInCategory(item, category) {
   if (category === "armor") return isRareArmor(item);
   if (category === "world_boss_weapon_t4") return isWorldBossWeaponT4(item);
   if (category === "world_boss_equip_t4") return isWorldBossEquipT4(item);
+  if (category === "world_boss_jewelry_t4") return isWorldBossJewelryT4(item);
   return (
     !isRareArmor(item) &&
     !isWorldBossWeaponT4(item) &&
-    !isWorldBossEquipT4(item)
+    !isWorldBossEquipT4(item) &&
+    !isWorldBossJewelryT4(item)
   );
 }
 

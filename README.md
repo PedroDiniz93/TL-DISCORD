@@ -9,7 +9,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - Registra uma arma de Archboss por jogador.
 - Registra itens raros por jogador, respeitando os limites configurados:
   - 1 equipamento T3/T4.
-  - 3 acessórios raros.
+  - 3 acessórios/joias.
   - 1 arma Boss Mundo T4.
 - Remove registros feitos pelo próprio jogador.
 - Lista os registros de Archboss do jogador.
@@ -138,4 +138,4 @@ npm test
 
 - As respostas dos comandos são privadas para quem executou o comando.
 - O canal permitido atualmente é `🎢planilha-arch-boss`.
-- Armas e equipamentos Boss Mundo T4 ficam disponíveis em `item_raro`; equipamentos T3/T4 compartilham o mesmo limite de 1 registro por jogador.
+- Armas, equipamentos e joias Boss Mundo T4 ficam disponíveis em `item_raro`; equipamentos T3/T4 compartilham o mesmo limite de 1 registro por jogador, e joias T4 compartilham o limite de 3 acessórios/joias.
