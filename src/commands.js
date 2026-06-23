@@ -157,6 +157,14 @@ function buildCommands() {
     .setName("meus_itens")
     .setDescription("Mostra sua arma Archboss e seus itens raros");
 
+  const helpCmd = new SlashCommandBuilder()
+    .setName("help")
+    .setDescription("Show summarized rules and available commands");
+
+  const ajudaCmd = new SlashCommandBuilder()
+    .setName("ajuda")
+    .setDescription("Mostra regras resumidas e comandos disponíveis");
+
   return [
     weaponArchCmdEn,
     weaponArchCmdPt,
@@ -174,6 +182,8 @@ function buildCommands() {
     filaItemCmdPt,
     myItemsCmd,
     meusItensCmd,
+    helpCmd,
+    ajudaCmd,
   ];
 }
 

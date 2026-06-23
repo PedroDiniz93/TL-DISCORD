@@ -326,6 +326,72 @@ function buildItemStatusReply({
   return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
 }
 
+function buildHelpReply({ interaction }) {
+  const isPt = tr(interaction, true, false);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x65b0fc)
+    .setTitle(tr(interaction, "Ajuda do bot", "Bot help"))
+    .setDescription(
+      tr(
+        interaction,
+        "Resumo das regras da lista de desejos e comandos disponíveis.",
+        "Summary of wishlist rules and available commands."
+      )
+    )
+    .addFields(
+      {
+        name: tr(interaction, "Regras resumidas", "Summarized rules"),
+        value: isPt
+          ? [
+              "Cada jogador pode registrar 1 arma Archboss.",
+              "Cada jogador pode registrar até 1 armadura rara.",
+              "Cada jogador pode registrar até 3 acessórios raros.",
+              "Você só pode remover registros feitos por você.",
+              "As filas são wishlist e não representam necessariamente prioridade.",
+            ].join("\n")
+          : [
+              "Each player can register 1 Archboss weapon.",
+              "Each player can register up to 1 rare armor piece.",
+              "Each player can register up to 3 rare accessories.",
+              "You can only remove records created by you.",
+              "Queues are wishlists and do not necessarily represent priority.",
+            ].join("\n"),
+        inline: false,
+      },
+      {
+        name: tr(interaction, "Comandos principais", "Main commands"),
+        value: [
+          "`/arma_arch` / `/weapon_arch`",
+          "`/item_raro` / `/rare_item`",
+          "`/meus_itens` / `/my_items`",
+          "`/fila_arch` / `/arch_queue`",
+          "`/fila_item_raro` / `/rare_item_queue`",
+          "`/remover_arch` / `/remove_arch`",
+          "`/remover_item_raro` / `/remove_rare_item`",
+          "`/listar_arch` / `/list_arch`",
+          "`/ajuda` / `/help`",
+        ].join("\n"),
+        inline: false,
+      },
+      {
+        name: tr(interaction, "Canal", "Channel"),
+        value: tr(
+          interaction,
+          "Use os comandos no canal configurado para o bot.",
+          "Use commands in the configured bot channel."
+        ),
+        inline: false,
+      }
+    )
+    .setFooter({
+      text: tr(interaction, "Lista de desejos TL", "TL wishlist"),
+    })
+    .setTimestamp();
+
+  return { embeds: [embed] };
+}
+
 function buildArchQueueReply({ interaction, itemName, rows }) {
   return buildItemQueueReply({
     interaction,
@@ -470,6 +536,7 @@ module.exports = {
   buildArchWishlistReply,
   buildEmptyItemReply,
   buildControlPanelReply,
+  buildHelpReply,
   buildRareItemQueueReply,
   buildRareItemWishlistReply,
   buildMyItemsReply,

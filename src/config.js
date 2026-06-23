@@ -24,6 +24,7 @@ const PT_BR_COMMANDS = new Set([
   "remover_item_raro",
   "fila_item_raro",
   "meus_itens",
+  "ajuda",
 ]);
 
 const LOG_DIR = path.join(__dirname, "..", "logs");
