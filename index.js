@@ -1,4 +1,5 @@
 require("dotenv").config();
+const http = require("http");
 const { Client, GatewayIntentBits } = require("discord.js");
 const { ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
@@ -17,6 +18,42 @@ const { isAllowedChannel, tr } = require("./src/utils");
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
+
+let healthServer = null;
+
+function startHealthServer() {
+  const port = process.env.PORT;
+  if (!port) return;
+
+  healthServer = http.createServer((req, res) => {
+    if (req.url === "/health" || req.url === "/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, ready: client.isReady() }));
+      return;
+    }
+
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Not found");
+  });
+
+  healthServer.listen(port, () => {
+    console.log(`✅ Healthcheck listening on port ${port}`);
+  });
+}
+
+function shutdown(signal) {
+  console.log(`Received ${signal}, shutting down...`);
+  client.destroy();
+
+  if (!healthServer) {
+    process.exit(0);
+    return;
+  }
+
+  healthServer.close(() => {
+    process.exit(0);
+  });
+}
 
 client.once("ready", async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
@@ -264,4 +301,12 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+startHealthServer();
+
+client.login(process.env.DISCORD_TOKEN).catch((err) => {
+  console.error("❌ Failed to login to Discord:", err);
+  process.exit(1);
+});
