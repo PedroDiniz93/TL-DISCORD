@@ -14,6 +14,7 @@ const {
   buildWarningItemReply,
 } = require("../responses");
 const { getSheet } = require("../sheets");
+const { appendLootHistoryLog } = require("../logging");
 const {
   getRequiredOptionAny,
   normalizeQueueItemName,
@@ -111,6 +112,13 @@ async function registerRareItem({ interaction, nick, item }) {
     Item: item,
     DiscordUserId: interaction.user.id,
   });
+  await appendLootHistoryLog({
+    interaction,
+    action: "add",
+    itemType: "rare",
+    item,
+    nick,
+  });
 
   return buildRegisteredItemReply({
     interaction,
@@ -148,6 +156,13 @@ async function buildRemoverItemRaroReply(interaction, item) {
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
+  await appendLootHistoryLog({
+    interaction,
+    action: "remove",
+    itemType: "rare",
+    item,
+    nick,
+  });
 
   return buildRemovedItemReply({
     interaction,

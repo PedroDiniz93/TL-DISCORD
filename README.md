@@ -19,6 +19,8 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - Salva os dados em abas do Google Sheets.
 - Cria e ajusta automaticamente cabeçalhos e formatação das abas usadas.
 - Registra comandos executados em `logs/commands.log`.
+- Registra alterações de loot em `logs/loot-history.log`.
+- Registra consultas de fila Archboss em `logs/queue-views.log`.
 
 ## Comandos
 
@@ -42,6 +44,18 @@ A aplicação usa duas abas:
 | `LISTA DESEJO ITEM RARO` | `Data`, `Nick`, `Item`, `DiscordUserId` |
 
 O bot autentica com uma conta de serviço do Google e usa o ID da planilha informado no `.env`.
+
+## Logs de auditoria
+
+Os logs são criados automaticamente na pasta `logs/` quando o bot registra o
+primeiro evento. Cada linha é um JSON independente para facilitar filtros e
+importação.
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| `logs/commands.log` | Comandos, botões, seleções e formulários processados pelo bot. |
+| `logs/loot-history.log` | Adições e remoções bem-sucedidas de armas Archboss e itens raros. |
+| `logs/queue-views.log` | Usuários que consultaram filas de armas Archboss. |
 
 ## Imagens dos itens
 

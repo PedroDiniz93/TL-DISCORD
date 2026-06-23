@@ -8,6 +8,7 @@ const {
   buildWarningItemReply,
 } = require("../responses");
 const { getSheet } = require("../sheets");
+const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
 const {
   getRequiredOptionAny,
   normalizeQueueItemName,
@@ -69,6 +70,13 @@ async function registerArchWeapon({ interaction, nick, arma }) {
     Arma: arma,
     DiscordUserId: interaction.user.id,
   });
+  await appendLootHistoryLog({
+    interaction,
+    action: "add",
+    itemType: "arch",
+    item: arma,
+    nick,
+  });
 
   return buildRegisteredItemReply({
     interaction,
@@ -128,6 +136,13 @@ async function buildRemoverArchReply(interaction, arma) {
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
   await targetRow.delete();
+  await appendLootHistoryLog({
+    interaction,
+    action: "remove",
+    itemType: "arch",
+    item: arma,
+    nick,
+  });
 
   return buildRemovedItemReply({
     interaction,
@@ -144,6 +159,11 @@ async function buildFilaArchReply(interaction, item) {
   const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
   const rows = await sheet.getRows();
   const targetItem = normalizeQueueItemName(item);
+  await appendQueueViewLog({
+    interaction,
+    itemType: "arch",
+    item,
+  });
   const filtered = rows
     .filter((row) => normalizeQueueItemName(row.Arma) === targetItem)
     .map((row) => ({

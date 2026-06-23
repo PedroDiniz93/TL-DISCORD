@@ -28,6 +28,8 @@ const PT_BR_COMMANDS = new Set([
 
 const LOG_DIR = path.join(__dirname, "..", "logs");
 const COMMAND_LOG_PATH = path.join(LOG_DIR, "commands.log");
+const LOOT_HISTORY_LOG_PATH = path.join(LOG_DIR, "loot-history.log");
+const QUEUE_VIEWS_LOG_PATH = path.join(LOG_DIR, "queue-views.log");
 
 module.exports = {
   ALLOWED_CHANNEL_NAME,
@@ -35,7 +37,9 @@ module.exports = {
   COMMAND_LOG_PATH,
   HEADER_BG,
   HEADER_FG,
+  LOOT_HISTORY_LOG_PATH,
   LOG_DIR,
   PT_BR_COMMANDS,
+  QUEUE_VIEWS_LOG_PATH,
   RARE_ITEM_SHEET,
 };
