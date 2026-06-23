@@ -17,6 +17,47 @@ function normalizeQueueItemName(value) {
     .toLowerCase();
 }
 
+function normalizeSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function tokenizeSearchQuery(value) {
+  const normalized = normalizeSearchText(value);
+  if (!normalized) return [];
+  return normalized.split(/\s+/).filter(Boolean);
+}
+
+function scoreSearchMatch(candidate, query) {
+  const normalizedCandidate = normalizeSearchText(candidate);
+  const tokens = tokenizeSearchQuery(query);
+
+  if (!tokens.length) return 1;
+  if (!normalizedCandidate) return 0;
+
+  let score = 0;
+  let lastIndex = -1;
+
+  for (const token of tokens) {
+    const index = normalizedCandidate.indexOf(token);
+    if (index === -1) return 0;
+
+    score += 20;
+    if (index === 0) score += 20;
+    if (index > lastIndex) score += 5;
+    lastIndex = index;
+  }
+
+  if (normalizedCandidate.includes(tokens.join(" "))) score += 30;
+  if (normalizedCandidate.startsWith(tokens[0])) score += 10;
+
+  return score;
+}
+
 function getUserDisplayName(user) {
   return user?.globalName ?? user?.username ?? user?.tag ?? "unknown";
 }
@@ -105,10 +146,13 @@ module.exports = {
   getUserDisplayName,
   interactionOptionsToSimpleArray,
   isAllowedChannel,
+  normalizeSearchText,
   normalizeQueueItemName,
   nowBrasilia,
   parseBrazilianDateTime,
   respondAutocompleteOnce,
   safeJsonStringify,
+  scoreSearchMatch,
+  tokenizeSearchQuery,
   tr,
 };

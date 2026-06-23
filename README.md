@@ -14,6 +14,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - Lista os registros de Archboss do jogador.
 - Mostra a fila de jogadores interessados em uma arma ou item raro.
 - Usa autocomplete nos comandos para facilitar a escolha dos itens.
+- O autocomplete aceita busca sem acento, em português ou inglês, e por termos parciais.
 - Exibe embeds mais organizados no Discord, com imagem local do item quando disponível.
 - Restringe o uso dos comandos ao canal configurado.
 - Salva os dados em abas do Google Sheets.
