@@ -80,6 +80,7 @@ function getRequiredOptionAny(interaction, names) {
 }
 
 function isPtBrCommand(interaction) {
+  if (interaction?.locale) return String(interaction.locale).toLowerCase().startsWith("pt");
   return PT_BR_COMMANDS.has(interaction?.commandName);
 }
 

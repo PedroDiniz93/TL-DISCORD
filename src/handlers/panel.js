@@ -19,10 +19,14 @@ const {
 } = require("../items");
 const { tr } = require("../utils");
 
-const PANEL_MESSAGE_TITLE = "Painel Archboss";
+const PANEL_MESSAGE_TITLES = new Set([
+  "Painel Archboss",
+  "Archboss Panel",
+  "Painel Archboss / Archboss Panel",
+]);
 
 function buildControlPanelMessage() {
-  return buildControlPanelReply();
+  return buildControlPanelReply({ locale: "bilingual" });
 }
 
 async function handleControlPanelButton(interaction) {
@@ -93,7 +97,9 @@ async function handleControlPanelSelect(interaction) {
 
   if (kind === "arch") {
     if (action === "register") {
-      await interaction.showModal(buildRegisterArchModal(value));
+      await interaction.showModal(
+        buildRegisterArchModal({ interaction: panelInteraction, value })
+      );
       return true;
     }
 
@@ -113,7 +119,9 @@ async function handleControlPanelSelect(interaction) {
     }
 
     if (action === "register") {
-      await interaction.showModal(buildRegisterRareModal(value));
+      await interaction.showModal(
+        buildRegisterRareModal({ interaction: panelInteraction, value })
+      );
       return true;
     }
 
@@ -214,9 +222,12 @@ async function ensureControlPanel(client, channelName) {
 }
 
 function buildRegisterArchModal(item) {
+  const interaction = item.interaction;
+  const value = item.value;
+
   return new ModalBuilder()
-    .setCustomId(`panel:register_arch:${encodePanelValue(item)}`)
-    .setTitle("Registrar arma Archboss")
+    .setCustomId(`panel:register_arch:${encodePanelValue(value)}`)
+    .setTitle(tr(interaction, "Registrar arma Archboss", "Register Archboss weapon"))
     .addComponents(
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
@@ -229,9 +240,12 @@ function buildRegisterArchModal(item) {
 }
 
 function buildRegisterRareModal(item) {
+  const interaction = item.interaction;
+  const value = item.value;
+
   return new ModalBuilder()
-    .setCustomId(`panel:register_rare:${encodePanelValue(item)}`)
-    .setTitle("Registrar item raro")
+    .setCustomId(`panel:register_rare:${encodePanelValue(value)}`)
+    .setTitle(tr(interaction, "Registrar item raro", "Register rare item"))
     .addComponents(
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
@@ -279,7 +293,7 @@ function findPanelMessage(messages, botUserId) {
       const embed = message.embeds?.[0];
       return (
         message.author?.id === botUserId &&
-        embed?.title === PANEL_MESSAGE_TITLE &&
+        PANEL_MESSAGE_TITLES.has(embed?.title) &&
         embed?.footer?.text === "TL control panel"
       );
     }) || null
@@ -298,7 +312,7 @@ function getMessageList(messages) {
 function withPanelLanguage(interaction) {
   return new Proxy(interaction, {
     get(target, prop, receiver) {
-      if (prop === "commandName") return "meus_itens";
+      if (prop === "locale") return target.locale || "pt-BR";
       return Reflect.get(target, prop, receiver);
     },
   });
@@ -309,12 +323,20 @@ function buildArchSelectReply(interaction, action) {
     interaction,
     title:
       action === "register"
-        ? "Selecione a arma"
-        : "Selecione a arma da fila",
+        ? tr(interaction, "Selecione a arma", "Select weapon")
+        : tr(interaction, "Selecione a arma da fila", "Select queue weapon"),
     description:
       action === "register"
-        ? "Escolha a arma Archboss para registrar."
-        : "Escolha a arma Archboss para ver a fila.",
+        ? tr(
+            interaction,
+            "Escolha a arma Archboss para registrar.",
+            "Choose the Archboss weapon to register."
+          )
+        : tr(
+            interaction,
+            "Escolha a arma Archboss para ver a fila.",
+            "Choose the Archboss weapon to view the queue."
+          ),
     customId: `panel-select:arch:${action}`,
     options: weapons.map((item) => ({
       label: trimSelectLabel(item),
@@ -328,32 +350,40 @@ function buildRareCategorySelectReply(interaction, action) {
     interaction,
     title:
       action === "register"
-        ? "Selecione o tipo de item"
-        : "Selecione a categoria da fila",
+        ? tr(interaction, "Selecione o tipo de item", "Select item type")
+        : tr(interaction, "Selecione a categoria da fila", "Select queue category"),
     description:
       action === "register"
-        ? "Escolha primeiro a categoria do item raro."
-        : "Escolha primeiro a categoria do item raro da fila.",
+        ? tr(
+            interaction,
+            "Escolha primeiro a categoria do item raro.",
+            "Choose the rare item category first."
+          )
+        : tr(
+            interaction,
+            "Escolha primeiro a categoria do item raro da fila.",
+            "Choose the rare item queue category first."
+          ),
     customId: `panel-select:rare:category:${action}`,
     options: [
       {
-        label: "Equipamentos Raro T3 - (Rare Armor T3)",
+        label: tr(interaction, "Equipamentos Raro T3", "Rare Equips T3"),
         value: "armor",
       },
       {
-        label: "Acessório Raro T3 -(Rare Accessory T3)",
+        label: tr(interaction, "Acessório Raro T3", "Rare Accessory T3"),
         value: "accessory",
       },
       {
-        label: "Arma Boss Mundo T4 - (World Boss Weapon T4)",
+        label: tr(interaction, "Arma Boss Mundo T4", "World Boss Weapon T4"),
         value: "world_boss_weapon_t4",
       },
       {
-        label: "Equipamentos Boss Mundo T4 - (World Boss Equips T4)",
+        label: tr(interaction, "Equipamentos Boss Mundo T4", "World Boss Equips T4"),
         value: "world_boss_equip_t4",
       },
       {
-        label: "Joias Boss Mundo T4 - (World Boss Jewelry T4)",
+        label: tr(interaction, "Joias Boss Mundo T4", "World Boss Jewelry T4"),
         value: "world_boss_jewelry_t4",
       },
     ],
@@ -367,12 +397,20 @@ function buildRareItemSelectReply(interaction, action, category) {
     interaction,
     title:
       action === "register"
-        ? "Selecione o item"
-        : "Selecione o item da fila",
+        ? tr(interaction, "Selecione o item", "Select item")
+        : tr(interaction, "Selecione o item da fila", "Select queue item"),
     description:
       action === "register"
-        ? "Escolha o item raro para registrar."
-        : "Escolha o item raro para ver a fila.",
+        ? tr(
+            interaction,
+            "Escolha o item raro para registrar.",
+            "Choose the rare item to register."
+          )
+        : tr(
+            interaction,
+            "Escolha o item raro para ver a fila.",
+            "Choose the rare item to view the queue."
+          ),
     customId: `panel-select:rare:${action}`,
     options: filtered.map((item) => ({
       label: trimSelectLabel(item),
@@ -407,7 +445,7 @@ function buildSelectReply({ interaction, title, description, customId, options }
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId(customId)
-          .setPlaceholder("Selecione uma opção")
+          .setPlaceholder(tr(interaction, "Selecione uma opção", "Select an option"))
           .setMinValues(1)
           .setMaxValues(1)
           .addOptions(options.slice(0, 25))

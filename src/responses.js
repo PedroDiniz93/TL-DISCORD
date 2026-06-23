@@ -534,12 +534,16 @@ function buildMyItemsRemoveActions({ interaction, archRows, rareItemRows }) {
   return [new ActionRowBuilder().addComponents(buttons.slice(0, 5))];
 }
 
-function buildControlPanelReply() {
+function buildControlPanelReply(interaction = null) {
   const embed = new EmbedBuilder()
     .setColor(0x65b0fc)
-    .setTitle("Painel Archboss")
+    .setTitle(panelTr(interaction, "Painel Archboss", "Archboss Panel"))
     .setDescription(
-      "Use os botões abaixo para registrar seus itens e consultar sua lista sem precisar digitar comandos."
+      panelTr(
+        interaction,
+        "Use os botões abaixo para registrar seus itens e consultar sua lista sem precisar digitar comandos.",
+        "Use the buttons below to register your items and check your wishlist without typing commands."
+      )
     )
     .setFooter({
       text: "TL control panel",
@@ -551,29 +555,34 @@ function buildControlPanelReply() {
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("panel:register_arch")
-          .setLabel("Registrar arma Archboss")
+          .setLabel(panelTr(interaction, "Registrar arma Archboss", "Register Archboss weapon"))
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId("panel:register_rare")
-          .setLabel("Registrar item raro")
+          .setLabel(panelTr(interaction, "Registrar item raro", "Register rare item"))
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId("panel:my_items")
-          .setLabel("Meus itens")
+          .setLabel(panelTr(interaction, "Meus itens", "My items"))
           .setStyle(ButtonStyle.Secondary)
       ),
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("panel:queue_arch")
-          .setLabel("Ver fila Archboss")
+          .setLabel(panelTr(interaction, "Ver fila Archboss", "View Archboss queue"))
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId("panel:queue_rare")
-          .setLabel("Ver fila item raro")
+          .setLabel(panelTr(interaction, "Ver fila item raro", "View rare item queue"))
           .setStyle(ButtonStyle.Success)
       ),
     ],
   };
+}
+
+function panelTr(interaction, ptBr, en) {
+  if (interaction?.locale === "bilingual") return `${ptBr} / ${en}`;
+  return tr(interaction, ptBr, en);
 }
 
 module.exports = {
