@@ -38,34 +38,26 @@ async function handleControlPanelButton(interaction) {
   const panelInteraction = withPanelLanguage(interaction);
 
   if (action === "register_arch") {
-    await interaction.reply({
-      ...buildArchSelectReply(panelInteraction, "register"),
-      ephemeral: true,
-    });
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply(buildArchSelectReply(panelInteraction, "register"));
     return true;
   }
 
   if (action === "register_rare") {
-    await interaction.reply({
-      ...buildRareCategorySelectReply(panelInteraction, "register"),
-      ephemeral: true,
-    });
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply(buildRareCategorySelectReply(panelInteraction, "register"));
     return true;
   }
 
   if (action === "queue_arch") {
-    await interaction.reply({
-      ...buildArchSelectReply(panelInteraction, "queue"),
-      ephemeral: true,
-    });
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply(buildArchSelectReply(panelInteraction, "queue"));
     return true;
   }
 
   if (action === "queue_rare") {
-    await interaction.reply({
-      ...buildRareCategorySelectReply(panelInteraction, "queue"),
-      ephemeral: true,
-    });
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply(buildRareCategorySelectReply(panelInteraction, "queue"));
     return true;
   }
 

@@ -101,6 +101,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (interaction.isButton()) {
+    let hasDeferred = false;
     try {
       const panelHandled = await handleControlPanelButton(interaction);
       if (panelHandled) {
@@ -112,7 +113,6 @@ client.on("interactionCreate", async (interaction) => {
         return true;
       }
 
-      let hasDeferred = false;
       await interaction.deferReply({ ephemeral: true });
       hasDeferred = true;
       const handled = await handleWishlistButton(interaction);
