@@ -27,7 +27,11 @@ const PT_BR_COMMANDS = new Set([
   "ajuda",
 ]);
 
-const LOG_DIR = path.join(__dirname, "..", "logs");
+const LOG_DIR =
+  process.env.LOG_DIR ||
+  (process.env.RAILWAY_VOLUME_MOUNT_PATH
+    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "logs")
+    : path.join(__dirname, "..", "logs"));
 const COMMAND_LOG_PATH = path.join(LOG_DIR, "commands.log");
 const LOOT_HISTORY_LOG_PATH = path.join(LOG_DIR, "loot-history.log");
 const QUEUE_VIEWS_LOG_PATH = path.join(LOG_DIR, "queue-views.log");
