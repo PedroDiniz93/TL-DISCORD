@@ -1,6 +1,8 @@
 const {
   ActionRowBuilder,
   ModalBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   StringSelectMenuBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -64,6 +66,15 @@ async function handleControlPanelButton(interaction) {
       ...buildRareCategorySelectReply(panelInteraction, "queue"),
       ephemeral: true,
     });
+    return true;
+  }
+
+  if (action === "back") {
+    const target = String(interaction.customId || "")
+      .split(":")
+      .slice(2)
+      .join(":") || "home";
+    await interaction.update(buildPanelBackReply(panelInteraction, target));
     return true;
   }
 
@@ -412,6 +423,7 @@ function buildRareItemSelectReply(interaction, action, category) {
             "Choose the rare item to view the queue."
           ),
     customId: `panel-select:rare:${action}`,
+    backTarget: `rare_category:${action}`,
     options: filtered.map((item) => ({
       label: trimSelectLabel(item),
       value: item,
@@ -432,7 +444,14 @@ function isRareItemInCategory(item, category) {
   );
 }
 
-function buildSelectReply({ interaction, title, description, customId, options }) {
+function buildSelectReply({
+  interaction,
+  title,
+  description,
+  customId,
+  options,
+  backTarget = "home",
+}) {
   const embed = {
     color: 0x65b0fc,
     title,
@@ -450,8 +469,29 @@ function buildSelectReply({ interaction, title, description, customId, options }
           .setMaxValues(1)
           .addOptions(options.slice(0, 25))
       ),
+      new ActionRowBuilder().addComponents(buildBackButton(interaction, backTarget)),
     ],
   };
+}
+
+function buildPanelBackReply(interaction, target) {
+  if (target.startsWith("rare_category")) {
+    const [, action = "register"] = target.split(":");
+    return buildRareCategorySelectReply(interaction, action);
+  }
+
+  return buildPanelHomeReply(interaction);
+}
+
+function buildPanelHomeReply(interaction) {
+  return buildControlPanelReply(interaction);
+}
+
+function buildBackButton(interaction, target) {
+  return new ButtonBuilder()
+    .setCustomId(`panel:back:${target}`)
+    .setLabel(tr(interaction, "Voltar", "Back"))
+    .setStyle(ButtonStyle.Secondary);
 }
 
 function trimSelectLabel(value) {
