@@ -271,8 +271,10 @@ function normalizeChannelName(value) {
 function findPanelMessage(messages, botUserId) {
   if (!messages) return null;
 
+  const messageList = getMessageList(messages);
+
   return (
-    messages.find((message) => {
+    messageList.find((message) => {
       const embed = message.embeds?.[0];
       return (
         message.author?.id === botUserId &&
@@ -281,6 +283,15 @@ function findPanelMessage(messages, botUserId) {
       );
     }) || null
   );
+}
+
+function getMessageList(messages) {
+  if (typeof messages.values === "function") return Array.from(messages.values());
+  if (Array.isArray(messages)) return messages;
+  if (Array.isArray(messages.items)) {
+    return messages.items.map((item) => item.message || item).filter(Boolean);
+  }
+  return [];
 }
 
 function withPanelLanguage(interaction) {
