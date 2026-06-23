@@ -10,6 +10,18 @@ const RARE_ITEM_SHEET = {
   headers: ["Data", "Nick", "Item", "DiscordUserId"],
 };
 
+const ARCH_GAIN_HISTORY_SHEET = {
+  title: "HISTORICO DE GANHO ARCH BOSS",
+  headers: ["Data/Hora", "Player", "Item", "DiscordUserId"],
+};
+
+const RARE_ITEM_GAIN_HISTORY_SHEET = {
+  title: "HISTORICO DE GANHO ITEM RARO",
+  headers: ["Data/Hora", "Player", "Item", "DiscordUserId"],
+};
+
+const ADMIN_ROLE_NAME = "ADM";
+
 const HEADER_BG = { red: 0.05, green: 0.15, blue: 0.35 };
 const HEADER_FG = { red: 1, green: 1, blue: 1 };
 
@@ -26,6 +38,7 @@ const PT_BR_COMMANDS = new Set([
   "meus_itens",
   "ajuda",
   "baixar_logs",
+  "marcar_entregue",
 ]);
 
 const LOG_DIR =
@@ -38,7 +51,9 @@ const LOOT_HISTORY_LOG_PATH = path.join(LOG_DIR, "loot-history.log");
 const QUEUE_VIEWS_LOG_PATH = path.join(LOG_DIR, "queue-views.log");
 
 module.exports = {
+  ADMIN_ROLE_NAME,
   ALLOWED_CHANNEL_NAME,
+  ARCH_GAIN_HISTORY_SHEET,
   ARCH_SHEET,
   COMMAND_LOG_PATH,
   HEADER_BG,
@@ -47,5 +62,6 @@ module.exports = {
   LOG_DIR,
   PT_BR_COMMANDS,
   QUEUE_VIEWS_LOG_PATH,
+  RARE_ITEM_GAIN_HISTORY_SHEET,
   RARE_ITEM_SHEET,
 };

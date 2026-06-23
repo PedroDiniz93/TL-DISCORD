@@ -13,6 +13,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - Remove registros feitos pelo próprio jogador.
 - Lista os registros de Archboss do jogador.
 - Mostra a fila de jogadores interessados em uma arma ou item raro.
+- Permite que membros com cargo `ADM` marquem itens como entregues.
 - Usa autocomplete nos comandos para facilitar a escolha dos itens.
 - O autocomplete aceita busca sem acento, em português ou inglês, e por termos parciais.
 - Exibe embeds mais organizados no Discord, com imagem local do item quando disponível.
@@ -34,6 +35,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 | `/rare_item` ou `/item_raro` | Registra um item raro na lista de desejo. |
 | `/remove_rare_item` ou `/remover_item_raro` | Remove um item raro registrado. |
 | `/rare_item_queue` ou `/fila_item_raro` | Mostra a fila de jogadores para um item raro. |
+| `/marcar_entregue` | Marca um item como entregue, remove da fila ativa e grava no histórico. Requer cargo `ADM`. |
 | `/my_items` ou `/meus_itens` | Mostra sua arma Archboss e seus itens raros. |
 | `/help` ou `/ajuda` | Mostra regras resumidas e a lista de comandos. |
 | `/baixar_logs` | Envia os arquivos de log em resposta privada para administradores. |
@@ -46,6 +48,8 @@ A aplicação usa duas abas:
 | --- | --- |
 | `LISTA DESEJO ARCH` | `Data`, `Nick`, `Arma`, `DiscordUserId` |
 | `LISTA DESEJO ITEM RARO` | `Data`, `Nick`, `Item`, `DiscordUserId` |
+| `HISTORICO DE GANHO ARCH BOSS` | `Data/Hora`, `Player`, `Item`, `DiscordUserId` |
+| `HISTORICO DE GANHO ITEM RARO` | `Data/Hora`, `Player`, `Item`, `DiscordUserId` |
 
 O bot autentica com uma conta de serviço do Google e usa o ID da planilha informado no `.env`.
 

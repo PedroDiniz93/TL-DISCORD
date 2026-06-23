@@ -170,6 +170,40 @@ function buildCommands() {
     .setDescription("Baixa os arquivos de log do bot")
     .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator);
 
+  const marcarEntregueCmd = new SlashCommandBuilder()
+    .setName("marcar_entregue")
+    .setDescription("Marca um item como entregue e move o registro para o histórico")
+    .addStringOption((o) =>
+      o
+        .setName("tipo")
+        .setDescription("Tipo de item")
+        .setRequired(true)
+        .addChoices(
+          {
+            name: "Archboss",
+            value: "arch",
+          },
+          {
+            name: "Item raro",
+            value: "rare",
+          }
+        )
+    )
+    .addStringOption((o) =>
+      o
+        .setName("item")
+        .setDescription("Item entregue")
+        .setRequired(true)
+        .setAutocomplete(true)
+    )
+    .addStringOption((o) =>
+      o
+        .setName("player")
+        .setDescription("Player que recebeu o item")
+        .setRequired(true)
+        .setAutocomplete(true)
+    );
+
   return [
     weaponArchCmdEn,
     weaponArchCmdPt,
@@ -190,6 +224,7 @@ function buildCommands() {
     helpCmd,
     ajudaCmd,
     baixarLogsCmd,
+    marcarEntregueCmd,
   ];
 }
 
