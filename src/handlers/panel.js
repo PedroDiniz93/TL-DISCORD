@@ -460,6 +460,8 @@ function buildSelectReply({
 
   return {
     embeds: [embed],
+    files: [],
+    attachments: [],
     components: [
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
@@ -484,7 +486,11 @@ function buildPanelBackReply(interaction, target) {
 }
 
 function buildPanelHomeReply(interaction) {
-  return buildControlPanelReply(interaction);
+  return {
+    ...buildControlPanelReply(interaction),
+    files: [],
+    attachments: [],
+  };
 }
 
 function buildBackButton(interaction, target) {
