@@ -45,6 +45,18 @@ const worldBossWeaponT4Items = [
   "🥊 Crimson Valley's Gauntlets of Brutality",
 ];
 
+const worldBossEquipT4Items = [
+  "🎩 Prayer of Salvation Hat",
+  "🥋 Blizzard Overture Armor",
+  "🥋 Frigid Melody Armor",
+  "🧥 North Wind's Tyranny Cloak",
+  "🧤 Prophecy of Nine Lives Gloves",
+  "🧤 Punisher's Wings Gloves",
+  "👢 Azure Sky Apostle Greaves",
+  "👢 Hex of Ingenuity Greaves",
+  "👢 Stigma Executor Greaves",
+];
+
 const rareItems = [
   "Brooch of Certainty (Broche da Certeza)",
   "Brooch of Nimblesness (Broche da Agilidade)",
@@ -75,6 +87,7 @@ const rareItems = [
   "Crimson Lotus Chestplate (Peitoral do Lotus Carmesim)",
   "Signet of the Alpha (Sinete do alfa)",
   ...worldBossWeaponT4Items,
+  ...worldBossEquipT4Items,
 ];
 
 const RARE_ARMOR_ITEMS = new Set([
@@ -88,14 +101,19 @@ const RARE_ARMOR_ITEMS = new Set([
 const RARE_ITEM_SET = new Set([
   ...rareItems,
   ...worldBossWeaponT4Items.map(stripLeadingItemEmoji),
+  ...worldBossEquipT4Items.map(stripLeadingItemEmoji),
 ]);
 const WORLD_BOSS_WEAPON_T4_ITEM_SET = new Set([
   ...worldBossWeaponT4Items,
   ...worldBossWeaponT4Items.map(stripLeadingItemEmoji),
 ]);
+const WORLD_BOSS_EQUIP_T4_ITEM_SET = new Set([
+  ...worldBossEquipT4Items,
+  ...worldBossEquipT4Items.map(stripLeadingItemEmoji),
+]);
 
 const MAX_RARE_ACCESSORIES_PER_USER = 3;
-const MAX_RARE_ARMORS_PER_USER = 1;
+const MAX_RARE_EQUIPS_PER_USER = 1;
 const MAX_WORLD_BOSS_WEAPONS_T4_PER_USER = 1;
 
 function isRareArmor(itemName) {
@@ -110,6 +128,10 @@ function isWorldBossWeaponT4(itemName) {
   return WORLD_BOSS_WEAPON_T4_ITEM_SET.has(itemName);
 }
 
+function isWorldBossEquipT4(itemName) {
+  return WORLD_BOSS_EQUIP_T4_ITEM_SET.has(itemName);
+}
+
 function stripLeadingItemEmoji(itemName) {
   return String(itemName || "")
     .replace(/^[^\p{L}\p{N}]+/u, "")
@@ -118,13 +140,15 @@ function stripLeadingItemEmoji(itemName) {
 
 module.exports = {
   MAX_RARE_ACCESSORIES_PER_USER,
-  MAX_RARE_ARMORS_PER_USER,
+  MAX_RARE_EQUIPS_PER_USER,
   MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
+  isWorldBossEquipT4,
   isRareArmor,
   isKnownRareItem,
   isWorldBossWeaponT4,
   rareItems,
   stripLeadingItemEmoji,
+  worldBossEquipT4Items,
   worldBossWeaponT4Items,
   weapons,
 };

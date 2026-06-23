@@ -1,10 +1,11 @@
 const { RARE_ITEM_SHEET } = require("../config");
 const {
   MAX_RARE_ACCESSORIES_PER_USER,
-  MAX_RARE_ARMORS_PER_USER,
+  MAX_RARE_EQUIPS_PER_USER,
   MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
   isKnownRareItem,
   isRareArmor,
+  isWorldBossEquipT4,
   isWorldBossWeaponT4,
   stripLeadingItemEmoji,
 } = require("../items");
@@ -60,9 +61,11 @@ async function registerRareItem({ interaction, nick, item }) {
   );
   const targetIsArmor = isRareArmor(item);
   const targetIsWorldBossWeaponT4 = isWorldBossWeaponT4(item);
-  const userArmors = userRows
+  const targetIsWorldBossEquipT4 = isWorldBossEquipT4(item);
+  const targetIsEquip = targetIsArmor || targetIsWorldBossEquipT4;
+  const userEquips = userRows
     .map((row) => (row.Item || "").trim())
-    .filter((name) => isRareArmor(name));
+    .filter((name) => isRareArmor(name) || isWorldBossEquipT4(name));
   const userWorldBossWeaponsT4 = userRows
     .map((row) => (row.Item || "").trim())
     .filter((name) => isWorldBossWeaponT4(name));
@@ -72,23 +75,24 @@ async function registerRareItem({ interaction, nick, item }) {
       (name) =>
         isKnownRareItem(name) &&
         !isRareArmor(name) &&
-        !isWorldBossWeaponT4(name)
+        !isWorldBossWeaponT4(name) &&
+        !isWorldBossEquipT4(name)
     );
 
-  if (targetIsArmor && userArmors.length >= MAX_RARE_ARMORS_PER_USER) {
+  if (targetIsEquip && userEquips.length >= MAX_RARE_EQUIPS_PER_USER) {
     return buildWarningItemReply({
       interaction,
-      itemName: userArmors[0],
-      title: tr(interaction, "⚠️ Limite de armadura", "⚠️ Armor limit reached"),
+      itemName: userEquips[0],
+      title: tr(interaction, "⚠️ Limite de equipamento", "⚠️ Equip limit reached"),
       description: tr(
         interaction,
-        "Você já possui 1 armadura rara registrada. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outra.",
-        "You already have 1 registered rare armor. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+        "Você já possui 1 equipamento T3/T4 registrado. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outro.",
+        "You already have 1 registered T3/T4 equip. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
       ),
       fields: [
         {
-          name: tr(interaction, "Armadura registrada", "Registered armor"),
-          value: userArmors[0],
+          name: tr(interaction, "Equipamento registrado", "Registered equip"),
+          value: userEquips[0],
           inline: false,
         },
       ],
@@ -129,6 +133,7 @@ async function registerRareItem({ interaction, nick, item }) {
   if (
     !targetIsArmor &&
     !targetIsWorldBossWeaponT4 &&
+    !targetIsWorldBossEquipT4 &&
     userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER
   ) {
     return buildWarningItemReply({

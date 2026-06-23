@@ -355,7 +355,7 @@ function buildHelpReply({ interaction }) {
         value: isPt
           ? [
               "Cada jogador pode registrar 1 arma Archboss.",
-              "Cada jogador pode registrar até 1 armadura rara.",
+              "Cada jogador pode registrar até 1 equipamento T3/T4.",
               "Cada jogador pode registrar até 3 acessórios raros.",
               "Cada jogador pode registrar até 1 arma Boss Mundo T4.",
               "Você só pode remover registros feitos por você.",
@@ -363,7 +363,7 @@ function buildHelpReply({ interaction }) {
             ].join("\n")
           : [
               "Each player can register 1 Archboss weapon.",
-              "Each player can register up to 1 rare armor piece.",
+              "Each player can register up to 1 T3/T4 equip.",
               "Each player can register up to 3 rare accessories.",
               "Each player can register up to 1 World Boss Weapon T4.",
               "You can only remove records created by you.",
