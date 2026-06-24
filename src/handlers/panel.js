@@ -17,7 +17,6 @@ const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
 const { buildItemInfoReply } = require("./item-info");
 const { buildMyItemsForInteraction } = require("./my-items");
-const { getLastNicknameForDiscordUser } = require("../nicknames");
 const { findKnownItemByHash, getItemInfo } = require("../item-info-service");
 const {
   rareItems,
@@ -261,7 +260,6 @@ async function ensureControlPanel(client, channelName) {
 async function buildRegisterArchModal(item) {
   const interaction = item.interaction;
   const value = item.value;
-  const lastNick = await getLastNicknameForDiscordUser(interaction.user?.id);
 
   return new ModalBuilder()
     .setCustomId(`panel:register_arch:${encodePanelValue(value)}`)
@@ -281,7 +279,6 @@ async function buildRegisterArchModal(item) {
 async function buildRegisterRareModal(item) {
   const interaction = item.interaction;
   const value = item.value;
-  const lastNick = await getLastNicknameForDiscordUser(interaction.user?.id);
 
   return new ModalBuilder()
     .setCustomId(`panel:register_rare:${encodePanelValue(value)}`)
@@ -587,21 +584,29 @@ function trimSelectLabel(value) {
 }
 
 function encodePanelValue(value) {
-  return shortStableHash(value);
+  const index = getPanelItems().findIndex((item) => item === value);
+  if (index >= 0) return `i${index}`;
+  return Buffer.from(String(value || ""), "utf8").toString("base64url");
 }
 
 function decodePanelValue(value) {
   const encoded = String(value || "");
-  const knownItem = [...weapons, ...rareItems].find(
-    (item) => shortStableHash(item) === encoded
-  );
-  if (knownItem) return knownItem;
+  if (/^i\d+$/.test(encoded)) {
+    return getPanelItems()[Number(encoded.slice(1))] || "";
+  }
+
+  const hashedItem = getPanelItems().find((item) => shortStableHash(item) === encoded);
+  if (hashedItem) return hashedItem;
 
   try {
     return Buffer.from(encoded, "base64url").toString("utf8");
   } catch {
     return "";
   }
+}
+
+function getPanelItems() {
+  return [...weapons, ...rareItems];
 }
 
 module.exports = {
