@@ -2,9 +2,9 @@ const fs = require("fs");
 const path = require("path");
 
 const ITEM_IMAGES = {
-  "🛡️ Espada e Escudo da Belandir (Belandir Sword and Shield)":
+  "🛡️ Espada/Escudo Belandir (Belandir Sword/Shield)":
     "assets/items/belandir-sword-and-shield.webp",
-  "🛡️ Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)":
+  "🛡️ Espada/Escudo Deluznoa (Deluznoa Sword/Shield)":
     "assets/items/deluznoa-sword-and-shield.webp",
   "🗡️ Espadão do Cordy (Cordy Greatsword)": "assets/items/cordy-greatsword.webp",
   "🗡️ Espadão do Tevent (Tevent Greatsword)": "assets/items/tevent-greatsword.webp",

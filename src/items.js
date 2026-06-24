@@ -1,8 +1,8 @@
 const weapons = [
   "🗡️ Espadão do Cordy (Cordy Greatsword)",
   "🗡️ Espadão do Tevent (Tevent Greatsword)",
-  "🛡️ Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)",
-  "🛡️ Espada e Escudo da Belandir (Belandir Sword and Shield)",
+  "🛡️ Espada/Escudo Deluznoa (Deluznoa Sword/Shield)",
+  "🛡️ Espada/Escudo Belandir (Belandir Sword/Shield)",
   "⚔️ Adaga da Deluznoa (Deluznoa Dagger)",
   "⚔️ Adaga do Tevent (Tevent Dagger)",
   "🎯 Balestra do Cordy (Cordy Crossbow)",
@@ -31,11 +31,11 @@ const archbossCodexAliases = [
     codexNames: ["Giant Cordy's Ascension Greatsword"],
   },
   {
-    localName: "🛡️ Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)",
+    localName: "🛡️ Espada/Escudo Deluznoa (Deluznoa Sword/Shield)",
     codexNames: ["Deluzhnoa's Edge of Eternal Frost"],
   },
   {
-    localName: "🛡️ Espada e Escudo da Belandir (Belandir Sword and Shield)",
+    localName: "🛡️ Espada/Escudo Belandir (Belandir Sword/Shield)",
     codexNames: ["Queen Bellandir's Languishing Blade"],
   },
   {
