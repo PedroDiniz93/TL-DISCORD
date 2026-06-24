@@ -185,6 +185,10 @@ function buildCommands() {
     .setName("baixar_logs")
     .setDescription("Baixa os arquivos de log do bot");
 
+  const statusBotCmd = new SlashCommandBuilder()
+    .setName("status_bot")
+    .setDescription("Mostra o status operacional do bot");
+
   const marcarEntregueCmd = new SlashCommandBuilder()
     .setName("marcar_entregue")
     .setDescription("Marca um item como entregue e move o registro para o histórico")
@@ -239,6 +243,7 @@ function buildCommands() {
     helpCmd,
     ajudaCmd,
     baixarLogsCmd,
+    statusBotCmd,
     marcarEntregueCmd,
   ];
 }

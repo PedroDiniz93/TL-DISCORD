@@ -301,7 +301,14 @@ function buildEmptyItemReply({ interaction, itemName, title, description }) {
   });
 }
 
-function buildWarningItemReply({ interaction, itemName, title, description, fields = [] }) {
+function buildWarningItemReply({
+  interaction,
+  itemName,
+  title,
+  description,
+  fields = [],
+  components = [],
+}) {
   return buildItemStatusReply({
     interaction,
     itemName,
@@ -309,6 +316,7 @@ function buildWarningItemReply({ interaction, itemName, title, description, fiel
     title,
     description,
     fields,
+    components,
   });
 }
 
@@ -319,6 +327,7 @@ function buildItemStatusReply({
   title,
   description,
   fields = [],
+  components = [],
 }) {
   const { attachment, thumbnailUrl } = createItemAttachmentAndThumbnail(itemName);
   const embed = new EmbedBuilder()
@@ -333,7 +342,11 @@ function buildItemStatusReply({
   if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
   if (fields.length) embed.addFields(fields);
 
-  return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+  return {
+    embeds: [embed],
+    ...(attachment ? { files: [attachment] } : {}),
+    ...(components.length ? { components } : {}),
+  };
 }
 
 function buildHelpReply({ interaction }) {
@@ -384,6 +397,7 @@ function buildHelpReply({ interaction }) {
           "`/listar_arch` / `/list_arch`",
           "`/ajuda` / `/help`",
           "`/baixar_logs`",
+          "`/status_bot`",
         ].join("\n"),
         inline: false,
       },
@@ -499,6 +513,17 @@ function buildRegisteredItemActions(interaction, type) {
   );
 }
 
+function buildRemoveItemAction(interaction, type) {
+  const lang = tr(interaction, "pt", "en");
+
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`wishlist:${type}:remove:${lang}`)
+      .setLabel(tr(interaction, "Remover", "Remove"))
+      .setStyle(ButtonStyle.Danger)
+  );
+}
+
 function buildMyItemsRemoveActions({ interaction, archRows, rareItemRows }) {
   const lang = tr(interaction, "pt", "en");
   const buttons = [];
@@ -592,6 +617,7 @@ module.exports = {
   buildRareItemWishlistReply,
   buildMyItemsReply,
   buildRegisteredItemReply,
+  buildRemoveItemAction,
   buildRemovedItemReply,
   buildWarningItemReply,
 };

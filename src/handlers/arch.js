@@ -4,6 +4,7 @@ const {
   buildArchWishlistReply,
   buildEmptyItemReply,
   buildRegisteredItemReply,
+  buildRemoveItemAction,
   buildRemovedItemReply,
   buildWarningItemReply,
 } = require("../responses");
@@ -62,6 +63,9 @@ async function registerArchWeapon({ interaction, nick, arma }) {
               inline: false,
             },
           ]
+        : [],
+      components: userWeapons.length
+        ? [buildRemoveItemAction(interaction, "arch")]
         : [],
     });
   }

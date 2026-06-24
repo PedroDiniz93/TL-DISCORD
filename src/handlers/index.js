@@ -13,6 +13,7 @@ const { handleHelp } = require("./help");
 const { handleBaixarLogs } = require("./logs");
 const { handleMyItems } = require("./my-items");
 const { handleMarcarEntregue } = require("./deliveries");
+const { handleStatusBot } = require("./status");
 
 const commandHandlers = {
   weapon_arch: handleArmaArch,
@@ -34,6 +35,7 @@ const commandHandlers = {
   help: handleHelp,
   ajuda: handleHelp,
   baixar_logs: handleBaixarLogs,
+  status_bot: handleStatusBot,
   marcar_entregue: handleMarcarEntregue,
 };
 
