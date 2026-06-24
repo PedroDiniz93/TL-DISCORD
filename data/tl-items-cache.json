@@ -1,0 +1,480 @@
+{
+  "cordy-greatsword": {
+    "source": "tlcodex",
+    "originalName": "🗡️ Espadão do Cordy (Cordy Greatsword)",
+    "displayName": "Espadão do Cordy (Cordy Greatsword)",
+    "ptName": "Espadão do Cordy",
+    "enName": "Cordy Greatsword",
+    "category": "archboss_weapon",
+    "categoryLabel": "Arma Archboss",
+    "typeLabel": "Archboss",
+    "limitLabel": "1 arma Archboss por jogador",
+    "externalUrl": "https://tlcodex.com/en/item/1757382910/",
+    "cachedAt": "2026-06-24T15:13:56.051Z",
+    "externalProvider": "tlcodex",
+    "externalId": 1757382910,
+    "externalName": "Giant Cordy's Ascension Greatsword",
+    "externalDescription": "\"The divine sword that once symbolized the birth of life has become an accursed weapon that consumes life with its toxicity. It is none other than Giant Cordy's Greatsword, corrupted along with the Astral Force.\"",
+    "iconUrl": "https://tlcodex.com/icons/icon/item_128/equip/weapon/it_p_sword2h_00052a.webp",
+    "grade": 7,
+    "combatPower": 277,
+    "statusSummary": "Damage: 149 ~ 277\nRange: 3.5m\nAttack Speed: 0.743s\nStrength: 6\nPerception: 4\nHit Chance: 40\nCollision Chance: 50",
+    "baseStats": [
+      {
+        "label": "Damage",
+        "value": "149 ~ 277"
+      },
+      {
+        "label": "Range",
+        "value": "3.5m"
+      },
+      {
+        "label": "Attack Speed",
+        "value": "0.743s"
+      },
+      {
+        "label": "Strength",
+        "value": "6"
+      },
+      {
+        "label": "Perception",
+        "value": "4"
+      },
+      {
+        "label": "Hit Chance",
+        "value": "40"
+      },
+      {
+        "label": "Collision Chance",
+        "value": "50"
+      }
+    ],
+    "possibleTraits": [
+      {
+        "label": "Hit Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Critical Hit Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Heavy Attack Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Collision Chance",
+        "value": "+100 | 200 | 300 | 400"
+      },
+      {
+        "label": "Max Health",
+        "value": "+600 | 1200 | 1800 | 2400"
+      },
+      {
+        "label": "Added Attack Speed",
+        "value": "+8 | 16 | 24 | 32"
+      }
+    ],
+    "flags": [
+      "Cannot be added to Lithograph Book",
+      "Storable",
+      "Unsellable in Auction House",
+      "Can be dissolved",
+      "Destructible",
+      "Level up Available",
+      "Illusion Extraction Unavailable"
+    ],
+    "skillEffect": "On hit with the Death Blow skill, creates a 3m-wide Poison Cloud that ignores Shield Block around the target for 4s. Enemies within the cloud will take damage over time equal to 132% of Base Damage every 0.5s, and Magic, Melee, and Ranged Evasion are reduced by 300. Damage increases by 100% against monsters. In PvP, deals Defense-ignoring damage equal to 2.5% of the target's max Health per sec.",
+    "upgradeStats": {
+      "mats": {
+        "1": {
+          "14000216": 1
+        },
+        "2": {
+          "14000216": 2
+        },
+        "3": {
+          "14000216": 3
+        },
+        "4": {
+          "14000216": 4
+        },
+        "5": {
+          "14000216": 5
+        },
+        "6": {
+          "14000216": 6
+        },
+        "7": {
+          "14000216": 7
+        },
+        "8": {
+          "14000216": 8
+        },
+        "9": {
+          "14000216": 9
+        },
+        "10": {
+          "14000216": 10
+        },
+        "11": {
+          "14000216": 11
+        },
+        "12": {
+          "14000216": 12
+        }
+      },
+      "items": {
+        "14000216": [
+          6,
+          "icon/item_128/misc/i_enchant_weapon_kaa3_001.webp"
+        ]
+      },
+      "gold": {
+        "1": 22000,
+        "2": 29200,
+        "3": 44000,
+        "4": 64000,
+        "5": 104000,
+        "6": 148000,
+        "7": 208000,
+        "8": 296000,
+        "9": 400000,
+        "10": 600000,
+        "11": 900000,
+        "12": 1350000
+      },
+      "growth": {
+        "1": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "2": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "3": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "4": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "5": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "6": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "7": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "8": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "9": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "10": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "11": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "12": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        }
+      },
+      "stats": {
+        "0": {
+          "52": 0,
+          "89": 0,
+          "153": 0,
+          "154": 0,
+          "176": 0,
+          "212": 0
+        },
+        "1": {
+          "153": 3,
+          "154": 12,
+          "176": 3,
+          "212": 10
+        },
+        "2": {
+          "52": 1,
+          "89": 1,
+          "153": 6,
+          "154": 25,
+          "176": 7,
+          "212": 20
+        },
+        "3": {
+          "52": 1,
+          "89": 1,
+          "153": 9,
+          "154": 37,
+          "176": 11,
+          "212": 30
+        },
+        "4": {
+          "52": 2,
+          "89": 2,
+          "153": 12,
+          "154": 50,
+          "176": 14,
+          "212": 40
+        },
+        "5": {
+          "52": 2,
+          "89": 2,
+          "153": 15,
+          "154": 62,
+          "176": 18,
+          "212": 50
+        },
+        "6": {
+          "52": 3,
+          "89": 3,
+          "153": 19,
+          "154": 75,
+          "176": 22,
+          "212": 60
+        },
+        "7": {
+          "52": 3,
+          "89": 3,
+          "153": 22,
+          "154": 87,
+          "176": 25,
+          "212": 70
+        },
+        "8": {
+          "52": 4,
+          "89": 4,
+          "153": 25,
+          "154": 100,
+          "176": 29,
+          "212": 80
+        },
+        "9": {
+          "52": 4,
+          "89": 4,
+          "153": 28,
+          "154": 112,
+          "176": 33,
+          "212": 90
+        },
+        "10": {
+          "52": 5,
+          "89": 5,
+          "153": 31,
+          "154": 125,
+          "176": 37,
+          "212": 100
+        },
+        "11": {
+          "52": 5,
+          "89": 5,
+          "153": 34,
+          "154": 137,
+          "176": 40,
+          "212": 110
+        },
+        "12": {
+          "52": 6,
+          "89": 6,
+          "153": 38,
+          "154": 150,
+          "176": 44,
+          "212": 120
+        }
+      },
+      "names": {
+        "52": "Strength",
+        "89": "Perception",
+        "153": "Damage",
+        "154": "Collision Chance",
+        "176": "Damage",
+        "212": "Hit Chance"
+      }
+    },
+    "scrapedAt": "2026-06-24T15:13:56.049Z"
+  }
+}

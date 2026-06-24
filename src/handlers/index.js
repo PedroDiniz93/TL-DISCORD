@@ -10,6 +10,7 @@ const {
   handleRemoverItemRaro,
 } = require("./rare-items");
 const { handleHelp } = require("./help");
+const { handleItemInfo } = require("./item-info");
 const { handleBaixarLogs } = require("./logs");
 const { handleMyItems } = require("./my-items");
 const { handleMarcarEntregue } = require("./deliveries");
@@ -33,6 +34,7 @@ const commandHandlers = {
   fila_item_raro: handleFilaItemRaro,
   my_items: handleMyItems,
   meus_itens: handleMyItems,
+  item_info: handleItemInfo,
   help: handleHelp,
   ajuda: handleHelp,
   baixar_logs: handleBaixarLogs,

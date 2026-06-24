@@ -181,6 +181,17 @@ function buildCommands() {
     .setName("ajuda")
     .setDescription("Mostra regras resumidas e comandos disponíveis");
 
+  const itemInfoCmd = new SlashCommandBuilder()
+    .setName("item_info")
+    .setDescription("Mostra informacoes de um item")
+    .addStringOption((o) =>
+      o
+        .setName("item")
+        .setDescription("Item")
+        .setRequired(true)
+        .setAutocomplete(true)
+    );
+
   const baixarLogsCmd = new SlashCommandBuilder()
     .setName("baixar_logs")
     .setDescription("Baixa os arquivos de log do bot");
@@ -246,6 +257,7 @@ function buildCommands() {
     meusItensCmd,
     helpCmd,
     ajudaCmd,
+    itemInfoCmd,
     baixarLogsCmd,
     statusBotCmd,
     adminBackupPlanilhaCmd,

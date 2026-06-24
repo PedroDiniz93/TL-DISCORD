@@ -1,4 +1,5 @@
 const { rareItems, weapons } = require("../items");
+const { allKnownItems } = require("../item-info-service");
 const { getQueueRows } = require("../wishlist-repository");
 const {
   isAllowedChannel,
@@ -15,6 +16,14 @@ async function handleAutocomplete(interaction) {
     }
 
     const focused = interaction.options.getFocused(true);
+    if (interaction.commandName === "item_info") {
+      await respondAutocompleteOnce(
+        interaction,
+        buildScoredAutocompleteResults(allKnownItems, String(focused.value || ""))
+      );
+      return;
+    }
+
     if (interaction.commandName === "marcar_entregue") {
       await handleDeliveryAutocomplete(interaction, focused);
       return;

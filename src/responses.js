@@ -392,6 +392,7 @@ function buildHelpReply({ interaction }) {
           "`/meus_itens` / `/my_items`",
           "`/fila_arch` / `/arch_queue`",
           "`/fila_item_raro` / `/rare_item_queue`",
+          "`/item_info`",
           "`/remover_arch` / `/remove_arch`",
           "`/remover_item_raro` / `/remove_rare_item`",
           "`/listar_arch` / `/list_arch`",
