@@ -51,6 +51,7 @@ function normalizeScrapedItemInfo(info) {
   return {
     ...info,
     externalName: stripCodexSuffix(info.externalName),
+    level12Stats: ensureLevel12Stats(info),
   };
 }
 
@@ -175,6 +176,47 @@ function buildExternalSearchUrl(itemName) {
 
 function stripCodexSuffix(value) {
   return String(value || "").replace(/\s*-\s*Items\s*-\s*Throne and Liberty Codex\s*$/i, "");
+}
+
+function ensureLevel12Stats(info) {
+  if (Array.isArray(info?.level12Stats) && info.level12Stats.length) {
+    return groupStatsByLabel(info.level12Stats);
+  }
+
+  const upgradeStats = info?.upgradeStats;
+  const stats = upgradeStats?.stats?.["12"] || upgradeStats?.stats?.[12];
+  const names = upgradeStats?.names || {};
+
+  if (!stats || typeof stats !== "object") return [];
+
+  return groupStatsByLabel(
+    Object.entries(stats)
+    .map(([statId, value]) => ({
+      label: String(names[statId] || `Stat ${statId}`).trim(),
+      value: String(value).trim(),
+    }))
+    .filter((stat) => stat.label && stat.value)
+  );
+}
+
+function groupStatsByLabel(stats) {
+  const grouped = new Map();
+
+  for (const stat of stats || []) {
+    const label = String(stat?.label || "").trim();
+    const value = String(stat?.value || "").trim();
+    if (!label || !value) continue;
+
+    if (!grouped.has(label)) {
+      grouped.set(label, []);
+    }
+    grouped.get(label).push(value);
+  }
+
+  return [...grouped.entries()].map(([label, values]) => ({
+    label,
+    value: values.length === 1 ? values[0] : values.join(" ~ "),
+  }));
 }
 
 function getItemCacheKey(itemName) {

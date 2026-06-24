@@ -111,6 +111,14 @@ function buildScrapedFields(info) {
     });
   }
 
+  if (Array.isArray(info.level12Stats) && info.level12Stats.length) {
+    fields.push({
+      name: "Status +12",
+      value: formatPairs(info.level12Stats, 8, 900),
+      inline: false,
+    });
+  }
+
   if (Array.isArray(info.baseStats) && info.baseStats.length) {
     fields.push({
       name: "Status base",

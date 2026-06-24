@@ -191,12 +191,14 @@ async function fetchItemDetail(url) {
   const flags = extractItemFlags(html);
   const skillEffect = decodeHtml(extractTextBlock(html, 'id="stat-us"') || "");
   const upgradeStats = extractEnchantStats(html);
+  const level12Stats = extractEnchantLevelStats(upgradeStats, 12);
 
   return {
     name: cleanCodexTitle(name),
     description,
     baseStats: statsTable.baseStats,
     statusSummary: formatStatusSummary(statsTable.baseStats),
+    level12Stats,
     possibleTraits,
     flags,
     skillEffect,
@@ -267,6 +269,31 @@ function extractEnchantStats(html) {
   } catch (err) {
     return null;
   }
+}
+
+function extractEnchantLevelStats(upgradeStats, level) {
+  if (!upgradeStats || !upgradeStats.stats || !upgradeStats.names) return [];
+
+  const levelStats = upgradeStats.stats[String(level)] || upgradeStats.stats[level];
+  if (!levelStats || typeof levelStats !== "object") return [];
+
+  const grouped = new Map();
+
+  for (const [statId, value] of Object.entries(levelStats)) {
+    const label = normalizeDisplayName(upgradeStats.names[statId] || `Stat ${statId}`);
+    const normalizedValue = normalizeDisplayName(String(value));
+    if (!label || !normalizedValue) continue;
+
+    if (!grouped.has(label)) {
+      grouped.set(label, []);
+    }
+    grouped.get(label).push(normalizedValue);
+  }
+
+  return [...grouped.entries()].map(([label, values]) => ({
+    label,
+    value: values.length === 1 ? values[0] : values.join(" ~ "),
+  }));
 }
 
 function extractMainImageUrl(html) {
