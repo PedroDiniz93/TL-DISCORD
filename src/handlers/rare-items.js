@@ -14,6 +14,7 @@ const {
   buildRareItemQueueReply,
   buildRareItemWishlistReply,
   buildRegisteredItemReply,
+  buildRemoveItemAction,
   buildRemovedItemReply,
   buildWarningItemReply,
 } = require("../responses");
@@ -100,6 +101,7 @@ async function registerRareItem({ interaction, nick, item }) {
           inline: false,
         },
       ],
+      components: [buildRemoveItemAction(interaction, "rare")],
     });
   }
 
@@ -131,6 +133,7 @@ async function registerRareItem({ interaction, nick, item }) {
           inline: false,
         },
       ],
+      components: [buildRemoveItemAction(interaction, "rare")],
     });
   }
 
@@ -156,6 +159,7 @@ async function registerRareItem({ interaction, nick, item }) {
           inline: false,
         },
       ],
+      components: [buildRemoveItemAction(interaction, "rare")],
     });
   }
 
