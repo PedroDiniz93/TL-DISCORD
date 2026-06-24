@@ -14,6 +14,7 @@ const { handleBaixarLogs } = require("./logs");
 const { handleMyItems } = require("./my-items");
 const { handleMarcarEntregue } = require("./deliveries");
 const { handleStatusBot } = require("./status");
+const { handleAdminBackupPlanilha } = require("./backup");
 
 const commandHandlers = {
   weapon_arch: handleArmaArch,
@@ -36,6 +37,7 @@ const commandHandlers = {
   ajuda: handleHelp,
   baixar_logs: handleBaixarLogs,
   status_bot: handleStatusBot,
+  admin_backup_planilha: handleAdminBackupPlanilha,
   marcar_entregue: handleMarcarEntregue,
 };
 

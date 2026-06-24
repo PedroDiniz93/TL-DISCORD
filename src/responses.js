@@ -398,6 +398,7 @@ function buildHelpReply({ interaction }) {
           "`/ajuda` / `/help`",
           "`/baixar_logs`",
           "`/status_bot`",
+          "`/admin_backup_planilha`",
         ].join("\n"),
         inline: false,
       },

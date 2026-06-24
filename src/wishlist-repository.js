@@ -34,6 +34,17 @@ async function getRareItemRows() {
   return getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
 }
 
+async function getArchHistoryRows() {
+  return getSheetRows(ARCH_GAIN_HISTORY_SHEET.title, ARCH_GAIN_HISTORY_SHEET.headers);
+}
+
+async function getRareItemHistoryRows() {
+  return getSheetRows(
+    RARE_ITEM_GAIN_HISTORY_SHEET.title,
+    RARE_ITEM_GAIN_HISTORY_SHEET.headers
+  );
+}
+
 async function getRowsByType(type) {
   const config = getWishlistConfig(type);
   return getSheetRows(config.active.title, config.active.headers);
@@ -142,8 +153,10 @@ module.exports = {
   deleteArchRow,
   deleteRareItemRow,
   getArchRows,
+  getArchHistoryRows,
   getQueueRows,
   getRareItemRows,
+  getRareItemHistoryRows,
   getRowsByType,
   getUserArchRows,
   getUserRareItemRows,

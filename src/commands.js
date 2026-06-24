@@ -189,6 +189,10 @@ function buildCommands() {
     .setName("status_bot")
     .setDescription("Mostra o status operacional do bot");
 
+  const adminBackupPlanilhaCmd = new SlashCommandBuilder()
+    .setName("admin_backup_planilha")
+    .setDescription("Gera backup CSV das abas usadas pelo bot");
+
   const marcarEntregueCmd = new SlashCommandBuilder()
     .setName("marcar_entregue")
     .setDescription("Marca um item como entregue e move o registro para o histórico")
@@ -244,6 +248,7 @@ function buildCommands() {
     ajudaCmd,
     baixarLogsCmd,
     statusBotCmd,
+    adminBackupPlanilhaCmd,
     marcarEntregueCmd,
   ];
 }
