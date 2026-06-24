@@ -1,7 +1,9 @@
 const fs = require("fs/promises");
 const path = require("path");
 
-const CACHE_PATH = path.join(__dirname, "..", "data", "tl-items-cache.json");
+const ROOT_CACHE_PATH = path.join(__dirname, "..", "tl-items-cache.json");
+const DATA_CACHE_PATH = path.join(__dirname, "..", "data", "tl-items-cache.json");
+const CACHE_PATH = ROOT_CACHE_PATH;
 
 async function getCachedItemInfo(cacheKey) {
   const cache = await readCache();
@@ -21,16 +23,21 @@ async function setCachedItemInfo(cacheKey, itemInfo) {
 }
 
 async function readCache() {
-  try {
-    return JSON.parse(await fs.readFile(CACHE_PATH, "utf8"));
-  } catch (err) {
-    if (err?.code === "ENOENT") return {};
-    throw err;
+  for (const cachePath of [ROOT_CACHE_PATH, DATA_CACHE_PATH]) {
+    try {
+      return JSON.parse(await fs.readFile(cachePath, "utf8"));
+    } catch (err) {
+      if (err?.code !== "ENOENT") throw err;
+    }
   }
+
+  return {};
 }
 
 module.exports = {
   CACHE_PATH,
+  DATA_CACHE_PATH,
+  ROOT_CACHE_PATH,
   getCachedItemInfo,
   setCachedItemInfo,
 };
