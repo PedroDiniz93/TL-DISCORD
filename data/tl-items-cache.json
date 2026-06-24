@@ -936,5 +936,466 @@
       }
     },
     "scrapedAt": "2026-06-24T16:16:40.238Z"
+  },
+  "arco-da-deluznoa": {
+    "source": "tlcodex",
+    "originalName": "🏹 Arco da Deluznoa (Deluznoa Bow)",
+    "displayName": "Arco da Deluznoa (Deluznoa Bow)",
+    "ptName": "Deluznoa Bow",
+    "enName": "Arco da Deluznoa",
+    "category": "archboss_weapon",
+    "categoryLabel": "Arma Archboss",
+    "typeLabel": "Archboss",
+    "limitLabel": "1 arma Archboss por jogador",
+    "externalUrl": "https://tlcodex.com/en/item/10012046/",
+    "externalProvider": "tlcodex",
+    "externalId": 10012046,
+    "externalName": "Deluzhnoa's Arc of Frozen Death",
+    "externalDescription": "\"A mysterious longbow that was made from Frenzied Deluzhnoa's crystalized icy mana.\"",
+    "iconUrl": "https://tlcodex.com/icons/icon/item_128/equip/weapon/it_p_bow_00017.webp",
+    "grade": 6,
+    "combatPower": 249,
+    "statusSummary": "Damage: 63 ~ 249\nRange: 19.2m\nAttack Speed: 0.776s\nDexterity: 6\nRange: 8%\nHit Chance: 40",
+    "baseStats": [
+      {
+        "label": "Damage",
+        "value": "63 ~ 249"
+      },
+      {
+        "label": "Range",
+        "value": "19.2m"
+      },
+      {
+        "label": "Attack Speed",
+        "value": "0.776s"
+      },
+      {
+        "label": "Dexterity",
+        "value": "6"
+      },
+      {
+        "label": "Range",
+        "value": "8%"
+      },
+      {
+        "label": "Hit Chance",
+        "value": "40"
+      }
+    ],
+    "possibleTraits": [
+      {
+        "label": "Hit Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Critical Hit Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Heavy Attack Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Bind Chance",
+        "value": "+100 | 200 | 300 | 400"
+      },
+      {
+        "label": "Max Health",
+        "value": "+600 | 1200 | 1800 | 2400"
+      },
+      {
+        "label": "Added Attack Speed",
+        "value": "+8 | 16 | 24 | 32"
+      }
+    ],
+    "flags": [
+      "Cannot be added to Lithograph Book",
+      "Storable",
+      "Unsellable in Auction House",
+      "Can be dissolved",
+      "Destructible",
+      "Level up Available",
+      "Illusion Extraction Unavailable"
+    ],
+    "skillEffect": "Arrow Vortex cooldown -30%. Deals 100% of Base Damage to the first enemy hit by Arrow Vortex. Also deals 120% of Base Damage to all enemies within 3m of the initial target. Has an 80% chance to apply Collision: Push and send target airborne for 3s. Damage boost +50% against monsters. The effect is transferred to another target within a 5m radius area once. Deals damage up to 6 times.",
+    "upgradeStats": {
+      "mats": {
+        "1": {
+          "14000214": 2
+        },
+        "2": {
+          "14000214": 4
+        },
+        "3": {
+          "14000214": 6
+        },
+        "4": {
+          "14000214": 8
+        },
+        "5": {
+          "14000214": 10
+        },
+        "6": {
+          "14000214": 12
+        },
+        "7": {
+          "14000214": 14
+        },
+        "8": {
+          "14000214": 16
+        },
+        "9": {
+          "14000214": 18
+        },
+        "10": {
+          "14000214": 20
+        },
+        "11": {
+          "14000214": 22
+        },
+        "12": {
+          "14000214": 24
+        }
+      },
+      "items": {
+        "14000214": [
+          5,
+          "icon/item_128/misc/i_enchant_weapon_kaa_001.webp"
+        ]
+      },
+      "gold": {
+        "1": 11000,
+        "2": 14600,
+        "3": 22000,
+        "4": 32000,
+        "5": 52000,
+        "6": 74000,
+        "7": 104000,
+        "8": 148000,
+        "9": 200000,
+        "10": 300000,
+        "11": 450000,
+        "12": 675000
+      },
+      "growth": {
+        "1": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "2": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "3": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "4": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "5": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "6": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "7": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "8": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "9": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "10": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "11": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "12": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        }
+      },
+      "stats": {
+        "0": {
+          "67": 0,
+          "153": 0,
+          "176": 0,
+          "177": 0,
+          "212": 0
+        },
+        "1": {
+          "153": 5,
+          "176": 1,
+          "177": 1,
+          "212": 10
+        },
+        "2": {
+          "67": 1,
+          "153": 10,
+          "176": 3,
+          "177": 2,
+          "212": 20
+        },
+        "3": {
+          "67": 1,
+          "153": 15,
+          "176": 5,
+          "177": 3,
+          "212": 30
+        },
+        "4": {
+          "67": 2,
+          "153": 20,
+          "176": 6,
+          "177": 4,
+          "212": 40
+        },
+        "5": {
+          "67": 2,
+          "153": 25,
+          "176": 8,
+          "177": 5,
+          "212": 50
+        },
+        "6": {
+          "67": 3,
+          "153": 30,
+          "176": 10,
+          "177": 6,
+          "212": 60
+        },
+        "7": {
+          "67": 3,
+          "153": 35,
+          "176": 11,
+          "177": 7,
+          "212": 70
+        },
+        "8": {
+          "67": 4,
+          "153": 40,
+          "176": 13,
+          "177": 8,
+          "212": 80
+        },
+        "9": {
+          "67": 4,
+          "153": 45,
+          "176": 15,
+          "177": 9,
+          "212": 90
+        },
+        "10": {
+          "67": 5,
+          "153": 51,
+          "176": 17,
+          "177": 10,
+          "212": 100
+        },
+        "11": {
+          "67": 5,
+          "153": 56,
+          "176": 18,
+          "177": 11,
+          "212": 110
+        },
+        "12": {
+          "67": 6,
+          "153": 61,
+          "176": 20,
+          "177": 12,
+          "212": 120
+        }
+      },
+      "names": {
+        "67": "Dexterity",
+        "153": "Damage",
+        "176": "Damage",
+        "177": "Range",
+        "212": "Hit Chance"
+      }
+    },
+    "scrapedAt": "2026-06-24T16:44:46.344Z",
+    "cachedAt": "2026-06-24T16:44:46.345Z"
   }
 }

@@ -179,24 +179,75 @@ function stripCodexSuffix(value) {
 }
 
 function ensureLevel12Stats(info) {
-  if (Array.isArray(info?.level12Stats) && info.level12Stats.length) {
-    return groupStatsByLabel(info.level12Stats);
-  }
-
   const upgradeStats = info?.upgradeStats;
   const stats = upgradeStats?.stats?.["12"] || upgradeStats?.stats?.[12];
   const names = upgradeStats?.names || {};
 
-  if (!stats || typeof stats !== "object") return [];
+  if (!stats || typeof stats !== "object") {
+    return Array.isArray(info?.level12Stats) ? groupStatsByLabel(info.level12Stats) : [];
+  }
 
-  return groupStatsByLabel(
-    Object.entries(stats)
-    .map(([statId, value]) => ({
-      label: String(names[statId] || `Stat ${statId}`).trim(),
-      value: String(value).trim(),
+  return buildFinalLevelStats(info?.baseStats, stats, names);
+}
+
+function buildFinalLevelStats(baseStats, levelStats, names) {
+  if (!Array.isArray(baseStats) || !baseStats.length) return [];
+
+  const incrementsByLabel = groupLevelIncrementsByLabel(levelStats, names);
+
+  return baseStats
+    .filter((stat) => normalizePlainText(stat.label) !== "damage")
+    .map((stat) => ({
+      label: String(stat?.label || "").trim(),
+      value: formatFinalStatValue(stat?.value, incrementsByLabel.get(normalizePlainText(stat?.label))),
     }))
-    .filter((stat) => stat.label && stat.value)
-  );
+    .filter((stat) => stat.label && stat.value);
+}
+
+function groupLevelIncrementsByLabel(levelStats, names) {
+  const incrementsByLabel = new Map();
+
+  for (const [statId, value] of Object.entries(levelStats || {})) {
+    const label = normalizePlainText(names[statId] || `Stat ${statId}`);
+    const numericValue = Number(value);
+    if (!label || !Number.isFinite(numericValue)) continue;
+
+    if (!incrementsByLabel.has(label)) {
+      incrementsByLabel.set(label, []);
+    }
+    incrementsByLabel.get(label).push(numericValue);
+  }
+
+  return incrementsByLabel;
+}
+
+function formatFinalStatValue(baseValue, increments = []) {
+  const parsed = parseStatValue(baseValue);
+  if (!parsed) return String(baseValue || "").trim();
+
+  const increment = increments.length && shouldApplyIncrement(parsed) ? increments.shift() : 0;
+  const finalValue = parsed.number + increment;
+  return `${formatNumber(finalValue)}${parsed.suffix}`;
+}
+
+function shouldApplyIncrement(parsed) {
+  if (parsed.suffix === "m" || parsed.suffix === "s") return false;
+  return true;
+}
+
+function parseStatValue(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+  if (!match) return null;
+
+  return {
+    number: Number(match[1]),
+    suffix: match[2] || "",
+  };
+}
+
+function formatNumber(value) {
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
 }
 
 function groupStatsByLabel(stats) {
@@ -217,6 +268,15 @@ function groupStatsByLabel(stats) {
     label,
     value: values.length === 1 ? values[0] : values.join(" ~ "),
   }));
+}
+
+function normalizePlainText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function getItemCacheKey(itemName) {

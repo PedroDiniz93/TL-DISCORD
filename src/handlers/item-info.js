@@ -111,7 +111,9 @@ function buildScrapedFields(info) {
     });
   }
 
-  if (Array.isArray(info.level12Stats) && info.level12Stats.length) {
+  const hasLevel12Stats = Array.isArray(info.level12Stats) && info.level12Stats.length;
+
+  if (hasLevel12Stats) {
     fields.push({
       name: "Status +12",
       value: formatPairs(info.level12Stats, 8, 900),
@@ -119,7 +121,7 @@ function buildScrapedFields(info) {
     });
   }
 
-  if (Array.isArray(info.baseStats) && info.baseStats.length) {
+  if (!hasLevel12Stats && Array.isArray(info.baseStats) && info.baseStats.length) {
     fields.push({
       name: "Status base",
       value: formatPairs(info.baseStats, 8, 900),

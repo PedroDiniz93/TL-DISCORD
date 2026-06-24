@@ -191,7 +191,7 @@ async function fetchItemDetail(url) {
   const flags = extractItemFlags(html);
   const skillEffect = decodeHtml(extractTextBlock(html, 'id="stat-us"') || "");
   const upgradeStats = extractEnchantStats(html);
-  const level12Stats = extractEnchantLevelStats(upgradeStats, 12);
+  const level12Stats = buildEnchantLevelStats(statsTable.baseStats, upgradeStats, 12);
 
   return {
     name: cleanCodexTitle(name),
@@ -271,29 +271,70 @@ function extractEnchantStats(html) {
   }
 }
 
-function extractEnchantLevelStats(upgradeStats, level) {
+function buildEnchantLevelStats(baseStats, upgradeStats, level) {
   if (!upgradeStats || !upgradeStats.stats || !upgradeStats.names) return [];
 
   const levelStats = upgradeStats.stats[String(level)] || upgradeStats.stats[level];
   if (!levelStats || typeof levelStats !== "object") return [];
+  if (!Array.isArray(baseStats) || !baseStats.length) return [];
 
-  const grouped = new Map();
+  const incrementsByLabel = groupLevelIncrementsByLabel(levelStats, upgradeStats.names);
+
+  return baseStats
+    .filter((stat) => normalizeText(stat.label) !== "damage")
+    .map((stat) => ({
+      label: stat.label,
+      value: formatFinalStatValue(stat.value, incrementsByLabel.get(normalizeText(stat.label))),
+    }))
+    .filter((stat) => stat.label && stat.value);
+}
+
+function groupLevelIncrementsByLabel(levelStats, names) {
+  const incrementsByLabel = new Map();
 
   for (const [statId, value] of Object.entries(levelStats)) {
-    const label = normalizeDisplayName(upgradeStats.names[statId] || `Stat ${statId}`);
-    const normalizedValue = normalizeDisplayName(String(value));
-    if (!label || !normalizedValue) continue;
+    const label = normalizeText(names[statId] || `Stat ${statId}`);
+    const numericValue = Number(value);
+    if (!label || !Number.isFinite(numericValue)) continue;
 
-    if (!grouped.has(label)) {
-      grouped.set(label, []);
+    if (!incrementsByLabel.has(label)) {
+      incrementsByLabel.set(label, []);
     }
-    grouped.get(label).push(normalizedValue);
+    incrementsByLabel.get(label).push(numericValue);
   }
 
-  return [...grouped.entries()].map(([label, values]) => ({
-    label,
-    value: values.length === 1 ? values[0] : values.join(" ~ "),
-  }));
+  return incrementsByLabel;
+}
+
+function formatFinalStatValue(baseValue, increments = []) {
+  const parsed = parseStatValue(baseValue);
+  if (!parsed) return normalizeDisplayName(baseValue);
+
+  const shouldAddIncrement = increments.length && shouldApplyIncrement(parsed);
+  const increment = shouldAddIncrement ? increments.shift() : 0;
+  const finalValue = parsed.number + increment;
+
+  return `${formatNumber(finalValue)}${parsed.suffix}`;
+}
+
+function shouldApplyIncrement(parsed) {
+  if (parsed.suffix === "m" || parsed.suffix === "s") return false;
+  return true;
+}
+
+function parseStatValue(value) {
+  const text = normalizeDisplayName(value);
+  const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+  if (!match) return null;
+
+  return {
+    number: Number(match[1]),
+    suffix: match[2] || "",
+  };
+}
+
+function formatNumber(value) {
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
 }
 
 function extractMainImageUrl(html) {
