@@ -26,7 +26,10 @@ async function getItemInfo(itemName) {
   const baseInfo = cached || buildItemInfo(item);
 
   if (cached?.source === "tlcodex" && Array.isArray(cached.baseStats)) {
-    return normalizeScrapedItemInfo(cached);
+    const normalizedCached = normalizeScrapedItemInfo(cached);
+    if (hasLevel12Stats(normalizedCached) || !isEnchantable(cached)) {
+      return normalizedCached;
+    }
   }
 
   try {
@@ -53,6 +56,14 @@ function normalizeScrapedItemInfo(info) {
     externalName: stripCodexSuffix(info.externalName),
     level12Stats: ensureLevel12Stats(info),
   };
+}
+
+function hasLevel12Stats(info) {
+  return Array.isArray(info?.level12Stats) && info.level12Stats.length > 0;
+}
+
+function isEnchantable(info) {
+  return Array.isArray(info?.flags) && info.flags.includes("Level up Available");
 }
 
 function findKnownItem(itemName) {
@@ -227,7 +238,7 @@ function formatFinalStatValue(baseValue, increments = []) {
 
   const increment = increments.length && shouldApplyIncrement(parsed) ? increments.shift() : 0;
   const finalValue = parsed.number + increment;
-  return `${formatNumber(finalValue)}${parsed.suffix}`;
+  return `${formatNumber(finalValue, parsed.hasPlusPrefix)}${parsed.suffix}`;
 }
 
 function shouldApplyIncrement(parsed) {
@@ -237,17 +248,19 @@ function shouldApplyIncrement(parsed) {
 
 function parseStatValue(value) {
   const text = String(value || "").trim();
-  const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+  const match = text.match(/^([+-]?\d+(?:\.\d+)?)(.*)$/);
   if (!match) return null;
 
   return {
     number: Number(match[1]),
+    hasPlusPrefix: match[1].startsWith("+"),
     suffix: match[2] || "",
   };
 }
 
-function formatNumber(value) {
-  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+function formatNumber(value, forcePlusPrefix = false) {
+  const formatted = Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+  return forcePlusPrefix && value > 0 ? `+${formatted}` : formatted;
 }
 
 function groupStatsByLabel(stats) {

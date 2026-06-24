@@ -29,6 +29,7 @@ async function fetchTLCodexItemDetails(item) {
       combatPower: matched.combatPower ?? null,
       statusSummary: detail.statusSummary,
       baseStats: detail.baseStats,
+      level12Stats: detail.level12Stats,
       possibleTraits: detail.possibleTraits,
       flags: detail.flags,
       skillEffect: detail.skillEffect,
@@ -51,17 +52,17 @@ function buildLookupPlan(item) {
   }
 
   if (item?.category === "rare_equip" || item?.category === "world_boss_equip_t4") {
-    return [{ type: "armor", searchTerm }];
+    return [{ type: "armor", searchTerm, slot: inferArmorSlot(searchTerm) }];
   }
 
   if (item?.category === "rare_accessory" || item?.category === "world_boss_jewelry_t4") {
-    return [{ type: "accessories", searchTerm }];
+    return [{ type: "accessories", searchTerm, slot: inferAccessorySlot(searchTerm) }];
   }
 
   return [
     { type: "weapons", searchTerm },
-    { type: "armor", searchTerm },
-    { type: "accessories", searchTerm },
+    { type: "armor", searchTerm, slot: inferArmorSlot(searchTerm) },
+    { type: "accessories", searchTerm, slot: inferAccessorySlot(searchTerm) },
   ];
 }
 
@@ -86,7 +87,8 @@ function buildArchbossLookupPlan(item, searchTerm) {
 async function fetchListing(candidate) {
   const type = candidate?.type;
   const searchTerm = candidate?.searchTerm || "";
-  const cacheKey = `${type}:${normalizeText(searchTerm)}`;
+  const slot = candidate?.slot || "";
+  const cacheKey = `${type}:${slot}:${normalizeText(searchTerm)}`;
   const cached = listingCache.get(cacheKey);
   const now = Date.now();
 
@@ -97,6 +99,9 @@ async function fetchListing(candidate) {
   const url = new URL("/query.php", TL_CODEX_BASE_URL);
   url.searchParams.set("a", "items");
   url.searchParams.set("type", type);
+  if (slot) {
+    url.searchParams.set("slot", slot);
+  }
   url.searchParams.set("l", "en");
   url.searchParams.set("iDisplayStart", "0");
   url.searchParams.set("iDisplayLength", "250");
@@ -122,6 +127,27 @@ async function fetchListing(candidate) {
   });
 
   return value;
+}
+
+function inferArmorSlot(value) {
+  const normalized = normalizeText(value);
+  if (normalized.includes("cloak")) return "cloak";
+  if (normalized.includes("glove")) return "hands";
+  if (normalized.includes("boot") || normalized.includes("shoe") || normalized.includes("greave")) return "feet";
+  if (normalized.includes("pants") || normalized.includes("leg")) return "legs";
+  if (normalized.includes("hat") || normalized.includes("helm") || normalized.includes("head") || normalized.includes("brim")) return "head";
+  return "chest";
+}
+
+function inferAccessorySlot(value) {
+  const normalized = normalizeText(value);
+  if (normalized.includes("necklace") || normalized.includes("pendant")) return "necklace";
+  if (normalized.includes("belt") || normalized.includes("sash")) return "belt";
+  if (normalized.includes("ring")) return "ring";
+  if (normalized.includes("bracelet")) return "bracelet";
+  if (normalized.includes("earring")) return "earring";
+  if (normalized.includes("brooch")) return "brooch";
+  return "";
 }
 
 function matchBestListing(rows, item, candidatePlan = {}) {
@@ -261,7 +287,7 @@ function extractItemFlags(html) {
 }
 
 function extractEnchantStats(html) {
-  const match = html.match(/var enchant_stats=([\s\S]*?);\s*var us_stats=/i);
+  const match = html.match(/var enchant_stats=([\s\S]*?);\s*(?:var us_stats=|var e_msgs=)/i);
   if (!match) return null;
 
   try {
@@ -314,7 +340,7 @@ function formatFinalStatValue(baseValue, increments = []) {
   const increment = shouldAddIncrement ? increments.shift() : 0;
   const finalValue = parsed.number + increment;
 
-  return `${formatNumber(finalValue)}${parsed.suffix}`;
+  return `${formatNumber(finalValue, parsed.hasPlusPrefix)}${parsed.suffix}`;
 }
 
 function shouldApplyIncrement(parsed) {
@@ -324,17 +350,19 @@ function shouldApplyIncrement(parsed) {
 
 function parseStatValue(value) {
   const text = normalizeDisplayName(value);
-  const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+  const match = text.match(/^([+-]?\d+(?:\.\d+)?)(.*)$/);
   if (!match) return null;
 
   return {
     number: Number(match[1]),
+    hasPlusPrefix: match[1].startsWith("+"),
     suffix: match[2] || "",
   };
 }
 
-function formatNumber(value) {
-  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+function formatNumber(value, forcePlusPrefix = false) {
+  const formatted = Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+  return forcePlusPrefix && value > 0 ? `+${formatted}` : formatted;
 }
 
 function extractMainImageUrl(html) {
