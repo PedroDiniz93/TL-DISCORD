@@ -1,4 +1,4 @@
-const { PermissionsBitField, SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 
 function buildCommands() {
   const weaponArchCmdEn = new SlashCommandBuilder()
@@ -183,8 +183,7 @@ function buildCommands() {
 
   const baixarLogsCmd = new SlashCommandBuilder()
     .setName("baixar_logs")
-    .setDescription("Baixa os arquivos de log do bot")
-    .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator);
+    .setDescription("Baixa os arquivos de log do bot");
 
   const marcarEntregueCmd = new SlashCommandBuilder()
     .setName("marcar_entregue")

@@ -450,16 +450,13 @@ function buildItemQueueReply({ interaction, itemName, rows, title, description }
 
   if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
 
-  const queueLines = rows.slice(0, 20).map(({ row }) => {
+  const queueLines = rows.slice(0, 20).map(({ row, discordDisplayName }) => {
     const nick = row.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
-    const mention =
-      row.DiscordUserId && String(row.DiscordUserId).trim()
-        ? ` (<@${String(row.DiscordUserId).trim()}>)`
-        : "";
+    const memberLabel = discordDisplayName ? ` (@${discordDisplayName})` : "";
     const registeredAt = row.Data
       ? tr(interaction, `\nRegistrado em ${row.Data}`, `\nRegistered at ${row.Data}`)
       : "";
-    return `${nick}${mention}${registeredAt}`;
+    return `${nick}${memberLabel}${registeredAt}`;
   });
 
   embed.addFields({

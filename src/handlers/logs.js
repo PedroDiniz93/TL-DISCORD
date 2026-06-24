@@ -1,11 +1,12 @@
 const fs = require("fs/promises");
 const path = require("path");
-const { AttachmentBuilder, PermissionsBitField } = require("discord.js");
+const { AttachmentBuilder } = require("discord.js");
 const {
   COMMAND_LOG_PATH,
   LOOT_HISTORY_LOG_PATH,
   QUEUE_VIEWS_LOG_PATH,
 } = require("../config");
+const { getAdminRoleLabel, hasAdminRole } = require("../permissions");
 const { buildWarningItemReply } = require("../responses");
 
 const DEFAULT_ATTACHMENT_LIMIT_BYTES = 8 * 1024 * 1024;
@@ -28,12 +29,12 @@ const LOG_FILES = [
 ];
 
 async function handleBaixarLogs(interaction) {
-  if (!hasAdminPermission(interaction)) {
+  if (!(await hasAdminRole(interaction))) {
     return interaction.editReply(
       buildWarningItemReply({
         interaction,
         title: "Acesso negado",
-        description: "Apenas administradores podem baixar os logs do bot.",
+        description: `Apenas membros com cargo ${getAdminRoleLabel()} podem baixar os logs do bot.`,
       })
     );
   }
@@ -73,12 +74,6 @@ async function handleBaixarLogs(interaction) {
       ephemeral: true,
     });
   }
-}
-
-function hasAdminPermission(interaction) {
-  return Boolean(
-    interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)
-  );
 }
 
 function getMaxLogChunkBytes(interaction) {

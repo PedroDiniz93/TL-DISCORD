@@ -20,6 +20,7 @@ const {
 const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
+const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
 const {
   getOptionalOptionAny,
   getRequiredOptionAny,
@@ -261,10 +262,12 @@ async function buildFilaItemRaroReply(interaction, item) {
     });
   }
 
+  const displayRows = await enrichQueueRowsWithDiscordDisplayNames(interaction, filtered);
+
   return buildRareItemQueueReply({
     interaction,
     itemName: item,
-    rows: filtered,
+    rows: displayRows,
   });
 }
 

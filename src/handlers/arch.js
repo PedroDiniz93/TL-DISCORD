@@ -10,6 +10,7 @@ const {
 const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
+const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
 const {
   getOptionalOptionAny,
   getRequiredOptionAny,
@@ -194,10 +195,12 @@ async function buildFilaArchReply(interaction, item) {
     });
   }
 
+  const displayRows = await enrichQueueRowsWithDiscordDisplayNames(interaction, filtered);
+
   return buildArchQueueReply({
     interaction,
     itemName: item,
-    rows: filtered,
+    rows: displayRows,
   });
 }
 
