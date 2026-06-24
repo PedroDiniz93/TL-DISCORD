@@ -61,7 +61,7 @@ async function registerArchWeapon({ interaction, nick, arma }) {
               inline: false,
             },
           ]
-      : [],
+        : [],
     });
   }
 

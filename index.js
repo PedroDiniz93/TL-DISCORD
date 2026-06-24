@@ -1,7 +1,7 @@
 require("dotenv").config();
 const http = require("http");
 const { Client, GatewayIntentBits } = require("discord.js");
-const { ALLOWED_CHANNEL_NAME } = require("./src/config");
+const { ALLOWED_CHANNEL_ID, ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
 const { handleWishlistButton } = require("./src/handlers/buttons");
 const { commandHandlers } = require("./src/handlers");
@@ -228,8 +228,8 @@ client.on("interactionCreate", async (interaction) => {
         title: tr(interaction, "❌ Canal incorreto", "❌ Wrong channel"),
         description: tr(
           interaction,
-          `Este bot só pode ser usado no canal #${ALLOWED_CHANNEL_NAME}.`,
-          `This bot can only be used in #${ALLOWED_CHANNEL_NAME}.`
+          `Este bot só pode ser usado no canal ${getAllowedChannelLabel()}.`,
+          `This bot can only be used in ${getAllowedChannelLabel()}.`
         ),
       }),
       ephemeral: true,
@@ -310,3 +310,7 @@ client.login(process.env.DISCORD_TOKEN).catch((err) => {
   console.error("❌ Failed to login to Discord:", err);
   process.exit(1);
 });
+
+function getAllowedChannelLabel() {
+  return ALLOWED_CHANNEL_ID ? `<#${ALLOWED_CHANNEL_ID}>` : `#${ALLOWED_CHANNEL_NAME}`;
+}

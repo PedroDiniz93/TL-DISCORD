@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { ALLOWED_CHANNEL_NAME, PT_BR_COMMANDS } = require("./config");
+const { ALLOWED_CHANNEL_ID, ALLOWED_CHANNEL_NAME, PT_BR_COMMANDS } = require("./config");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -97,6 +97,7 @@ function tr(interaction, ptBr, en) {
 }
 
 function isAllowedChannel(interaction) {
+  if (ALLOWED_CHANNEL_ID) return interaction.channelId === ALLOWED_CHANNEL_ID;
   return (interaction.channel && interaction.channel.name) === ALLOWED_CHANNEL_NAME;
 }
 

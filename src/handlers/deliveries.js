@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
 const {
+  ADMIN_ROLE_ID,
   ADMIN_ROLE_NAME,
   ARCH_GAIN_HISTORY_SHEET,
   ARCH_SHEET,
@@ -22,7 +23,7 @@ async function handleMarcarEntregue(interaction) {
       buildWarningItemReply({
         interaction,
         title: "Acesso negado",
-        description: `Apenas membros com cargo ${ADMIN_ROLE_NAME} podem marcar itens como entregues.`,
+        description: `Apenas membros com cargo ${getAdminRoleLabel()} podem marcar itens como entregues.`,
       })
     );
   }
@@ -130,21 +131,31 @@ function findDeliveryTarget(rows, itemColumn, item, player) {
 
 async function hasAdminRole(interaction) {
   const member = interaction.member;
-  if (memberHasRole(member, ADMIN_ROLE_NAME)) return true;
+  if (memberHasAdminRole(member)) return true;
 
   const fetchedMember = await interaction.guild?.members
     ?.fetch(interaction.user.id)
     .catch(() => null);
-  return memberHasRole(fetchedMember, ADMIN_ROLE_NAME);
+  return memberHasAdminRole(fetchedMember);
 }
 
-function memberHasRole(member, roleName) {
+function memberHasAdminRole(member) {
   const roles = member?.roles;
   if (!roles) return false;
 
-  if (roles.cache?.some((role) => role.name === roleName)) return true;
+  if (ADMIN_ROLE_ID) {
+    if (roles.cache?.has?.(ADMIN_ROLE_ID)) return true;
+    if (Array.isArray(roles) && roles.includes(ADMIN_ROLE_ID)) return true;
+    return false;
+  }
+
+  if (roles.cache?.some((role) => role.name === ADMIN_ROLE_NAME)) return true;
 
   return false;
+}
+
+function getAdminRoleLabel() {
+  return ADMIN_ROLE_ID ? `<@&${ADMIN_ROLE_ID}>` : ADMIN_ROLE_NAME;
 }
 
 function buildDeliveredReply({

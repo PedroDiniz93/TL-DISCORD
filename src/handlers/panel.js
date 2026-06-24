@@ -8,6 +8,7 @@ const {
   TextInputStyle,
 } = require("discord.js");
 const { buildControlPanelReply, buildWarningItemReply } = require("../responses");
+const { ALLOWED_CHANNEL_ID } = require("../config");
 const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
 const { buildMyItemsForInteraction } = require("./my-items");
@@ -202,9 +203,13 @@ async function ensureControlPanel(client, channelName) {
   const guild = await client.guilds.fetch(guildId).catch(() => null);
   if (!guild) return false;
 
-  const channel = await findTextChannelByName(guild, channelName);
+  const channel = ALLOWED_CHANNEL_ID
+    ? await findTextChannelById(guild, ALLOWED_CHANNEL_ID)
+    : await findTextChannelByName(guild, channelName);
   if (!channel) {
-    console.warn(`⚠️ Control panel channel not found: ${channelName}`);
+    console.warn(
+      `⚠️ Control panel channel not found: ${ALLOWED_CHANNEL_ID || channelName}`
+    );
     return false;
   }
 
@@ -263,6 +268,12 @@ async function buildRegisterRareModal(item) {
           .setRequired(true)
       )
     );
+}
+
+async function findTextChannelById(guild, channelId) {
+  const channel = await guild.channels.fetch(channelId).catch(() => null);
+  if (!channel?.isTextBased?.()) return null;
+  return channel;
 }
 
 async function findTextChannelByName(guild, channelName) {
