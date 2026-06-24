@@ -88,11 +88,17 @@ Crie um arquivo `.env` na raiz do projeto:
 DISCORD_TOKEN=token_do_bot
 DISCORD_CLIENT_ID=id_da_aplicacao_discord
 GUILD_ID=id_do_servidor
+ALLOWED_CHANNEL_ID=id_do_canal_permitido
+ADMIN_ROLE_ID=id_do_cargo_administrador
 SHEET_ID=id_da_planilha_google
 GOOGLE_CREDS_B64=json_da_conta_de_servico_em_base64
 ```
 
 `GOOGLE_CREDS_B64` deve ser o JSON da conta de serviço convertido para base64.
+
+`ALLOWED_CHANNEL_ID` e `ADMIN_ROLE_ID` são recomendados em produção para evitar
+dependência de nomes de canal/cargo. Se essas variáveis não forem definidas, o
+bot usa como fallback o canal `🎢planilha-arch-boss` e o cargo `ADM`.
 
 ## Como rodar
 
