@@ -2,6 +2,8 @@ const TL_CODEX_BASE_URL = "https://tlcodex.com";
 const TL_CODEX_TIMEOUT_MS = 12000;
 const TL_CODEX_CACHE_TTL_MS = 10 * 60 * 1000;
 
+const { archbossCodexAliases } = require("./items");
+
 const listingCache = new Map();
 
 async function fetchTLCodexItemDetails(item) {
@@ -9,7 +11,7 @@ async function fetchTLCodexItemDetails(item) {
 
   for (const candidate of lookupPlan) {
     const listing = await fetchListing(candidate);
-    const matched = matchBestListing(listing.rows, item);
+    const matched = matchBestListing(listing.rows, item, candidate);
     if (!matched) continue;
 
     const detail = await fetchItemDetail(matched.url);
@@ -45,7 +47,7 @@ function buildLookupPlan(item) {
   const searchTerm = searchText;
 
   if (item?.category === "archboss_weapon" || item?.category === "world_boss_weapon_t4") {
-    return [{ type: "weapons", searchTerm }];
+    return buildArchbossLookupPlan(item, searchTerm);
   }
 
   if (item?.category === "rare_equip" || item?.category === "world_boss_equip_t4") {
@@ -61,6 +63,24 @@ function buildLookupPlan(item) {
     { type: "armor", searchTerm },
     { type: "accessories", searchTerm },
   ];
+}
+
+function buildArchbossLookupPlan(item, searchTerm) {
+  const plans = [];
+  const alias = archbossCodexAliases.find((entry) => entry.localName === item?.originalName);
+
+  if (Array.isArray(alias?.codexNames)) {
+    for (const codexName of alias.codexNames) {
+      plans.push({
+        type: "weapons",
+        searchTerm: codexName,
+        preferredName: codexName,
+      });
+    }
+  }
+
+  plans.push({ type: "weapons", searchTerm, preferredName: "" });
+  return plans;
 }
 
 async function fetchListing(candidate) {
@@ -104,7 +124,7 @@ async function fetchListing(candidate) {
   return value;
 }
 
-function matchBestListing(rows, item) {
+function matchBestListing(rows, item, candidatePlan = {}) {
   const candidates = rows
     .map((row) => parseListingRow(row))
     .filter((row) => row && row.name);
@@ -123,6 +143,14 @@ function matchBestListing(rows, item) {
     const score = scoreNameMatch(searchTokens, candidate.tokens, candidate.name);
     if (!best || score > best.score) {
       best = { ...candidate, score };
+    }
+  }
+
+  const preferredName = normalizeText(candidatePlan?.preferredName);
+  if (preferredName) {
+    const exact = candidates.find((candidate) => normalizeText(candidate.name).includes(preferredName));
+    if (exact) {
+      return { ...exact, score: 100 };
     }
   }
 

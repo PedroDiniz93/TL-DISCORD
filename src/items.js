@@ -21,6 +21,73 @@ const weapons = [
   "🥊 Queen Bellandir's Gauntlet",
 ];
 
+const archbossCodexAliases = [
+  {
+    localName: "🗡️ Espadão do Tevent (Tevent Greatsword)",
+    codexNames: ["Tevent's Warblade of Despair", "Tevent's Warblade of Incineration"],
+  },
+  {
+    localName: "🗡️ Espadão do Cordy (Cordy Greatsword)",
+    codexNames: ["Giant Cordy's Ascension Greatsword"],
+  },
+  {
+    localName: "⚔️ Adaga da Deluznoa (Deluznoa Dagger)",
+    codexNames: ["Deluzhnoa's Permafrost Razors"],
+  },
+  {
+    localName: "⚔️ Adaga do Tevent (Tevent Dagger)",
+    codexNames: ["Tevent's Fangs of Fury"],
+  },
+  {
+    localName: "🎯 Balestra da Belandir (Belandir Crossbow)",
+    codexNames: ["Queen Bellandir's Toxic Spine Throwers"],
+  },
+  {
+    localName: "🎯 Balestra do Cordy (Cordy Crossbow)",
+    codexNames: ["Cordy's Stormspore Spike Slingers"],
+  },
+  {
+    localName: "🏹 Arco da Deluznoa (Deluznoa Bow)",
+    codexNames: ["Deluzhnoa's Arc of Frozen Death"],
+  },
+  {
+    localName: "🏹 Arco do Tevent (Tevent Bow)",
+    codexNames: ["Tevent's Arc of Wailing Death"],
+  },
+  {
+    localName: "⚡ Cajado da Belandir (Belandir Staff)",
+    codexNames: ["Queen Bellandir's Hivemind Staff"],
+  },
+  {
+    localName: "⚡ Cajado da Deluznoa (Deluznoa Staff)",
+    codexNames: ["Deluzhnoa's Ancient Petrified Staff"],
+  },
+  {
+    localName: "🪄 Varinha do Cordy (Cordy Wand)",
+    codexNames: ["Cordy's Grasp of Manipulation"],
+  },
+  {
+    localName: "🪄 Varinha do Tevent (Tevent Wand)",
+    codexNames: ["Tevent's Grasp of Withering"],
+  },
+  {
+    localName: "🗡️ Lança da Belandir (Belandir Spear)",
+    codexNames: ["Queen Bellandir's Serrated Spike"],
+  },
+  {
+    localName: "🗡️ Lança da Deluznoa (Deluznoa Spear)",
+    codexNames: ["Deluzhnoa's Serrated Shard"],
+  },
+  {
+    localName: "🔮 Orb do Cordy (Cordy Orb)",
+    codexNames: ["Cordy's Source of Contagion"],
+  },
+  {
+    localName: "🔮 Orb do Tevent (Tevent Orb)",
+    codexNames: ["Tevent's Omniscient Eye"],
+  },
+];
+
 const worldBossWeaponT4Items = [
   "🗡️ Ascended Pakilo Naru's Greatsword",
   "🛡️ Ascended Daigon's Sword",
@@ -167,6 +234,7 @@ module.exports = {
   isWorldBossWeaponT4,
   rareItems,
   stripLeadingItemEmoji,
+  archbossCodexAliases,
   worldBossEquipT4Items,
   worldBossJewelryT4Items,
   worldBossWeaponT4Items,

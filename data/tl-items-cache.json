@@ -476,5 +476,465 @@
       }
     },
     "scrapedAt": "2026-06-24T15:13:56.049Z"
+  },
+  "tevent-greatsword": {
+    "source": "tlcodex",
+    "originalName": "🗡️ Espadão do Tevent (Tevent Greatsword)",
+    "displayName": "Espadão do Tevent (Tevent Greatsword)",
+    "ptName": "Espadão do Tevent",
+    "enName": "Tevent Greatsword",
+    "category": "archboss_weapon",
+    "categoryLabel": "Arma Archboss",
+    "typeLabel": "Archboss",
+    "limitLabel": "1 arma Archboss por jogador",
+    "externalUrl": "https://tlcodex.com/en/item/10042047/",
+    "cachedAt": "2026-06-24T16:16:40.239Z",
+    "externalProvider": "tlcodex",
+    "externalId": 10042047,
+    "externalName": "Tevent's Warblade of Despair",
+    "externalDescription": "\"A broadsword that summons the despair trap of Tevent Kuhul, the ancient Courte of Trutizan who craved magic power.\"",
+    "iconUrl": "https://tlcodex.com/icons/icon/item_128/equip/weapon/it_p_sword2h_00036.webp",
+    "grade": 5,
+    "combatPower": 219,
+    "statusSummary": "Damage: 118 ~ 219\nRange: 3.5m\nAttack Speed: 0.743s\nStrength: 5\nDexterity: 4\nStun Chance: 50",
+    "baseStats": [
+      {
+        "label": "Damage",
+        "value": "118 ~ 219"
+      },
+      {
+        "label": "Range",
+        "value": "3.5m"
+      },
+      {
+        "label": "Attack Speed",
+        "value": "0.743s"
+      },
+      {
+        "label": "Strength",
+        "value": "5"
+      },
+      {
+        "label": "Dexterity",
+        "value": "4"
+      },
+      {
+        "label": "Stun Chance",
+        "value": "50"
+      }
+    ],
+    "possibleTraits": [
+      {
+        "label": "Hit Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Critical Hit Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Heavy Attack Chance",
+        "value": "+80 | 160 | 240 | 320"
+      },
+      {
+        "label": "Undead Bonus Damage",
+        "value": "+32 | 64 | 96 | 128"
+      },
+      {
+        "label": "Max Health",
+        "value": "+600 | 1200 | 1800 | 2400"
+      },
+      {
+        "label": "Debuff Duration",
+        "value": "-6 | -12 | -18 | -24"
+      }
+    ],
+    "flags": [
+      "Cannot be added to Lithograph Book",
+      "Storable",
+      "Sellable in Auction House",
+      "Can be dissolved",
+      "Destructible",
+      "Level up Available",
+      "Illusion Extraction Unavailable"
+    ],
+    "skillEffect": "Upon applying Collision, Shock, or Stun with Greatsword Skills, creates an area in a 1.5m radius around the target that explodes in 1.5s, dealing 325% of Base Damage. Damage increases by 50% against monsters.",
+    "upgradeStats": {
+      "mats": {
+        "1": {
+          "14000214": 1
+        },
+        "2": {
+          "14000214": 2
+        },
+        "3": {
+          "14000214": 3
+        },
+        "4": {
+          "14000214": 4
+        },
+        "5": {
+          "14000214": 5
+        },
+        "6": {
+          "14000214": 6
+        },
+        "7": {
+          "14000214": 7
+        },
+        "8": {
+          "14000214": 8
+        },
+        "9": {
+          "14000214": 9
+        },
+        "10": {
+          "14000214": 10
+        },
+        "11": {
+          "14000214": 11
+        },
+        "12": {
+          "14000214": 12
+        }
+      },
+      "items": {
+        "14000214": [
+          5,
+          "icon/item_128/misc/i_enchant_weapon_kaa_001.webp"
+        ]
+      },
+      "gold": {
+        "1": 5500,
+        "2": 7300,
+        "3": 11000,
+        "4": 16000,
+        "5": 26000,
+        "6": 37000,
+        "7": 52000,
+        "8": 74000,
+        "9": 100000,
+        "10": 150000,
+        "11": 225000,
+        "12": 337500
+      },
+      "growth": {
+        "1": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "2": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "3": {
+          "1": [
+            40,
+            35
+          ],
+          "2": [
+            30,
+            40
+          ],
+          "3": [
+            20,
+            60
+          ],
+          "4": [
+            10,
+            100
+          ]
+        },
+        "4": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "5": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "6": {
+          "1": [
+            40,
+            25
+          ],
+          "2": [
+            30,
+            30
+          ],
+          "3": [
+            20,
+            50
+          ],
+          "4": [
+            10,
+            80
+          ]
+        },
+        "7": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "8": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "9": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "10": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "11": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        },
+        "12": {
+          "1": [
+            40,
+            15
+          ],
+          "2": [
+            30,
+            20
+          ],
+          "3": [
+            20,
+            40
+          ],
+          "4": [
+            10,
+            70
+          ]
+        }
+      },
+      "stats": {
+        "0": {
+          "52": 0,
+          "67": 0,
+          "147": 0,
+          "153": 0,
+          "176": 0
+        },
+        "1": {
+          "147": 12,
+          "153": 3,
+          "176": 3
+        },
+        "2": {
+          "52": 1,
+          "67": 1,
+          "147": 25,
+          "153": 6,
+          "176": 7
+        },
+        "3": {
+          "52": 1,
+          "67": 1,
+          "147": 37,
+          "153": 9,
+          "176": 11
+        },
+        "4": {
+          "52": 2,
+          "67": 2,
+          "147": 50,
+          "153": 12,
+          "176": 14
+        },
+        "5": {
+          "52": 2,
+          "67": 2,
+          "147": 62,
+          "153": 15,
+          "176": 18
+        },
+        "6": {
+          "52": 3,
+          "67": 3,
+          "147": 75,
+          "153": 19,
+          "176": 22
+        },
+        "7": {
+          "52": 3,
+          "67": 3,
+          "147": 87,
+          "153": 22,
+          "176": 25
+        },
+        "8": {
+          "52": 4,
+          "67": 4,
+          "147": 100,
+          "153": 25,
+          "176": 29
+        },
+        "9": {
+          "52": 4,
+          "67": 4,
+          "147": 112,
+          "153": 28,
+          "176": 33
+        },
+        "10": {
+          "52": 5,
+          "67": 5,
+          "147": 125,
+          "153": 31,
+          "176": 37
+        },
+        "11": {
+          "52": 5,
+          "67": 5,
+          "147": 137,
+          "153": 34,
+          "176": 40
+        },
+        "12": {
+          "52": 6,
+          "67": 6,
+          "147": 150,
+          "153": 38,
+          "176": 44
+        }
+      },
+      "names": {
+        "52": "Strength",
+        "67": "Dexterity",
+        "147": "Stun Chance",
+        "153": "Damage",
+        "176": "Damage"
+      }
+    },
+    "scrapedAt": "2026-06-24T16:16:40.238Z"
   }
 }
