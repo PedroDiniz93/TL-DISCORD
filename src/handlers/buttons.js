@@ -6,7 +6,9 @@ const {
   buildFilaItemRaroReply,
   buildRemoverItemRaroReply,
 } = require("./rare-items");
+const { buildItemInfoReply } = require("./item-info");
 const { buildMyItemsForInteraction } = require("./my-items");
+const { findKnownItemByHash, getItemInfo } = require("../item-info-service");
 const { buildWarningItemReply } = require("../responses");
 const { getUserArchRows, getUserRareItemRows } = require("../wishlist-repository");
 const { shortStableHash, tr } = require("../utils");
@@ -15,6 +17,11 @@ async function handleWishlistButton(interaction) {
   const [scope, type, action, lang] = String(interaction.customId || "").split(":");
   if (scope === "myitems") {
     await handleMyItemsRemoveButton(interaction, type, action, lang);
+    return true;
+  }
+
+  if (scope === "queueinfo") {
+    await handleQueueInfoButton(interaction, type, action);
     return true;
   }
 
@@ -60,6 +67,45 @@ async function handleWishlistButton(interaction) {
     })
   );
   return true;
+}
+
+async function handleQueueInfoButton(interaction, itemHash, lang) {
+  const displayInteraction = withButtonLanguage(interaction, lang);
+  const itemName = findKnownItemByHash(itemHash, shortStableHash);
+
+  if (!itemName) {
+    await interaction.editReply(
+      buildWarningItemReply({
+        interaction: displayInteraction,
+        title: tr(displayInteraction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+        description: tr(
+          displayInteraction,
+          "Não consegui identificar o item dessa fila.",
+          "I couldn't identify the item from this queue."
+        ),
+      })
+    );
+    return;
+  }
+
+  const info = await getItemInfo(itemName);
+  if (!info) {
+    await interaction.editReply(
+      buildWarningItemReply({
+        interaction: displayInteraction,
+        itemName,
+        title: tr(displayInteraction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+        description: tr(
+          displayInteraction,
+          "Não encontrei esse item na base conhecida do bot.",
+          "I couldn't find this item in the bot known item database."
+        ),
+      })
+    );
+    return;
+  }
+
+  await interaction.editReply(buildItemInfoReply(info));
 }
 
 async function handleMyItemsRemoveButton(interaction, type, itemHash, lang) {

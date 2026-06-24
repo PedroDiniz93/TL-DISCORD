@@ -185,5 +185,6 @@ function buildExternalLinkAction(url) {
 }
 
 module.exports = {
+  buildItemInfoReply,
   handleItemInfo,
 };

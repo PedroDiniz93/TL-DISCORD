@@ -71,6 +71,16 @@ function findKnownItem(itemName) {
   return allKnownItems.find((item) => normalizeItemName(item) === target) || "";
 }
 
+function findKnownItemByHash(itemHash, hashFn) {
+  if (!itemHash || typeof hashFn !== "function") return "";
+
+  return (
+    allKnownItems.find((item) => hashFn(item) === itemHash) ||
+    allKnownItems.find((item) => hashFn(stripLeadingItemEmoji(item)) === itemHash) ||
+    ""
+  );
+}
+
 function buildItemInfo(itemName) {
   const cleanName = stripLeadingItemEmoji(itemName);
   const names = splitItemNames(cleanName);
@@ -307,5 +317,6 @@ function normalizeItemName(itemName) {
 
 module.exports = {
   allKnownItems,
+  findKnownItemByHash,
   getItemInfo,
 };

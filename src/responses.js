@@ -493,7 +493,33 @@ function buildItemQueueReply({ interaction, itemName, rows, title, description }
     });
   }
 
-  return attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+  const reply = attachment ? { embeds: [embed], files: [attachment] } : { embeds: [embed] };
+  return {
+    ...reply,
+    components: [buildQueueInfoAction(interaction, itemName)],
+  };
+}
+
+function buildQueueInfoAction(interaction, itemName) {
+  const lang = tr(interaction, "pt", "en");
+
+  return new ActionRowBuilder().addComponents(
+    buildItemInfoButton({
+      interaction,
+      itemName,
+      customIdPrefix: "queueinfo",
+      lang,
+    })
+  );
+}
+
+function buildItemInfoButton({ interaction, itemName, customIdPrefix, lang = "" }) {
+  const suffix = lang ? `:${lang}` : "";
+
+  return new ButtonBuilder()
+    .setCustomId(`${customIdPrefix}:${shortStableHash(itemName)}${suffix}`)
+    .setLabel(tr(interaction, "Info Item", "Item info"))
+    .setStyle(ButtonStyle.Secondary);
 }
 
 function buildRegisteredItemActions(interaction, type) {
@@ -615,6 +641,7 @@ module.exports = {
   buildEmptyItemReply,
   buildControlPanelReply,
   buildHelpReply,
+  buildItemInfoButton,
   buildRareItemQueueReply,
   buildRareItemWishlistReply,
   buildMyItemsReply,

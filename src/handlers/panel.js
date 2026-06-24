@@ -7,12 +7,18 @@ const {
   TextInputBuilder,
   TextInputStyle,
 } = require("discord.js");
-const { buildControlPanelReply, buildWarningItemReply } = require("../responses");
+const {
+  buildControlPanelReply,
+  buildItemInfoButton,
+  buildWarningItemReply,
+} = require("../responses");
 const { ALLOWED_CHANNEL_ID } = require("../config");
 const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
+const { buildItemInfoReply } = require("./item-info");
 const { buildMyItemsForInteraction } = require("./my-items");
 const { getLastNicknameForDiscordUser } = require("../nicknames");
+const { findKnownItemByHash, getItemInfo } = require("../item-info-service");
 const {
   rareItems,
   weapons,
@@ -21,7 +27,7 @@ const {
   isWorldBossJewelryT4,
   isWorldBossWeaponT4,
 } = require("../items");
-const { tr } = require("../utils");
+const { shortStableHash, tr } = require("../utils");
 
 const PANEL_MESSAGE_TITLES = new Set([
   "Painel Archboss",
@@ -72,6 +78,14 @@ async function handleControlPanelButton(interaction) {
     return true;
   }
 
+  if (action === "info") {
+    const itemHash = String(interaction.customId || "").split(":")[2] || "";
+    const itemName = findKnownItemByHash(itemHash, shortStableHash);
+    await interaction.deferUpdate();
+    await interaction.editReply(await buildPanelItemInfoReply(panelInteraction, itemName));
+    return true;
+  }
+
   await interaction.deferReply({ ephemeral: true });
 
   if (action === "my_items") {
@@ -110,7 +124,14 @@ async function handleControlPanelSelect(interaction) {
 
     if (action === "queue") {
       await interaction.deferUpdate();
-      await interaction.editReply(await buildFilaArchReply(panelInteraction, value));
+      await interaction.editReply(
+        withPanelQueueActions({
+          reply: await buildFilaArchReply(panelInteraction, value),
+          interaction: panelInteraction,
+          itemName: value,
+          backTarget: "home",
+        })
+      );
       return true;
     }
   }
@@ -132,7 +153,14 @@ async function handleControlPanelSelect(interaction) {
 
     if (action === "queue") {
       await interaction.deferUpdate();
-      await interaction.editReply(await buildFilaItemRaroReply(panelInteraction, value));
+      await interaction.editReply(
+        withPanelQueueActions({
+          reply: await buildFilaItemRaroReply(panelInteraction, value),
+          interaction: panelInteraction,
+          itemName: value,
+          backTarget: `rare_category:${action}`,
+        })
+      );
       return true;
     }
   }
@@ -491,6 +519,52 @@ function buildPanelBackReply(interaction, target) {
   }
 
   return buildPanelHomeReply(interaction);
+}
+
+function withPanelQueueActions({ reply, interaction, itemName, backTarget }) {
+  return {
+    ...reply,
+    components: [
+      new ActionRowBuilder().addComponents(
+        buildBackButton(interaction, backTarget),
+        buildItemInfoButton({
+          interaction,
+          itemName,
+          customIdPrefix: "panel:info",
+        })
+      ),
+    ],
+  };
+}
+
+async function buildPanelItemInfoReply(interaction, itemName) {
+  if (!itemName) {
+    return buildWarningItemReply({
+      interaction,
+      title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+      description: tr(
+        interaction,
+        "Não consegui identificar o item dessa fila.",
+        "I couldn't identify the item from this queue."
+      ),
+    });
+  }
+
+  const info = await getItemInfo(itemName);
+  if (!info) {
+    return buildWarningItemReply({
+      interaction,
+      itemName,
+      title: tr(interaction, "⚠️ Item não encontrado", "⚠️ Item not found"),
+      description: tr(
+        interaction,
+        "Não encontrei esse item na base conhecida do bot.",
+        "I couldn't find this item in the bot known item database."
+      ),
+    });
+  }
+
+  return buildItemInfoReply(info);
 }
 
 function buildPanelHomeReply(interaction) {

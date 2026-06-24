@@ -31,6 +31,14 @@ const archbossCodexAliases = [
     codexNames: ["Giant Cordy's Ascension Greatsword"],
   },
   {
+    localName: "🛡️ Espada e Escudo da Deluznoa (Deluznoa Sword and Shield)",
+    codexNames: ["Deluzhnoa's Edge of Eternal Frost"],
+  },
+  {
+    localName: "🛡️ Espada e Escudo da Belandir (Belandir Sword and Shield)",
+    codexNames: ["Queen Bellandir's Languishing Blade"],
+  },
+  {
     localName: "⚔️ Adaga da Deluznoa (Deluznoa Dagger)",
     codexNames: ["Deluzhnoa's Permafrost Razors"],
   },
