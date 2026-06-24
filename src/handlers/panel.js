@@ -587,11 +587,21 @@ function trimSelectLabel(value) {
 }
 
 function encodePanelValue(value) {
-  return Buffer.from(String(value || ""), "utf8").toString("base64url");
+  return shortStableHash(value);
 }
 
 function decodePanelValue(value) {
-  return Buffer.from(String(value || ""), "base64url").toString("utf8");
+  const encoded = String(value || "");
+  const knownItem = [...weapons, ...rareItems].find(
+    (item) => shortStableHash(item) === encoded
+  );
+  if (knownItem) return knownItem;
+
+  try {
+    return Buffer.from(encoded, "base64url").toString("utf8");
+  } catch {
+    return "";
+  }
 }
 
 module.exports = {
