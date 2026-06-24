@@ -1,42 +1,19 @@
-const { ARCH_SHEET, RARE_ITEM_SHEET } = require("./config");
-const { getSheetRows } = require("./sheets");
+const { getUserWishlistRows } = require("./wishlist-repository");
 const { parseBrazilianDateTime, tr } = require("./utils");
 const { buildWarningItemReply } = require("./responses");
-
-const NICKNAME_SOURCES = [
-  {
-    sheet: ARCH_SHEET,
-    nickField: "Nick",
-    dateField: "Data",
-  },
-  {
-    sheet: RARE_ITEM_SHEET,
-    nickField: "Nick",
-    dateField: "Data",
-  },
-];
 
 async function getLastNicknameForDiscordUser(discordUserId) {
   const userId = String(discordUserId || "").trim();
   if (!userId) return "";
 
-  const sourceRows = await Promise.all(
-    NICKNAME_SOURCES.map(async (source) => ({
-      source,
-      rows: await getSheetRows(source.sheet.title, source.sheet.headers),
-    }))
-  );
+  const { archRows, rareItemRows } = await getUserWishlistRows(userId);
 
-  return sourceRows
-    .flatMap(({ source, rows }) =>
-      rows
-        .filter((row) => String(row.DiscordUserId || "").trim() === userId)
-        .map((row) => ({
-          nick: String(row[source.nickField] || "").trim(),
-          parsedDate: parseBrazilianDateTime(row[source.dateField]) || new Date(0),
-          rowNumber: row.rowNumber || 0,
-        }))
-    )
+  return [...archRows, ...rareItemRows]
+    .map((row) => ({
+      nick: String(row.Nick || "").trim(),
+      parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
+      rowNumber: row.rowNumber || 0,
+    }))
     .filter((entry) => entry.nick)
     .sort((a, b) => {
       if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {

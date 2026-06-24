@@ -1,13 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
-const {
-  ARCH_GAIN_HISTORY_SHEET,
-  ARCH_SHEET,
-  RARE_ITEM_GAIN_HISTORY_SHEET,
-  RARE_ITEM_SHEET,
-} = require("../config");
 const { appendLootHistoryLog } = require("../logging");
 const { buildWarningItemReply } = require("../responses");
-const { getSheet } = require("../sheets");
 const {
   getRequiredOptionAny,
   getUserDisplayName,
@@ -15,6 +8,12 @@ const {
   nowBrasilia,
 } = require("../utils");
 const { getAdminRoleLabel, hasAdminRole } = require("../permissions");
+const {
+  addDeliveryHistory,
+  deleteActiveRowByType,
+  getRowsByType,
+  getWishlistConfig,
+} = require("../wishlist-repository");
 
 async function handleMarcarEntregue(interaction) {
   if (!(await hasAdminRole(interaction))) {
@@ -53,9 +52,8 @@ async function handleMarcarEntregue(interaction) {
 }
 
 async function markItemDelivered({ interaction, type, item, player }) {
-  const config = getDeliveryConfig(type);
-  const activeSheet = await getSheet(config.active.title, config.active.headers);
-  const rows = await activeSheet.getRows();
+  const config = getWishlistConfig(type);
+  const rows = await getRowsByType(type);
   const targetRow = findDeliveryTarget(rows, config.itemColumn, item, player);
 
   if (!targetRow) {
@@ -72,14 +70,14 @@ async function markItemDelivered({ interaction, type, item, player }) {
   const deliveredItem = String(targetRow[config.itemColumn] || item).trim();
   const discordUserId = String(targetRow.DiscordUserId || "").trim();
 
-  const historySheet = await getSheet(config.history.title, config.history.headers);
-  await historySheet.addRow({
-    "Data/Hora": deliveredAt,
-    Player: deliveredPlayer,
-    Item: deliveredItem,
-    DiscordUserId: discordUserId,
+  await addDeliveryHistory({
+    type,
+    deliveredAt,
+    player: deliveredPlayer,
+    item: deliveredItem,
+    discordUserId,
   });
-  await targetRow.delete();
+  await deleteActiveRowByType(type, targetRow);
 
   await appendLootHistoryLog({
     interaction,
@@ -97,24 +95,6 @@ async function markItemDelivered({ interaction, type, item, player }) {
     deliveredAt,
     adminName: getUserDisplayName(interaction.user),
   });
-}
-
-function getDeliveryConfig(type) {
-  if (type === "arch") {
-    return {
-      active: ARCH_SHEET,
-      history: ARCH_GAIN_HISTORY_SHEET,
-      itemColumn: "Arma",
-      label: "Archboss",
-    };
-  }
-
-  return {
-    active: RARE_ITEM_SHEET,
-    history: RARE_ITEM_GAIN_HISTORY_SHEET,
-    itemColumn: "Item",
-    label: "Item raro",
-  };
 }
 
 function findDeliveryTarget(rows, itemColumn, item, player) {

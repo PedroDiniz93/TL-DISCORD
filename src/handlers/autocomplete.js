@@ -1,9 +1,7 @@
 const { rareItems, weapons } = require("../items");
-const { ARCH_SHEET, RARE_ITEM_SHEET } = require("../config");
-const { getSheet } = require("../sheets");
+const { getQueueRows } = require("../wishlist-repository");
 const {
   isAllowedChannel,
-  normalizeQueueItemName,
   respondAutocompleteOnce,
   scoreSearchMatch,
 } = require("../utils");
@@ -85,24 +83,11 @@ async function handleDeliveryAutocomplete(interaction, focused) {
 }
 
 async function getPlayersInQueue(type, item) {
-  const config =
-    type === "rare"
-      ? {
-          sheet: RARE_ITEM_SHEET,
-          itemColumn: "Item",
-        }
-      : {
-          sheet: ARCH_SHEET,
-          itemColumn: "Arma",
-        };
-  const sheet = await getSheet(config.sheet.title, config.sheet.headers);
-  const rows = await sheet.getRows();
-  const targetItem = normalizeQueueItemName(item);
+  const queueRows = await getQueueRows(type, item);
   const seen = new Set();
 
-  return rows
-    .filter((row) => normalizeQueueItemName(row[config.itemColumn]) === targetItem)
-    .map((row) => String(row.Nick || "").trim())
+  return queueRows
+    .map(({ row }) => String(row.Nick || "").trim())
     .filter(Boolean)
     .filter((player) => {
       const key = player.toLowerCase();

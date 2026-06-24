@@ -17,16 +17,20 @@ const {
   buildRemovedItemReply,
   buildWarningItemReply,
 } = require("../responses");
-const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
 const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
+const {
+  addRareItemRegistration,
+  deleteRareItemRow,
+  getQueueRows,
+  getUserRareItemRows,
+} = require("../wishlist-repository");
 const {
   getOptionalOptionAny,
   getRequiredOptionAny,
   normalizeQueueItemName,
   nowBrasilia,
-  parseBrazilianDateTime,
   tr,
 } = require("../utils");
 
@@ -58,10 +62,7 @@ async function registerRareItem({ interaction, nick, item }) {
   }
 
   const itemForSheet = stripLeadingItemEmoji(item);
-  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const userRows = rows.filter(
-    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
-  );
+  const userRows = await getUserRareItemRows(interaction.user.id);
   const targetIsArmor = isRareArmor(item);
   const targetIsWorldBossWeaponT4 = isWorldBossWeaponT4(item);
   const targetIsWorldBossEquipT4 = isWorldBossEquipT4(item);
@@ -161,14 +162,12 @@ async function registerRareItem({ interaction, nick, item }) {
   const nickname = await resolveNicknameForRegistration(interaction, nick);
   if (nickname.reply) return nickname.reply;
 
-  const sheet = await getSheet(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  await sheet.addRow({
-    Data: nowBrasilia(),
-    Nick: nickname.nick,
-    Item: itemForSheet,
-    DiscordUserId: interaction.user.id,
+  await addRareItemRegistration({
+    registeredAt: nowBrasilia(),
+    nick: nickname.nick,
+    item: itemForSheet,
+    discordUserId: interaction.user.id,
   });
-  invalidateSheetRows(RARE_ITEM_SHEET.title);
   await appendLootHistoryLog({
     interaction,
     action: "add",
@@ -190,12 +189,10 @@ async function registerRareItem({ interaction, nick, item }) {
 }
 
 async function buildRemoverItemRaroReply(interaction, item) {
-  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
+  const rows = await getUserRareItemRows(interaction.user.id);
   const targetItem = normalizeQueueItemName(item);
   const targetRow = rows.find(
-    (row) =>
-      (row.DiscordUserId || "").trim() === interaction.user.id &&
-      normalizeQueueItemName(row.Item) === targetItem
+    (row) => normalizeQueueItemName(row.Item) === targetItem
   );
 
   if (!targetRow) {
@@ -212,8 +209,7 @@ async function buildRemoverItemRaroReply(interaction, item) {
   }
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
-  await targetRow.delete();
-  invalidateSheetRows(RARE_ITEM_SHEET.title);
+  await deleteRareItemRow(targetRow);
   await appendLootHistoryLog({
     interaction,
     action: "remove",
@@ -234,20 +230,7 @@ async function buildRemoverItemRaroReply(interaction, item) {
 }
 
 async function buildFilaItemRaroReply(interaction, item) {
-  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const targetItem = normalizeQueueItemName(item);
-  const filtered = rows
-    .filter((row) => normalizeQueueItemName(row.Item) === targetItem)
-    .map((row) => ({
-      row,
-      parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
-    }))
-    .sort((a, b) => {
-      if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
-        return a.parsedDate.getTime() - b.parsedDate.getTime();
-      }
-      return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
-    });
+  const filtered = await getQueueRows("rare", item);
 
   if (!filtered.length) {
     return buildEmptyItemReply({
@@ -272,10 +255,7 @@ async function buildFilaItemRaroReply(interaction, item) {
 }
 
 async function buildListarItemRaroReply(interaction) {
-  const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
-  const userRows = rows.filter(
-    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
-  );
+  const userRows = await getUserRareItemRows(interaction.user.id);
 
   if (!userRows.length) {
     return buildEmptyItemReply({

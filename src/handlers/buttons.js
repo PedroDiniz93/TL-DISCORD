@@ -7,9 +7,8 @@ const {
   buildRemoverItemRaroReply,
 } = require("./rare-items");
 const { buildMyItemsForInteraction } = require("./my-items");
-const { ARCH_SHEET, RARE_ITEM_SHEET } = require("../config");
 const { buildWarningItemReply } = require("../responses");
-const { getSheetRows } = require("../sheets");
+const { getUserArchRows, getUserRareItemRows } = require("../wishlist-repository");
 const { shortStableHash, tr } = require("../utils");
 
 async function handleWishlistButton(interaction) {
@@ -103,20 +102,18 @@ async function findMyItemNameByHash(interaction, type, itemHash) {
   const userId = interaction.user.id;
 
   if (type === "arch") {
-    const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
+    const rows = await getUserArchRows(userId);
     const row = rows.find(
       (currentRow) =>
-        String(currentRow.DiscordUserId || "").trim() === userId &&
         shortStableHash(currentRow.Arma) === itemHash
     );
     return String(row?.Arma || "").trim();
   }
 
   if (type === "rare") {
-    const rows = await getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers);
+    const rows = await getUserRareItemRows(userId);
     const row = rows.find(
       (currentRow) =>
-        String(currentRow.DiscordUserId || "").trim() === userId &&
         shortStableHash(currentRow.Item) === itemHash
     );
     return String(row?.Item || "").trim();

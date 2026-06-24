@@ -1,20 +1,13 @@
-const { ARCH_SHEET, RARE_ITEM_SHEET } = require("../config");
 const { buildMyItemsReply } = require("../responses");
-const { getSheetRows } = require("../sheets");
+const { getUserWishlistRows } = require("../wishlist-repository");
 
 async function buildMyItemsForInteraction(interaction) {
-  const [archRows, rareItemRows] = await Promise.all([
-    getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers),
-    getSheetRows(RARE_ITEM_SHEET.title, RARE_ITEM_SHEET.headers),
-  ]);
-  const userId = interaction.user.id;
+  const { archRows, rareItemRows } = await getUserWishlistRows(interaction.user.id);
 
   return buildMyItemsReply({
     interaction,
-    archRows: archRows.filter((row) => String(row.DiscordUserId || "").trim() === userId),
-    rareItemRows: rareItemRows.filter(
-      (row) => String(row.DiscordUserId || "").trim() === userId
-    ),
+    archRows,
+    rareItemRows,
   });
 }
 

@@ -7,16 +7,19 @@ const {
   buildRemovedItemReply,
   buildWarningItemReply,
 } = require("../responses");
-const { getSheet, getSheetRows, invalidateSheetRows } = require("../sheets");
 const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
 const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
 const {
+  addArchRegistration,
+  deleteArchRow,
+  getQueueRows,
+  getUserArchRows,
+} = require("../wishlist-repository");
+const {
   getOptionalOptionAny,
   getRequiredOptionAny,
-  normalizeQueueItemName,
   nowBrasilia,
-  parseBrazilianDateTime,
   tr,
 } = require("../utils");
 
@@ -34,10 +37,7 @@ async function handleArmaArch(interaction) {
 }
 
 async function registerArchWeapon({ interaction, nick, arma }) {
-  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const userRows = rows.filter(
-    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
-  );
+  const userRows = await getUserArchRows(interaction.user.id);
 
   if (userRows.length) {
     const userWeapons = userRows
@@ -69,14 +69,12 @@ async function registerArchWeapon({ interaction, nick, arma }) {
   const nickname = await resolveNicknameForRegistration(interaction, nick);
   if (nickname.reply) return nickname.reply;
 
-  const sheet = await getSheet(ARCH_SHEET.title, ARCH_SHEET.headers);
-  await sheet.addRow({
-    Data: nowBrasilia(),
-    Nick: nickname.nick,
-    Arma: arma,
-    DiscordUserId: interaction.user.id,
+  await addArchRegistration({
+    registeredAt: nowBrasilia(),
+    nick: nickname.nick,
+    weapon: arma,
+    discordUserId: interaction.user.id,
   });
-  invalidateSheetRows(ARCH_SHEET.title);
   await appendLootHistoryLog({
     interaction,
     action: "add",
@@ -98,10 +96,7 @@ async function registerArchWeapon({ interaction, nick, arma }) {
 }
 
 async function buildListarArchReply(interaction) {
-  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const userRows = rows.filter(
-    (row) => (row.DiscordUserId || "").trim() === interaction.user.id
-  );
+  const userRows = await getUserArchRows(interaction.user.id);
 
   if (!userRows.length) {
     return buildEmptyItemReply({
@@ -119,11 +114,9 @@ async function buildListarArchReply(interaction) {
 }
 
 async function buildRemoverArchReply(interaction, arma) {
-  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
+  const rows = await getUserArchRows(interaction.user.id);
   const targetRow = rows.find(
-    (row) =>
-      (row.DiscordUserId || "").trim() === interaction.user.id &&
-      (row.Arma || "").trim() === arma
+    (row) => (row.Arma || "").trim() === arma
   );
 
   if (!targetRow) {
@@ -140,8 +133,7 @@ async function buildRemoverArchReply(interaction, arma) {
   }
 
   const nick = targetRow.Nick || tr(interaction, "Nick não informado", "Unknown nickname");
-  await targetRow.delete();
-  invalidateSheetRows(ARCH_SHEET.title);
+  await deleteArchRow(targetRow);
   await appendLootHistoryLog({
     interaction,
     action: "remove",
@@ -162,25 +154,12 @@ async function buildRemoverArchReply(interaction, arma) {
 }
 
 async function buildFilaArchReply(interaction, item) {
-  const rows = await getSheetRows(ARCH_SHEET.title, ARCH_SHEET.headers);
-  const targetItem = normalizeQueueItemName(item);
   await appendQueueViewLog({
     interaction,
     itemType: "arch",
     item,
   });
-  const filtered = rows
-    .filter((row) => normalizeQueueItemName(row.Arma) === targetItem)
-    .map((row) => ({
-      row,
-      parsedDate: parseBrazilianDateTime(row.Data) || new Date(0),
-    }))
-    .sort((a, b) => {
-      if (a.parsedDate.getTime() !== b.parsedDate.getTime()) {
-        return a.parsedDate.getTime() - b.parsedDate.getTime();
-      }
-      return (a.row.rowNumber || 0) - (b.row.rowNumber || 0);
-    });
+  const filtered = await getQueueRows("arch", item);
 
   if (!filtered.length) {
     return buildEmptyItemReply({
