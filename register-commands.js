@@ -1,6 +1,9 @@
 require("dotenv").config();
 const { REST, Routes } = require("discord.js");
 const { buildCommands } = require("./src/commands");
+const { validateRequiredEnv } = require("./src/env");
+
+validateRequiredEnv();
 
 const GUILD_ID = process.env.GUILD_ID;
 

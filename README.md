@@ -96,9 +96,8 @@ GOOGLE_CREDS_B64=json_da_conta_de_servico_em_base64
 
 `GOOGLE_CREDS_B64` deve ser o JSON da conta de serviço convertido para base64.
 
-`ALLOWED_CHANNEL_ID` e `ADMIN_ROLE_ID` são recomendados em produção para evitar
-dependência de nomes de canal/cargo. Se essas variáveis não forem definidas, o
-bot usa como fallback o canal `🎢planilha-arch-boss` e o cargo `ADM`.
+Todas as variáveis acima são validadas na inicialização. `ALLOWED_CHANNEL_ID` e
+`ADMIN_ROLE_ID` evitam dependência de nomes de canal/cargo no Discord.
 
 ## Como rodar
 

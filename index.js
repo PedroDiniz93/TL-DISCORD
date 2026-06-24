@@ -14,6 +14,9 @@ const {
 const { appendCommandLog } = require("./src/logging");
 const { buildWarningItemReply } = require("./src/responses");
 const { isAllowedChannel, tr } = require("./src/utils");
+const { validateRequiredEnv } = require("./src/env");
+
+validateRequiredEnv();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -27,8 +30,9 @@ function startHealthServer() {
 
   healthServer = http.createServer((req, res) => {
     if (req.url === "/health" || req.url === "/") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, ready: client.isReady() }));
+      const ready = client.isReady();
+      res.writeHead(ready ? 200 : 503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: ready, ready }));
       return;
     }
 
