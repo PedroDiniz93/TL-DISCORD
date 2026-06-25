@@ -50,6 +50,12 @@ async function getRowsByType(type) {
   return getSheetRows(config.active.title, config.active.headers);
 }
 
+async function getFreshRowsByType(type) {
+  const config = getWishlistConfig(type);
+  const sheet = await getSheet(config.active.title, config.active.headers);
+  return sheet.getRows();
+}
+
 async function getUserArchRows(discordUserId) {
   return filterRowsByDiscordUserId(await getArchRows(), discordUserId);
 }
@@ -106,6 +112,18 @@ async function addRareItemRegistration({ registeredAt, nick, item, discordUserId
   invalidateSheetRows(RARE_ITEM_SHEET.title);
 }
 
+async function addActiveRowByType(type, { registeredAt, nick, item, discordUserId }) {
+  const config = getWishlistConfig(type);
+  const sheet = await getSheet(config.active.title, config.active.headers);
+  await sheet.addRow({
+    Data: registeredAt,
+    Nick: nick,
+    [config.itemColumn]: item,
+    DiscordUserId: discordUserId,
+  });
+  invalidateSheetRows(config.active.title);
+}
+
 async function deleteArchRow(row) {
   await row.delete();
   invalidateSheetRows(ARCH_SHEET.title);
@@ -125,6 +143,7 @@ async function addDeliveryHistory({ type, deliveredAt, player, item, discordUser
     Item: item,
     DiscordUserId: discordUserId,
   });
+  invalidateSheetRows(config.history.title);
 }
 
 async function deleteActiveRowByType(type, row) {
@@ -146,6 +165,7 @@ function compareQueueEntries(a, b) {
 }
 
 module.exports = {
+  addActiveRowByType,
   addArchRegistration,
   addDeliveryHistory,
   addRareItemRegistration,
@@ -154,6 +174,7 @@ module.exports = {
   deleteRareItemRow,
   getArchRows,
   getArchHistoryRows,
+  getFreshRowsByType,
   getQueueRows,
   getRareItemRows,
   getRareItemHistoryRows,

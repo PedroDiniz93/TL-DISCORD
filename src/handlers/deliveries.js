@@ -9,11 +9,14 @@ const {
 } = require("../utils");
 const { getAdminRoleLabel, hasAdminRole } = require("../permissions");
 const {
+  addActiveRowByType,
   addDeliveryHistory,
   deleteActiveRowByType,
-  getRowsByType,
+  getFreshRowsByType,
   getWishlistConfig,
 } = require("../wishlist-repository");
+
+const deliveryLocks = new Set();
 
 async function handleMarcarEntregue(interaction) {
   if (!(await hasAdminRole(interaction))) {
@@ -53,7 +56,34 @@ async function handleMarcarEntregue(interaction) {
 
 async function markItemDelivered({ interaction, type, item, player }) {
   const config = getWishlistConfig(type);
-  const rows = await getRowsByType(type);
+  const lockKey = buildDeliveryLockKey(type, item, player);
+
+  if (deliveryLocks.has(lockKey)) {
+    return buildWarningItemReply({
+      interaction,
+      itemName: item,
+      title: "Entrega em andamento",
+      description: `Já existe uma marcação de entrega em andamento para ${player} em **${item}**.`,
+    });
+  }
+
+  deliveryLocks.add(lockKey);
+
+  try {
+    return await markItemDeliveredLocked({
+      interaction,
+      type,
+      item,
+      player,
+      config,
+    });
+  } finally {
+    deliveryLocks.delete(lockKey);
+  }
+}
+
+async function markItemDeliveredLocked({ interaction, type, item, player, config }) {
+  const rows = await getFreshRowsByType(type);
   const targetRow = findDeliveryTarget(rows, config.itemColumn, item, player);
 
   if (!targetRow) {
@@ -69,15 +99,37 @@ async function markItemDelivered({ interaction, type, item, player }) {
   const deliveredPlayer = String(targetRow.Nick || player).trim();
   const deliveredItem = String(targetRow[config.itemColumn] || item).trim();
   const discordUserId = String(targetRow.DiscordUserId || "").trim();
+  const registeredAt = String(targetRow.Data || "").trim();
 
-  await addDeliveryHistory({
+  await deleteActiveRowByType(type, targetRow);
+  await assertActiveRowRemoved({
     type,
-    deliveredAt,
+    config,
+    registeredAt,
     player: deliveredPlayer,
     item: deliveredItem,
     discordUserId,
   });
-  await deleteActiveRowByType(type, targetRow);
+
+  try {
+    await addDeliveryHistory({
+      type,
+      deliveredAt,
+      player: deliveredPlayer,
+      item: deliveredItem,
+      discordUserId,
+    });
+  } catch (err) {
+    await rollbackActiveRow({
+      type,
+      registeredAt,
+      player: deliveredPlayer,
+      item: deliveredItem,
+      discordUserId,
+      cause: err,
+    });
+    throw err;
+  }
 
   await appendLootHistoryLog({
     interaction,
@@ -95,6 +147,36 @@ async function markItemDelivered({ interaction, type, item, player }) {
     deliveredAt,
     adminName: getUserDisplayName(interaction.user),
   });
+}
+
+async function assertActiveRowRemoved({ type, config, registeredAt, player, item, discordUserId }) {
+  const rows = await getFreshRowsByType(type);
+  const stillExists = rows.some((row) => {
+    return (
+      normalizeQueueItemName(row[config.itemColumn]) === normalizeQueueItemName(item) &&
+      normalizePlayerName(row.Nick) === normalizePlayerName(player) &&
+      String(row.DiscordUserId || "").trim() === discordUserId &&
+      String(row.Data || "").trim() === registeredAt
+    );
+  });
+
+  if (stillExists) {
+    throw new Error(`Delivery aborted: active wishlist row was not removed for ${player} / ${item}.`);
+  }
+}
+
+async function rollbackActiveRow({ type, registeredAt, player, item, discordUserId, cause }) {
+  try {
+    await addActiveRowByType(type, {
+      registeredAt,
+      nick: player,
+      item,
+      discordUserId,
+    });
+  } catch (rollbackErr) {
+    rollbackErr.message = `Rollback failed after delivery history error: ${rollbackErr.message}. Original error: ${cause?.message || cause}`;
+    throw rollbackErr;
+  }
 }
 
 function findDeliveryTarget(rows, itemColumn, item, player) {
@@ -160,6 +242,14 @@ function normalizePlayerName(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function buildDeliveryLockKey(type, item, player) {
+  return [
+    type,
+    normalizeQueueItemName(item),
+    normalizePlayerName(player),
+  ].join("|");
 }
 
 module.exports = {
