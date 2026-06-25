@@ -59,6 +59,32 @@ function shutdown(signal) {
   });
 }
 
+function isUnknownInteractionError(err) {
+  return err?.code === 10062 || err?.rawError?.code === 10062;
+}
+
+async function replyToSelectMenuError(interaction) {
+  try {
+    if (!interaction.replied && !interaction.deferred) {
+      return await interaction.reply({
+        content: "Erro ao processar a seleção.",
+        ephemeral: true,
+      });
+    }
+
+    return await interaction.followUp({
+      content: "Erro ao processar a seleção.",
+      ephemeral: true,
+    });
+  } catch (err) {
+    if (isUnknownInteractionError(err)) {
+      console.warn("⚠️ Select menu interaction expired before the error reply could be sent.");
+      return false;
+    }
+    throw err;
+  }
+}
+
 client.once("clientReady", async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
   await ensureControlPanel(client, ALLOWED_CHANNEL_NAME).catch((err) => {
@@ -91,16 +117,13 @@ client.on("interactionCreate", async (interaction) => {
         status: "ERROR",
         err,
       });
-      if (!interaction.replied && !interaction.deferred) {
-        return interaction.reply({
-          content: "Erro ao processar a seleção.",
-          ephemeral: true,
-        });
+
+      if (isUnknownInteractionError(err)) {
+        console.warn("⚠️ Select menu interaction expired before the bot could respond.");
+        return false;
       }
-      return interaction.followUp({
-        content: "Erro ao processar a seleção.",
-        ephemeral: true,
-      });
+
+      return replyToSelectMenuError(interaction);
     }
   }
 

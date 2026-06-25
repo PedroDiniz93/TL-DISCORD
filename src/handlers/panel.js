@@ -17,7 +17,6 @@ const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
 const { buildItemInfoReply } = require("./item-info");
 const { buildMyItemsForInteraction } = require("./my-items");
-const { getLastNicknameForDiscordUser } = require("../nicknames");
 const { findKnownItemByHash, getItemInfo } = require("../item-info-service");
 const {
   rareItems,
@@ -258,10 +257,9 @@ async function ensureControlPanel(client, channelName) {
   return Boolean(sent);
 }
 
-async function buildRegisterArchModal(item) {
+function buildRegisterArchModal(item) {
   const interaction = item.interaction;
   const value = item.value;
-  const lastNick = await getLastNicknameForDiscordUser(interaction.user?.id);
 
   return new ModalBuilder()
     .setCustomId(`panel:register_arch:${encodePanelValue(value)}`)
@@ -272,16 +270,14 @@ async function buildRegisterArchModal(item) {
           .setCustomId("nick")
           .setLabel("Nick")
           .setStyle(TextInputStyle.Short)
-          .setValue(lastNick.slice(0, 100))
-          .setRequired(true)
+          .setRequired(false)
       )
     );
 }
 
-async function buildRegisterRareModal(item) {
+function buildRegisterRareModal(item) {
   const interaction = item.interaction;
   const value = item.value;
-  const lastNick = await getLastNicknameForDiscordUser(interaction.user?.id);
 
   return new ModalBuilder()
     .setCustomId(`panel:register_rare:${encodePanelValue(value)}`)
@@ -292,8 +288,7 @@ async function buildRegisterRareModal(item) {
           .setCustomId("nick")
           .setLabel("Nick")
           .setStyle(TextInputStyle.Short)
-          .setValue(lastNick.slice(0, 100))
-          .setRequired(true)
+          .setRequired(false)
       )
     );
 }
