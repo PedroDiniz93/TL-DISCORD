@@ -107,6 +107,7 @@ const worldBossWeaponT4Items = [
   "🏹 Arctic Roar Sniping Bow",
   "🏹 Ascended Leviathan's Bow",
   "⚡ Arctic Roar Staff",
+  "⚡ Aridus's Immolated Voidstaff (Cajado do Vazio Imolado de Aridus)",
   "⚡ Ascended Daigon's Staff",
   "🪄 Ascended Deckman's Wand",
   "🪄 Coldblooded Wand",
