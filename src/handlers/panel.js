@@ -35,6 +35,8 @@ const PANEL_MESSAGE_TITLES = new Set([
   "Painel Archboss / Archboss Panel",
 ]);
 const RARE_PANEL_PAGE_SIZE = 25;
+const RARE_PANEL_VISIBLE_PAGE_BUTTONS = 10;
+const DISCORD_BUTTONS_PER_ROW = 5;
 
 function buildControlPanelMessage() {
   return buildControlPanelReply({ locale: "bilingual" });
@@ -500,29 +502,81 @@ function buildRareItemSelectReply(interaction, action, category, page = 0) {
     reply.components.splice(
       1,
       0,
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(
-            `panel:rare_page:${action}:${category}:${Math.max(currentPage - 1, 0)}`
-          )
-          .setLabel(tr(interaction, "Anterior", "Previous"))
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(currentPage <= 0),
-        new ButtonBuilder()
-          .setCustomId(
-            `panel:rare_page:${action}:${category}:${Math.min(
-              currentPage + 1,
-              totalPages - 1
-            )}`
-          )
-          .setLabel(tr(interaction, "Próxima", "Next"))
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(currentPage >= totalPages - 1)
-      )
+      ...buildRarePageButtonRows({
+        action,
+        category,
+        currentPage,
+        totalPages,
+      })
     );
   }
 
   return reply;
+}
+
+function buildRarePageButtonRows({ action, category, currentPage, totalPages }) {
+  if (totalPages <= RARE_PANEL_VISIBLE_PAGE_BUTTONS) {
+    return chunkArray(
+      Array.from({ length: totalPages }, (_, page) =>
+        buildRarePageButton({ action, category, currentPage, page })
+      ),
+      DISCORD_BUTTONS_PER_ROW
+    ).map((buttons) => new ActionRowBuilder().addComponents(...buttons));
+  }
+
+  const pageWindow = buildCenteredPageWindow(currentPage, totalPages, 3);
+  const buttons = [
+    buildRarePageButton({
+      action,
+      category,
+      currentPage,
+      page: Math.max(currentPage - 1, 0),
+      label: "‹",
+      disabled: currentPage <= 0,
+    }),
+    ...pageWindow.map((page) =>
+      buildRarePageButton({ action, category, currentPage, page })
+    ),
+    buildRarePageButton({
+      action,
+      category,
+      currentPage,
+      page: Math.min(currentPage + 1, totalPages - 1),
+      label: "›",
+      disabled: currentPage >= totalPages - 1,
+    }),
+  ];
+
+  return [new ActionRowBuilder().addComponents(...buttons)];
+}
+
+function buildRarePageButton({
+  action,
+  category,
+  currentPage,
+  page,
+  label = String(page + 1),
+  disabled = page === currentPage,
+}) {
+  return new ButtonBuilder()
+    .setCustomId(`panel:rare_page:${action}:${category}:${page}`)
+    .setLabel(label)
+    .setStyle(page === currentPage ? ButtonStyle.Primary : ButtonStyle.Secondary)
+    .setDisabled(disabled);
+}
+
+function buildCenteredPageWindow(currentPage, totalPages, size) {
+  const maxStart = Math.max(totalPages - size, 0);
+  const start = Math.min(Math.max(currentPage - Math.floor(size / 2), 0), maxStart);
+  return Array.from({ length: Math.min(size, totalPages) }, (_, index) => start + index);
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
 }
 
 function isRareItemInCategory(item, category) {
