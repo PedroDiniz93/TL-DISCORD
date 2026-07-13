@@ -1,9 +1,11 @@
 const {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_EQUIPS_PER_USER,
+  MAX_SKILL_CORES_PER_USER,
   MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
   isKnownRareItem,
   isRareArmor,
+  isSkillCore,
   isWorldBossEquipT4,
   isWorldBossJewelryT4,
   isWorldBossWeaponT4,
@@ -161,6 +163,15 @@ function getItemCategory(itemName) {
       label: "Joia Boss Mundo T4",
       typeLabel: "World Boss T4",
       limitLabel: `${MAX_RARE_ACCESSORIES_PER_USER} acessorios/joias por jogador`,
+    };
+  }
+
+  if (isSkillCore(cleanName) || isSkillCore(itemName)) {
+    return {
+      id: "skill_core",
+      label: "Núcleo",
+      typeLabel: "Skill Core",
+      limitLabel: `${MAX_SKILL_CORES_PER_USER} núcleo por jogador`,
     };
   }
 

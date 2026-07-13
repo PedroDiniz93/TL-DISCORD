@@ -2,9 +2,11 @@ const { RARE_ITEM_SHEET } = require("../config");
 const {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_EQUIPS_PER_USER,
+  MAX_SKILL_CORES_PER_USER,
   MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
   isKnownRareItem,
   isRareArmor,
+  isSkillCore,
   isWorldBossEquipT4,
   isWorldBossWeaponT4,
   stripLeadingItemEmoji,
@@ -65,9 +67,13 @@ async function registerRareItem({ interaction, nick, item }) {
   const itemForSheet = stripLeadingItemEmoji(item);
   const userRows = await getUserRareItemRows(interaction.user.id);
   const targetIsArmor = isRareArmor(item);
+  const targetIsSkillCore = isSkillCore(item);
   const targetIsWorldBossWeaponT4 = isWorldBossWeaponT4(item);
   const targetIsWorldBossEquipT4 = isWorldBossEquipT4(item);
   const targetIsEquip = targetIsArmor || targetIsWorldBossEquipT4;
+  const userSkillCores = userRows
+    .map((row) => (row.Item || "").trim())
+    .filter((name) => isSkillCore(name));
   const userEquips = userRows
     .map((row) => (row.Item || "").trim())
     .filter((name) => isRareArmor(name) || isWorldBossEquipT4(name));
@@ -80,6 +86,7 @@ async function registerRareItem({ interaction, nick, item }) {
       (name) =>
         isKnownRareItem(name) &&
         !isRareArmor(name) &&
+        !isSkillCore(name) &&
         !isWorldBossWeaponT4(name) &&
         !isWorldBossEquipT4(name)
     );
@@ -98,6 +105,27 @@ async function registerRareItem({ interaction, nick, item }) {
         {
           name: tr(interaction, "Equipamento registrado", "Registered equip"),
           value: userEquips[0],
+          inline: false,
+        },
+      ],
+      components: [buildRemoveItemAction(interaction, "rare")],
+    });
+  }
+
+  if (targetIsSkillCore && userSkillCores.length >= MAX_SKILL_CORES_PER_USER) {
+    return buildWarningItemReply({
+      interaction,
+      itemName: userSkillCores[0],
+      title: tr(interaction, "⚠️ Limite de núcleo", "⚠️ Skill core limit reached"),
+      description: tr(
+        interaction,
+        "Você já possui 1 núcleo registrado. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outro.",
+        "You already have 1 registered skill core. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+      ),
+      fields: [
+        {
+          name: tr(interaction, "Núcleo registrado", "Registered skill core"),
+          value: userSkillCores[0],
           inline: false,
         },
       ],
@@ -139,6 +167,7 @@ async function registerRareItem({ interaction, nick, item }) {
 
   if (
     !targetIsArmor &&
+    !targetIsSkillCore &&
     !targetIsWorldBossWeaponT4 &&
     !targetIsWorldBossEquipT4 &&
     userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER

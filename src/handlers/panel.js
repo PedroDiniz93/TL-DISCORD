@@ -22,6 +22,7 @@ const {
   rareItems,
   weapons,
   isRareArmor,
+  isSkillCore,
   isWorldBossEquipT4,
   isWorldBossJewelryT4,
   isWorldBossWeaponT4,
@@ -33,6 +34,7 @@ const PANEL_MESSAGE_TITLES = new Set([
   "Archboss Panel",
   "Painel Archboss / Archboss Panel",
 ]);
+const RARE_PANEL_PAGE_SIZE = 25;
 
 function buildControlPanelMessage() {
   return buildControlPanelReply({ locale: "bilingual" });
@@ -74,6 +76,21 @@ async function handleControlPanelButton(interaction) {
       .slice(2)
       .join(":") || "home";
     await interaction.update(buildPanelBackReply(panelInteraction, target));
+    return true;
+  }
+
+  if (action === "rare_page") {
+    const [, , rareAction = "register", category = "accessory", page = "0"] =
+      String(interaction.customId || "").split(":");
+    await interaction.deferUpdate();
+    await interaction.editReply(
+      buildRareItemSelectReply(
+        panelInteraction,
+        rareAction,
+        category,
+        Number(page) || 0
+      )
+    );
     return true;
   }
 
@@ -428,14 +445,32 @@ function buildRareCategorySelectReply(interaction, action) {
         label: tr(interaction, "Joias Boss Mundo T4", "World Boss Jewelry T4"),
         value: "world_boss_jewelry_t4",
       },
+      {
+        label: tr(interaction, "Núcleos", "Skill Cores"),
+        value: "skill_core",
+      },
     ],
   });
 }
 
-function buildRareItemSelectReply(interaction, action, category) {
+function buildRareItemSelectReply(interaction, action, category, page = 0) {
   const filtered = rareItems.filter((item) => isRareItemInCategory(item, category));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / RARE_PANEL_PAGE_SIZE));
+  const currentPage = Math.min(Math.max(page, 0), totalPages - 1);
+  const pageItems = filtered.slice(
+    currentPage * RARE_PANEL_PAGE_SIZE,
+    (currentPage + 1) * RARE_PANEL_PAGE_SIZE
+  );
+  const pageLabel =
+    filtered.length > RARE_PANEL_PAGE_SIZE
+      ? tr(
+          interaction,
+          ` Página ${currentPage + 1}/${totalPages}.`,
+          ` Page ${currentPage + 1}/${totalPages}.`
+        )
+      : "";
 
-  return buildSelectReply({
+  const reply = buildSelectReply({
     interaction,
     title:
       action === "register"
@@ -445,30 +480,60 @@ function buildRareItemSelectReply(interaction, action, category) {
       action === "register"
         ? tr(
             interaction,
-            "Escolha o item raro para registrar.",
-            "Choose the rare item to register."
+            `Escolha o item raro para registrar.${pageLabel}`,
+            `Choose the rare item to register.${pageLabel}`
           )
         : tr(
             interaction,
-            "Escolha o item raro para ver a fila.",
-            "Choose the rare item to view the queue."
+            `Escolha o item raro para ver a fila.${pageLabel}`,
+            `Choose the rare item to view the queue.${pageLabel}`
           ),
     customId: `panel-select:rare:${action}`,
     backTarget: `rare_category:${action}`,
-    options: filtered.map((item) => ({
+    options: pageItems.map((item) => ({
       label: trimSelectLabel(item),
       value: item,
     })),
   });
+
+  if (filtered.length > RARE_PANEL_PAGE_SIZE) {
+    reply.components.splice(
+      1,
+      0,
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(
+            `panel:rare_page:${action}:${category}:${Math.max(currentPage - 1, 0)}`
+          )
+          .setLabel(tr(interaction, "Anterior", "Previous"))
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(currentPage <= 0),
+        new ButtonBuilder()
+          .setCustomId(
+            `panel:rare_page:${action}:${category}:${Math.min(
+              currentPage + 1,
+              totalPages - 1
+            )}`
+          )
+          .setLabel(tr(interaction, "Próxima", "Next"))
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(currentPage >= totalPages - 1)
+      )
+    );
+  }
+
+  return reply;
 }
 
 function isRareItemInCategory(item, category) {
   if (category === "armor") return isRareArmor(item);
+  if (category === "skill_core") return isSkillCore(item);
   if (category === "world_boss_weapon_t4") return isWorldBossWeaponT4(item);
   if (category === "world_boss_equip_t4") return isWorldBossEquipT4(item);
   if (category === "world_boss_jewelry_t4") return isWorldBossJewelryT4(item);
   return (
     !isRareArmor(item) &&
+    !isSkillCore(item) &&
     !isWorldBossWeaponT4(item) &&
     !isWorldBossEquipT4(item) &&
     !isWorldBossJewelryT4(item)
