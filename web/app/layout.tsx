@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarChart3, Bot, Boxes, ClipboardList, LayoutDashboard, LogOut, ServerCog, Settings } from "lucide-react";
+import { Bot, LayoutDashboard, LogOut, ServerCog } from "lucide-react";
 import "./globals.css";
 import { getSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
@@ -32,12 +32,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <SidebarGroup label="Principal">
                 <SidebarLink href="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>Dashboard</SidebarLink>
               </SidebarGroup>
-              <SidebarGroup label="Guild">
-                <SidebarAnchor href="#settings" icon={<Settings className="h-4 w-4" />}>Configuracao</SidebarAnchor>
-                <SidebarAnchor href="#catalog" icon={<Boxes className="h-4 w-4" />}>Catalogo</SidebarAnchor>
-                <SidebarAnchor href="#queues" icon={<ClipboardList className="h-4 w-4" />}>Filas</SidebarAnchor>
-                <SidebarAnchor href="#reports" icon={<BarChart3 className="h-4 w-4" />}>Historico</SidebarAnchor>
-              </SidebarGroup>
+              <div className="rounded-md border border-white/10 px-3 py-3 text-xs leading-5 text-slate-400">
+                Abra uma guild no dashboard para acessar configuracao, catalogo, filas e historico em paginas separadas.
+              </div>
             </nav>
             {session ? (
               <div className="absolute inset-x-0 bottom-0 border-t border-white/10 p-4">
@@ -89,14 +86,5 @@ function SidebarLink({ href, icon, children }: { href: string; icon: React.React
       {icon}
       {children}
     </Link>
-  );
-}
-
-function SidebarAnchor({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <a href={href} className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/10">
-      {icon}
-      {children}
-    </a>
   );
 }
