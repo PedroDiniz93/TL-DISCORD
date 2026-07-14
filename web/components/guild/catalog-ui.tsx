@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Edit3, ImagePlus, PackagePlus, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, ImagePlus, PackagePlus, Plus, Search, Trash2 } from "lucide-react";
 import { deleteCategory, deleteItem, saveCategory, saveItem } from "@/lib/actions";
 import type { Category, GuildItem } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -68,9 +68,41 @@ export function CategoryManager({ guildId, categories }: { guildId: string; cate
 export function ItemManager({ guildId, categories, items }: { guildId: string; categories: Category[]; items: GuildItem[] }) {
   const [editing, setEditing] = useState<GuildItem | null>(null);
   const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [pageSize, setPageSize] = useState(12);
+  const [page, setPage] = useState(1);
+
+  const filteredItems = useMemo(() => {
+    const term = normalizeSearch(query);
+    return items.filter((item) => {
+      const matchesTerm = !term || normalizeSearch([
+        item.name,
+        item.namePt,
+        item.nameEn,
+        item.categoryName,
+        item.type,
+        ...item.aliases,
+      ].join(" ")).includes(term);
+      const matchesType = typeFilter === "all" || item.type === typeFilter;
+      const matchesCategory = categoryFilter === "all" || String(item.categoryId || "") === categoryFilter;
+      const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? item.active : !item.active);
+      return matchesTerm && matchesType && matchesCategory && matchesStatus;
+    });
+  }, [categoryFilter, items, query, statusFilter, typeFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filteredItems.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [categoryFilter, pageSize, query, statusFilter, typeFilter]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Itens</h2>
@@ -79,37 +111,69 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Adicionar item</Button>
       </div>
 
+      <Card className="overflow-hidden">
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(220px,1fr)_150px_190px_150px_120px]">
+            <label className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Filtrar por nome, alias ou categoria"
+                className="pl-9"
+              />
+            </label>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
+              <option value="all">Todos os tipos</option>
+              <option value="arch">Archboss</option>
+              <option value="rare">Item raro</option>
+            </select>
+            <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
+              <option value="all">Todas categorias</option>
+              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </select>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
+              <option value="all">Todos status</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
+            <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
+              <option value={12}>12 por pagina</option>
+              <option value={24}>24 por pagina</option>
+              <option value={48}>48 por pagina</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-2 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span><strong className="text-foreground">{filteredItems.length}</strong> de {items.length} itens encontrados</span>
+            <span>Pagina {safePage} de {totalPages}</span>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-        {items.map((item) => (
-          <Card key={item.id} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-[92px_1fr]">
-                <ItemImage src={item.imageUrl} alt={item.name} className="h-full min-h-32 rounded-none border-0 border-r border-border" />
-                <div className="space-y-4 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-bold leading-tight">{item.name}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">{item.categoryName || "Sem categoria"}</p>
-                    </div>
-                    <StatusPill active={item.active} activeText="Ativo" inactiveText="Inativo" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <Metric label="Tipo" value={item.type} />
-                    <Metric label="Ordem" value={String(item.sortOrder)} />
-                    <Metric label="Aliases" value={String(item.aliases.length)} />
-                  </div>
-                  {item.aliases.length ? <p className="line-clamp-2 text-xs text-muted-foreground">{item.aliases.join(", ")}</p> : null}
-                  <div className="flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => setEditing(item)}><Edit3 className="h-4 w-4" />Editar</Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {pageItems.map((item) => (
+          <ItemCard key={item.id} item={item} onEdit={() => setEditing(item)} />
         ))}
       </div>
 
-      {!items.length ? <EmptyState text="Nenhum item cadastrado." /> : null}
+      {!filteredItems.length ? <EmptyState text="Nenhum item encontrado com os filtros atuais." /> : null}
+
+      {filteredItems.length ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {(safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredItems.length)} de {filteredItems.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <ChevronLeft className="h-4 w-4" />Anterior
+            </Button>
+            <div className="rounded-md border border-border px-3 py-2 text-sm font-semibold">{safePage}/{totalPages}</div>
+            <Button type="button" variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+              Proxima<ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <Modal title="Adicionar item" open={creating} onClose={() => setCreating(false)}>
         <ItemForm guildId={guildId} categories={categories} />
@@ -123,6 +187,42 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
         ) : null}
       </Modal>
     </div>
+  );
+}
+
+function ItemCard({ item, onEdit }: { item: GuildItem; onEdit: () => void }) {
+  return (
+    <Card className="group overflow-hidden transition hover:border-primary">
+      <CardContent className="p-0">
+        <div className="border-b border-border bg-muted/40 p-3">
+          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[16/10] w-full rounded-md border-border bg-card" />
+        </div>
+        <div className="space-y-4 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="line-clamp-2 min-h-10 font-bold leading-tight">{item.name}</h3>
+              <p className="mt-1 truncate text-xs text-muted-foreground">{item.categoryName || "Sem categoria"}</p>
+            </div>
+            <StatusPill active={item.active} activeText="Ativo" inactiveText="Inativo" />
+          </div>
+          <div className="grid grid-cols-3 gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
+            <Metric label="Tipo" value={item.type} />
+            <Metric label="Ordem" value={String(item.sortOrder)} />
+            <Metric label="Aliases" value={String(item.aliases.length)} />
+          </div>
+          <div className="min-h-10">
+            {item.aliases.length ? (
+              <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{item.aliases.join(", ")}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Sem aliases cadastrados.</p>
+            )}
+          </div>
+          <div className="flex justify-end border-t border-border pt-4">
+            <Button variant="outline" size="sm" onClick={onEdit}><Edit3 className="h-4 w-4" />Editar</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -269,4 +369,12 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">{text}</div>;
+}
+
+function normalizeSearch(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
