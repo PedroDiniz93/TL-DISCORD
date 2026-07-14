@@ -25,6 +25,22 @@ export type GuildItem = {
   sortOrder: number;
 };
 
+export type QueuePlayer = {
+  id: number;
+  nickname: string;
+  discordUserId: string;
+  registeredAtText: string;
+  createdAt: string;
+};
+
+export type QueueGroup = {
+  type: string;
+  item_name: string;
+  total: number;
+  imageUrl: string;
+  players: QueuePlayer[];
+};
+
 export async function ensureGuild(discordGuildId: string, name = "") {
   const result = await query<{ id: number; discord_guild_id: string; name: string }>(
     `INSERT INTO guilds (discord_guild_id, name)
@@ -100,12 +116,11 @@ export async function getPanelData(discordGuildId: string) {
        FROM wishlist_entries WHERE guild_id = $1 AND deleted_at IS NULL`,
       [guild.id]
     ),
-    query<{ type: string; item_name: string; total: number }>(
-      `SELECT type, item_name, COUNT(*)::int AS total
+    query<QueueEntryRow>(
+      `SELECT id, type, item_name, nickname, discord_user_id, registered_at_text, created_at
        FROM wishlist_entries
        WHERE guild_id = $1 AND deleted_at IS NULL
-       GROUP BY type, item_name
-       ORDER BY type ASC, total DESC, item_name ASC`,
+       ORDER BY type ASC, lower(item_name) ASC, created_at ASC, id ASC`,
       [guild.id]
     ),
     query<{ type: string; item_name: string; player_name: string; delivered_at_text: string }>(
@@ -127,7 +142,7 @@ export async function getPanelData(discordGuildId: string) {
   ]);
   return {
     counts: counts.rows[0] || { arch_count: 0, rare_count: 0, player_count: 0 },
-    queues: queues.rows,
+    queues: mapQueues(queues.rows),
     deliveries: deliveries.rows,
     subscription: subscription.rows[0] || { plan: "free", status: "trial", current_period_ends_at: null },
   };
@@ -157,6 +172,16 @@ type ItemRow = {
   sort_order: number;
 };
 
+type QueueEntryRow = {
+  id: number;
+  type: string;
+  item_name: string;
+  nickname: string;
+  discord_user_id: string;
+  registered_at_text: string;
+  created_at: Date;
+};
+
 function mapCategory(row: CategoryRow): Category {
   return {
     id: row.id,
@@ -183,4 +208,32 @@ function mapItem(row: ItemRow): GuildItem {
     active: Boolean(row.active),
     sortOrder: Number(row.sort_order || 0),
   };
+}
+
+function mapQueues(rows: QueueEntryRow[]): QueueGroup[] {
+  const groups = new Map<string, QueueGroup>();
+  for (const row of rows) {
+    const key = `${row.type}:${row.item_name.toLowerCase()}`;
+    const group = groups.get(key) || {
+      type: row.type,
+      item_name: row.item_name,
+      total: 0,
+      imageUrl: getCatalogItemImageUrl(row.item_name, ""),
+      players: [],
+    };
+    group.total += 1;
+    group.players.push({
+      id: row.id,
+      nickname: row.nickname,
+      discordUserId: row.discord_user_id,
+      registeredAtText: row.registered_at_text,
+      createdAt: row.created_at.toISOString(),
+    });
+    groups.set(key, group);
+  }
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.type !== b.type) return a.type.localeCompare(b.type);
+    if (b.total !== a.total) return b.total - a.total;
+    return a.item_name.localeCompare(b.item_name);
+  });
 }

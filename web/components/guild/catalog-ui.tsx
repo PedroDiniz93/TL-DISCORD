@@ -24,7 +24,7 @@ export function CategoryManager({ guildId, categories }: { guildId: string; cate
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Adicionar categoria</Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         {categories.map((category) => (
           <Card key={category.id} className="overflow-hidden">
             <CardHeader className="border-b border-border">
@@ -194,30 +194,30 @@ function ItemCard({ item, onEdit }: { item: GuildItem; onEdit: () => void }) {
   return (
     <Card className="group overflow-hidden transition hover:border-primary">
       <CardContent className="p-0">
-        <div className="border-b border-border bg-muted/40 p-3">
-          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[16/10] w-full rounded-md border-border bg-card" />
+        <div className="border-b border-border bg-muted/40 p-2">
+          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[4/3] w-full rounded-md border-border bg-card" />
         </div>
-        <div className="space-y-4 p-4">
+        <div className="space-y-3 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="line-clamp-2 min-h-10 font-bold leading-tight">{item.name}</h3>
+              <h3 className="line-clamp-2 min-h-9 text-sm font-bold leading-tight">{item.name}</h3>
               <p className="mt-1 truncate text-xs text-muted-foreground">{item.categoryName || "Sem categoria"}</p>
             </div>
             <StatusPill active={item.active} activeText="Ativo" inactiveText="Inativo" />
           </div>
-          <div className="grid grid-cols-3 gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
+          <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-muted/30 p-2 text-sm">
             <Metric label="Tipo" value={item.type} />
             <Metric label="Ordem" value={String(item.sortOrder)} />
             <Metric label="Aliases" value={String(item.aliases.length)} />
           </div>
-          <div className="min-h-10">
+          <div className="min-h-9">
             {item.aliases.length ? (
               <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{item.aliases.join(", ")}</p>
             ) : (
               <p className="text-xs text-muted-foreground">Sem aliases cadastrados.</p>
             )}
           </div>
-          <div className="flex justify-end border-t border-border pt-4">
+          <div className="flex justify-end border-t border-border pt-3">
             <Button variant="outline" size="sm" onClick={onEdit}><Edit3 className="h-4 w-4" />Editar</Button>
           </div>
         </div>

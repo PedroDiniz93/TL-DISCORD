@@ -5,7 +5,8 @@ import { buildBotInviteUrl, fetchBotGuild } from "@/lib/discord";
 import { getPanelData } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GuildHeader, QueuesCard, Stats } from "@/components/guild/guild-ui";
+import { GuildHeader, Stats } from "@/components/guild/guild-ui";
+import { QueueGrid } from "@/components/guild/queue-ui";
 
 export default async function GuildQueuesPage({ params }: { params: Promise<{ guildId: string }> }) {
   const { guildId } = await params;
@@ -40,7 +41,7 @@ export default async function GuildQueuesPage({ params }: { params: Promise<{ gu
         </Button>
       </div>
       <Stats counts={panelData.counts} queues={panelData.queues.length} />
-      <QueuesCard queues={panelData.queues} />
+      <QueueGrid queues={panelData.queues} />
     </div>
   );
 }
