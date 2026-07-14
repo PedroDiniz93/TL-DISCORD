@@ -122,7 +122,9 @@ async function parseDiscordResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (res.ok) return data as T;
-  throw new Error(`Discord API ${res.status}: ${data?.message || res.statusText}`);
+  throw new Error(
+    `Discord API ${res.status}: ${data?.error_description || data?.message || data?.error || res.statusText}`
+  );
 }
 
 function requiredEnv(name: string) {

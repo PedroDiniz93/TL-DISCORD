@@ -30,14 +30,19 @@ export async function createSession(payload: SessionPayload) {
 }
 
 export async function getSession() {
-  const cookieStore = await cookies();
-  const rawId = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!rawId) return null;
-  const result = await query<{ payload: SessionPayload }>(
-    `SELECT payload FROM web_sessions WHERE id = $1 AND expires_at > now() LIMIT 1`,
-    [hash(rawId)]
-  );
-  return (result.rows[0]?.payload as SessionPayload | undefined) || null;
+  try {
+    const cookieStore = await cookies();
+    const rawId = cookieStore.get(SESSION_COOKIE)?.value;
+    if (!rawId) return null;
+    const result = await query<{ payload: SessionPayload }>(
+      `SELECT payload FROM web_sessions WHERE id = $1 AND expires_at > now() LIMIT 1`,
+      [hash(rawId)]
+    );
+    return (result.rows[0]?.payload as SessionPayload | undefined) || null;
+  } catch (err) {
+    console.error("Failed to load web session:", err);
+    return null;
+  }
 }
 
 export async function destroySession() {

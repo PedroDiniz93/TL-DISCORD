@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Painel multi-guild do TLGM Bot",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   return (
