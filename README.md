@@ -142,6 +142,18 @@ Crie as tabelas do PostgreSQL, se estiver usando `STORAGE_DRIVER=postgres`:
 npm run db:migrate
 ```
 
+Importe os dados existentes do Google Sheets para a guild configurada em
+`GUILD_ID`, se estiver migrando uma instalação atual:
+
+```bash
+npm run db:import:sheets -- --dry-run
+npm run db:import:sheets
+```
+
+O importador exige `DATABASE_URL`, `GUILD_ID`, `SHEET_ID` e `GOOGLE_CREDS_B64`.
+Ele é idempotente: se encontrar registros iguais no PostgreSQL, pula em vez de
+duplicar.
+
 Registre os comandos no servidor:
 
 ```bash

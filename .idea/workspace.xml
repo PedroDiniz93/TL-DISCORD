@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="83fbf23c-ab99-4780-899e-fd2fd91798fe" name="Changes" comment="new accessory">
+      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings">
+    <execution />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="12" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;PedroDiniz93&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:PedroDiniz93/TL-DISCORD.git&quot;,
+    &quot;accountId&quot;: &quot;99d2f202-4796-4c89-858e-a2f53e01b758&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="/bin/php" />
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="3B0G86FweQACp8CRT0FmBGYeRMS" />
+  <component name="ProjectViewState">
+    <option name="autoscrollFromSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="false" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/pedrodiniz/Documentos/minerva-magento2",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "/snap/phpstorm/621/plugins/javascript-plugin/jsLanguageServicesImpl/external",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-php-predefined-a98d8de5180a-a9a4ea3ee0f4-com.jetbrains.php.sharedIndexes-PS-261.22158.283" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="83fbf23c-ab99-4780-899e-fd2fd91798fe" name="Changes" comment="" />
+      <created>1773618411790</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1773618411790</updated>
+      <workItem from="1773618412835" duration="2061000" />
+      <workItem from="1773659027715" duration="472000" />
+      <workItem from="1773672345369" duration="3795000" />
+      <workItem from="1775438223344" duration="2556000" />
+      <workItem from="1775473688776" duration="4353000" />
+      <workItem from="1775766369724" duration="5062000" />
+      <workItem from="1775819037061" duration="3977000" />
+      <workItem from="1775910803650" duration="3236000" />
+      <workItem from="1775942324392" duration="1854000" />
+      <workItem from="1776034389754" duration="1229000" />
+      <workItem from="1776078391278" duration="1220000" />
+    </task>
+    <task id="LOCAL-00001" summary="tranlate weapon arch">
+      <option name="closed" value="true" />
+      <created>1773618497692</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1773618497692</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Adiciona comando em ingles e portugues">
+      <option name="closed" value="true" />
+      <created>1775439489501</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1775439489501</updated>
+    </task>
+    <task id="LOCAL-00003" summary="adjust package-lock.json">
+      <option name="closed" value="true" />
+      <created>1775440076552</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1775440076552</updated>
+    </task>
+    <task id="LOCAL-00004" summary="add brooch options">
+      <option name="closed" value="true" />
+      <created>1775766885254</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1775766885254</updated>
+    </task>
+    <task id="LOCAL-00005" summary="rule 3 for accessories">
+      <option name="closed" value="true" />
+      <created>1775767433221</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1775767433221</updated>
+    </task>
+    <task id="LOCAL-00006" summary="testing for icon in each weapon">
+      <option name="closed" value="true" />
+      <created>1775911299169</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1775911299170</updated>
+    </task>
+    <task id="LOCAL-00007" summary="testing for icon in each weapon">
+      <option name="closed" value="true" />
+      <created>1775911326665</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1775911326665</updated>
+    </task>
+    <task id="LOCAL-00008" summary="testing for icon in each weapon">
+      <option name="closed" value="true" />
+      <created>1775911513180</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1775911513180</updated>
+    </task>
+    <task id="LOCAL-00009" summary="testing for icon in each weapon">
+      <option name="closed" value="true" />
+      <created>1775911676482</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1775911676482</updated>
+    </task>
+    <task id="LOCAL-00010" summary="last test">
+      <option name="closed" value="true" />
+      <created>1775912626088</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1775912626088</updated>
+    </task>
+    <task id="LOCAL-00011" summary="new accessory">
+      <option name="closed" value="true" />
+      <created>1775942375053</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1775942375053</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="tranlate weapon arch" />
+    <MESSAGE value="Adiciona comando em ingles e portugues" />
+    <MESSAGE value="adjust package-lock.json" />
+    <MESSAGE value="add brooch options" />
+    <MESSAGE value="rule 3 for accessories" />
+    <MESSAGE value="testing for icon in each weapon" />
+    <MESSAGE value="last test" />
+    <MESSAGE value="new accessory" />
+    <option name="LAST_COMMIT_MESSAGE" value="new accessory" />
+    <option name="NON_MODAL_COMMIT_POSTPONE_SLOW_CHECKS" value="false" />
+  </component>
+</project>

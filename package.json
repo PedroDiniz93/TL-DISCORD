@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "check": "node --check index.js && node --check register-commands.js && find src -name '*.js' -exec node --check {} \\;",
+    "db:import:sheets": "node scripts/import-sheets-to-postgres.js",
     "db:migrate": "node db/migrate.js",
     "register": "node register-commands.js",
     "start": "node index.js",
