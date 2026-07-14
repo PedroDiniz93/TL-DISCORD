@@ -1,6 +1,8 @@
 # TLGM Bot
 
-Bot de Discord para gerenciar filas de desejo de itens de Throne and Liberty usando Google Sheets como base de dados.
+Bot de Discord para gerenciar filas de desejo de itens de Throne and Liberty.
+Ele pode usar Google Sheets no modo legado ou PostgreSQL no modo preparado para
+múltiplas guilds e painel web.
 
 Ele permite que jogadores registrem interesse em armas de Archboss e itens raros, removam os próprios registros e consultem a fila de pessoas interessadas em cada item. As respostas no Discord usam embeds e, quando existe imagem local do item, exibem a miniatura ao lado do nome.
 
@@ -21,7 +23,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - O autocomplete aceita busca sem acento, em português ou inglês, e por termos parciais.
 - Exibe embeds mais organizados no Discord, com imagem local do item quando disponível.
 - Restringe o uso dos comandos ao canal configurado.
-- Salva os dados em abas do Google Sheets.
+- Salva os dados em abas do Google Sheets ou em PostgreSQL, conforme o modo configurado.
 - Cria e ajusta automaticamente cabeçalhos e formatação das abas usadas.
 - Registra comandos executados em `logs/commands.log`.
 - Registra alterações de loot em `logs/loot-history.log`.
@@ -43,9 +45,13 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 | `/help` ou `/ajuda` | Mostra regras resumidas e a lista de comandos. |
 | `/baixar_logs` | Envia os arquivos de log em resposta privada para administradores. |
 
-## Google Sheets
+## Persistência
 
-A aplicação usa duas abas:
+No modo legado, a aplicação usa Google Sheets com as abas abaixo. No modo
+PostgreSQL, as mesmas informações são salvas nas tabelas criadas pelas migrações
+em `db/migrations/`.
+
+No modo Google Sheets, a aplicação usa estas abas:
 
 | Aba | Colunas |
 | --- | --- |
@@ -54,7 +60,8 @@ A aplicação usa duas abas:
 | `HISTORICO DE GANHO ARCH BOSS` | `Data/Hora`, `Player`, `Item`, `DiscordUserId` |
 | `HISTORICO DE GANHO ITEM RARO` | `Data/Hora`, `Player`, `Item`, `DiscordUserId` |
 
-O bot autentica com uma conta de serviço do Google e usa o ID da planilha informado no `.env`.
+Nesse modo, o bot autentica com uma conta de serviço do Google e usa o ID da
+planilha informado no `.env`.
 
 ## Logs de auditoria
 
@@ -85,7 +92,10 @@ O bot primeiro verifica os nomes configurados em `src/item-assets.js`. Se não e
 
 Crie um arquivo `.env` na raiz do projeto:
 
+### Modo Google Sheets
+
 ```env
+STORAGE_DRIVER=sheets
 DISCORD_TOKEN=token_do_bot
 DISCORD_CLIENT_ID=id_da_aplicacao_discord
 GUILD_ID=id_do_servidor
@@ -97,8 +107,26 @@ GOOGLE_CREDS_B64=json_da_conta_de_servico_em_base64
 
 `GOOGLE_CREDS_B64` deve ser o JSON da conta de serviço convertido para base64.
 
-Todas as variáveis acima são validadas na inicialização. `ALLOWED_CHANNEL_ID` e
-`ADMIN_ROLE_ID` evitam dependência de nomes de canal/cargo no Discord.
+### Modo PostgreSQL
+
+Use este modo para preparar a aplicação para múltiplas guilds e painel web.
+
+```env
+STORAGE_DRIVER=postgres
+DISCORD_TOKEN=token_do_bot
+DISCORD_CLIENT_ID=id_da_aplicacao_discord
+DATABASE_URL=postgres://usuario:senha@host:5432/database
+```
+
+Quando `GUILD_ID` estiver definido, `npm run register` registra os comandos só
+na guild informada. Sem `GUILD_ID`, os comandos são registrados globalmente na
+aplicação do Discord, que é o fluxo esperado para um bot vendável.
+
+`ALLOWED_CHANNEL_ID` e `ADMIN_ROLE_ID` ainda podem ser usados como fallback. A
+base PostgreSQL já possui as tabelas `guilds` e `guild_settings` para a próxima
+etapa: configurar canal, cargo e regras pelo painel web.
+
+Todas as variáveis obrigatórias do modo escolhido são validadas na inicialização.
 
 ## Como rodar
 
@@ -106,6 +134,12 @@ Instale as dependências:
 
 ```bash
 npm install
+```
+
+Crie as tabelas do PostgreSQL, se estiver usando `STORAGE_DRIVER=postgres`:
+
+```bash
+npm run db:migrate
 ```
 
 Registre os comandos no servidor:
@@ -132,8 +166,13 @@ npm test
 | --- | --- |
 | `index.js` | Inicializa o bot, autentica no Discord e roteia interações. |
 | `register-commands.js` | Registra os slash commands no servidor. |
+| `db/migrations/` | Migrações SQL para o PostgreSQL. |
 | `src/commands.js` | Define os comandos disponíveis. |
+| `src/db.js` | Centraliza a conexão PostgreSQL. |
 | `src/handlers/` | Implementa a lógica de cada comando. |
+| `src/wishlist-repository.js` | Escolhe o provider de dados conforme `STORAGE_DRIVER`. |
+| `src/wishlist-repository-postgres.js` | Persistência da lista de desejos no PostgreSQL. |
+| `src/wishlist-repository-sheets.js` | Persistência legada no Google Sheets. |
 | `src/sheets.js` | Lida com autenticação, leitura e escrita no Google Sheets. |
 | `src/responses.js` | Monta respostas e embeds enviados no Discord. |
 | `src/items.js` | Lista armas, itens raros e regras de limite. |

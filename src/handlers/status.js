@@ -8,6 +8,7 @@ const {
 const { getAdminRoleLabel, hasAdminRole } = require("../permissions");
 const { buildWarningItemReply } = require("../responses");
 const { getArchRows, getRareItemRows } = require("../wishlist-repository");
+const { getStorageDriver } = require("../env");
 
 async function handleStatusBot(interaction) {
   if (!(await hasAdminRole(interaction))) {
@@ -22,10 +23,11 @@ async function handleStatusBot(interaction) {
 
   const startedAt = new Date(Date.now() - process.uptime() * 1000);
   const memory = process.memoryUsage();
-  const sheetStatus = await getSheetStatus();
+  const storageStatus = await getStorageStatus();
+  const storageLabel = getStorageDriver() === "sheets" ? "Google Sheets" : "PostgreSQL";
 
   const embed = new EmbedBuilder()
-    .setColor(sheetStatus.ok ? 0x57c785 : 0xd9826b)
+    .setColor(storageStatus.ok ? 0x57c785 : 0xd9826b)
     .setTitle("Status do bot")
     .addFields(
       {
@@ -44,13 +46,13 @@ async function handleStatusBot(interaction) {
         inline: false,
       },
       {
-        name: "Google Sheets",
-        value: sheetStatus.ok ? "Conectado" : `Erro: ${sheetStatus.error}`,
+        name: storageLabel,
+        value: storageStatus.ok ? "Conectado" : `Erro: ${storageStatus.error}`,
         inline: false,
       },
       {
         name: "Registros",
-        value: `Archboss: ${sheetStatus.archCount}\nItens raros: ${sheetStatus.rareCount}`,
+        value: `Archboss: ${storageStatus.archCount}\nItens raros: ${storageStatus.rareCount}`,
         inline: true,
       },
       {
@@ -74,7 +76,7 @@ async function handleStatusBot(interaction) {
   return interaction.editReply({ embeds: [embed] });
 }
 
-async function getSheetStatus() {
+async function getStorageStatus() {
   try {
     const [archRows, rareRows] = await Promise.all([getArchRows(), getRareItemRows()]);
     return {

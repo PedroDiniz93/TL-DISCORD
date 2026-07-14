@@ -13,6 +13,8 @@ const {
 } = require("./src/handlers/panel");
 const { appendCommandLog } = require("./src/logging");
 const { buildWarningItemReply } = require("./src/responses");
+const { closePool } = require("./src/db");
+const { runWithInteractionContext } = require("./src/interaction-context");
 const { isAllowedChannel, tr } = require("./src/utils");
 const { validateRequiredEnv } = require("./src/env");
 
@@ -45,9 +47,12 @@ function startHealthServer() {
   });
 }
 
-function shutdown(signal) {
+async function shutdown(signal) {
   console.log(`Received ${signal}, shutting down...`);
   client.destroy();
+  await closePool().catch((err) => {
+    console.error("❌ Failed to close database pool:", err);
+  });
 
   if (!healthServer) {
     process.exit(0);
@@ -92,7 +97,7 @@ client.once("clientReady", async () => {
   });
 });
 
-client.on("interactionCreate", async (interaction) => {
+client.on("interactionCreate", (interaction) => runWithInteractionContext(interaction, async () => {
   if (interaction.isAutocomplete()) {
     await handleAutocomplete(interaction);
     return;
@@ -326,7 +331,7 @@ client.on("interactionCreate", async (interaction) => {
       ephemeral: true,
     });
   }
-});
+}));
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));

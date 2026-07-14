@@ -5,10 +5,20 @@ const { validateRequiredEnv } = require("./src/env");
 
 validateRequiredEnv();
 
-const GUILD_ID = process.env.GUILD_ID;
+const GUILD_ID = String(process.env.GUILD_ID || "").trim();
 
 (async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+  const commands = buildCommands().map((command) => command.toJSON());
+
+  if (!GUILD_ID) {
+    await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID), {
+      body: commands,
+    });
+
+    console.log("✅ Global application commands registered.");
+    return;
+  }
 
   await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID), {
     body: [],
@@ -17,7 +27,7 @@ const GUILD_ID = process.env.GUILD_ID;
   await rest.put(
     Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, GUILD_ID),
     {
-      body: buildCommands().map((command) => command.toJSON()),
+      body: commands,
     }
   );
 
