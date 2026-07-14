@@ -1,11 +1,10 @@
 require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
-const { ALLOWED_CHANNEL_ID, ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
 const { handleWishlistButton } = require("./src/handlers/buttons");
 const { commandHandlers } = require("./src/handlers");
 const {
-  ensureControlPanel,
+  ensureConfiguredControlPanels,
   handleControlPanelButton,
   handleControlPanelSelect,
   handleControlPanelModal,
@@ -65,8 +64,8 @@ async function replyToSelectMenuError(interaction) {
 
 client.once("clientReady", async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
-  await ensureControlPanel(client, ALLOWED_CHANNEL_NAME).catch((err) => {
-    console.error("❌ Failed to ensure control panel:", err);
+  await ensureConfiguredControlPanels(client).catch((err) => {
+    console.error("❌ Failed to ensure configured control panels:", err);
   });
 });
 

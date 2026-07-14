@@ -24,6 +24,7 @@ const {
 } = require("./session");
 const { getPanelData, getWishlistExportRows, getDeliveryExportRows, rowsToCsv } = require("./data");
 const { getGuildSettings, saveGuildSettings } = require("../guild-settings");
+const { ensureControlPanel } = require("../handlers/panel");
 const { rareItems, weapons } = require("../items");
 
 let webServer = null;
@@ -112,7 +113,7 @@ async function handleRequest(req, res, client) {
     }
 
     if (req.method === "POST" && action === "settings") {
-      await handleSaveSettings(req, res, session, guildId);
+      await handleSaveSettings(req, res, session, guildId, client);
       return;
     }
 
@@ -195,21 +196,42 @@ async function handleDashboard(res, session) {
 }
 
 async function handleGuildPanel(res, session, guildId) {
-  const [botGuild, channels, roles, settings, panelData] = await Promise.all([
-    fetchBotGuild(guildId),
+  const guild = findSessionGuild(session, guildId);
+  const botGuild = await fetchBotGuild(guildId);
+
+  if (!botGuild) {
+    const body = `
+      <section class="topline">
+        <div>
+          <a class="backlink" href="/dashboard">Voltar</a>
+          <h1>${escapeHtml(guild?.name || "Guild")}</h1>
+          <p>O bot ainda nao esta instalado neste servidor.</p>
+        </div>
+      </section>
+      <section class="panel invite-panel">
+        <h2>Convidar bot</h2>
+        <p>Convide o bot para este servidor antes de configurar canal, cargos, regras, filas ou exportacoes.</p>
+        <a class="button" href="${escapeHtml(buildBotInviteUrl(guildId))}">Convidar para ${escapeHtml(guild?.name || "esta guild")}</a>
+        <p class="muted">Depois de concluir o convite no Discord, volte para esta pagina e atualize.</p>
+      </section>
+    `;
+    sendHtml(res, 200, renderPage({ title: "Convidar bot", session, body }));
+    return;
+  }
+
+  const [channels, roles, settings, panelData] = await Promise.all([
     fetchGuildChannels(guildId),
     fetchGuildRoles(guildId),
     getGuildSettings(guildId),
     getPanelData(guildId),
   ]);
 
-  const guild = findSessionGuild(session, guildId);
   const body = `
     <section class="topline">
       <div>
         <a class="backlink" href="/dashboard">Voltar</a>
         <h1>${escapeHtml(guild?.name || botGuild?.name || settings.name || "Guild")}</h1>
-        <p>${botGuild ? "Bot conectado a esta guild." : `Convide o bot para esta guild antes de aplicar as configuracoes. <a href="${escapeHtml(buildBotInviteUrl(guildId))}">Convidar bot</a>`}</p>
+        <p>Bot conectado a esta guild.</p>
       </div>
       <div class="actions">
         <a class="button" href="/guild/${guildId}/export/wishlist.csv">Exportar filas CSV</a>
@@ -229,7 +251,12 @@ async function handleGuildPanel(res, session, guildId) {
   sendHtml(res, 200, renderPage({ title: "Guild", session, body }));
 }
 
-async function handleSaveSettings(req, res, session, guildId) {
+async function handleSaveSettings(req, res, session, guildId, client) {
+  if (!(await fetchBotGuild(guildId))) {
+    redirect(res, `/guild/${guildId}`);
+    return;
+  }
+
   const form = await readForm(req);
   const guild = findSessionGuild(session, guildId);
   const rules = {
@@ -247,17 +274,34 @@ async function handleSaveSettings(req, res, session, guildId) {
     },
   };
 
-  await saveGuildSettings(guildId, {
+  const saved = await saveGuildSettings(guildId, {
     guildName: guild?.name || "",
     allowedChannelId: form.get("allowedChannelId"),
     locale: form.get("locale") || "pt-BR",
     rules,
     actorDiscordUserId: session.user?.id,
   });
+  if (saved.allowedChannelId) {
+    await ensureControlPanel(client, {
+      guildId,
+      channelId: saved.allowedChannelId,
+    }).catch((err) => {
+      console.error(`❌ Failed to ensure control panel after settings save for guild ${guildId}:`, err);
+    });
+  }
   redirect(res, `/guild/${guildId}`);
 }
 
 async function handleWishlistExport(res, guildId) {
+  if (!(await fetchBotGuild(guildId))) {
+    sendHtml(res, 403, renderPage({
+      title: "Bot nao instalado",
+      session: null,
+      body: `<section class="panel"><h1>Bot nao instalado</h1><p>Convide o bot antes de exportar dados desta guild.</p></section>`,
+    }));
+    return;
+  }
+
   const rows = await getWishlistExportRows(guildId);
   const csv = rowsToCsv(
     ["type", "registered_at_text", "nickname", "item_name", "discord_user_id"],
@@ -267,6 +311,15 @@ async function handleWishlistExport(res, guildId) {
 }
 
 async function handleDeliveryExport(res, guildId) {
+  if (!(await fetchBotGuild(guildId))) {
+    sendHtml(res, 403, renderPage({
+      title: "Bot nao instalado",
+      session: null,
+      body: `<section class="panel"><h1>Bot nao instalado</h1><p>Convide o bot antes de exportar dados desta guild.</p></section>`,
+    }));
+    return;
+  }
+
   const rows = await getDeliveryExportRows(guildId);
   const csv = rowsToCsv(
     ["type", "delivered_at_text", "player_name", "item_name", "discord_user_id"],

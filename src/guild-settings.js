@@ -66,6 +66,21 @@ async function getGuildSettings(discordGuildId) {
   return normalizeSettings(result.rows[0]);
 }
 
+async function getConfiguredPanelGuilds() {
+  const result = await query(
+    `SELECT g.discord_guild_id, gs.allowed_channel_id
+       FROM guilds g
+       JOIN guild_settings gs ON gs.guild_id = g.id
+      WHERE COALESCE(gs.allowed_channel_id, '') <> ''
+      ORDER BY g.created_at ASC`
+  );
+
+  return result.rows.map((row) => ({
+    discordGuildId: String(row.discord_guild_id || "").trim(),
+    allowedChannelId: String(row.allowed_channel_id || "").trim(),
+  }));
+}
+
 async function saveGuildSettings(discordGuildId, settings) {
   const guild = await ensureGuild(discordGuildId, {
     name: settings.guildName,
@@ -224,6 +239,7 @@ module.exports = {
   DEFAULT_LIMITS,
   defaultRules,
   ensureGuild,
+  getConfiguredPanelGuilds,
   getGuildSettings,
   getRulesForInteraction,
   getSubscription,

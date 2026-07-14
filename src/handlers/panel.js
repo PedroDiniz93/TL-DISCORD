@@ -12,7 +12,8 @@ const {
   buildItemInfoButton,
   buildWarningItemReply,
 } = require("../responses");
-const { ALLOWED_CHANNEL_ID } = require("../config");
+const { ALLOWED_CHANNEL_ID, ALLOWED_CHANNEL_NAME } = require("../config");
+const { getConfiguredPanelGuilds } = require("../guild-settings");
 const { buildFilaArchReply, registerArchWeapon } = require("./arch");
 const { buildFilaItemRaroReply, registerRareItem } = require("./rare-items");
 const { buildItemInfoReply } = require("./item-info");
@@ -242,19 +243,44 @@ async function handleControlPanelModal(interaction) {
   );
 }
 
-async function ensureControlPanel(client, channelName) {
-  const guildId = process.env.GUILD_ID;
+async function ensureConfiguredControlPanels(client) {
+  const configuredGuilds = await getConfiguredPanelGuilds();
+  const targets = configuredGuilds.length
+    ? configuredGuilds
+    : process.env.GUILD_ID
+      ? [{ discordGuildId: process.env.GUILD_ID, allowedChannelId: ALLOWED_CHANNEL_ID }]
+      : [];
+
+  let ensured = 0;
+  for (const target of targets) {
+    const ok = await ensureControlPanel(client, {
+      guildId: target.discordGuildId,
+      channelId: target.allowedChannelId,
+      channelName: ALLOWED_CHANNEL_NAME,
+    }).catch((err) => {
+      console.error(`❌ Failed to ensure control panel for guild ${target.discordGuildId}:`, err);
+      return false;
+    });
+    if (ok) ensured++;
+  }
+  return ensured;
+}
+
+async function ensureControlPanel(client, options = {}) {
+  const guildId = String(options.guildId || process.env.GUILD_ID || "").trim();
   if (!guildId) return false;
 
   const guild = await client.guilds.fetch(guildId).catch(() => null);
   if (!guild) return false;
 
-  const channel = ALLOWED_CHANNEL_ID
-    ? await findTextChannelById(guild, ALLOWED_CHANNEL_ID)
+  const channelId = String(options.channelId || ALLOWED_CHANNEL_ID || "").trim();
+  const channelName = String(options.channelName || ALLOWED_CHANNEL_NAME || "").trim();
+  const channel = channelId
+    ? await findTextChannelById(guild, channelId)
     : await findTextChannelByName(guild, channelName);
   if (!channel) {
     console.warn(
-      `⚠️ Control panel channel not found: ${ALLOWED_CHANNEL_ID || channelName}`
+      `⚠️ Control panel channel not found for guild ${guildId}: ${channelId || channelName}`
     );
     return false;
   }
@@ -710,6 +736,7 @@ function decodePanelValue(value) {
 
 module.exports = {
   buildControlPanelMessage,
+  ensureConfiguredControlPanels,
   ensureControlPanel,
   handleControlPanelButton,
   handleControlPanelSelect,
