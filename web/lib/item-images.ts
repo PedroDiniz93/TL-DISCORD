@@ -38,6 +38,7 @@ export function getItemAssetPath(fileName: string) {
   if (!safeFileName || safeFileName !== fileName) return "";
 
   const candidates = [
+    path.join(process.cwd(), "public", "item-assets", safeFileName),
     path.join(process.cwd(), "assets", "items", safeFileName),
     path.join(process.cwd(), "..", "assets", "items", safeFileName),
   ];
@@ -45,7 +46,7 @@ export function getItemAssetPath(fileName: string) {
 }
 
 function getItemAssetUrl(fileName: string) {
-  return `/api/item-assets/${encodeURIComponent(fileName)}`;
+  return `/item-assets/${encodeURIComponent(fileName)}`;
 }
 
 function findItemAssetFileName(itemName: string, aliases: string[]) {
@@ -90,6 +91,7 @@ function getAssetIndex() {
 
 function getAssetDirs() {
   return [
+    path.join(process.cwd(), "public", "item-assets"),
     path.join(process.cwd(), "assets", "items"),
     path.join(process.cwd(), "..", "assets", "items"),
   ];
