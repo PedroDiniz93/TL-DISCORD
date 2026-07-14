@@ -1,5 +1,8 @@
 "use server";
 
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { query } from "@/lib/db";
@@ -22,8 +25,8 @@ export async function saveSettings(guildId: string, formData: FormData) {
       JSON.stringify(adminRoleIds),
     ]
   );
-  revalidatePath(`/guild/${guildId}`);
-  redirect(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/settings`);
+  redirect(`/guild/${guildId}/settings`);
 }
 
 export async function saveCategory(guildId: string, formData: FormData) {
@@ -55,8 +58,9 @@ export async function saveCategory(guildId: string, formData: FormData) {
       values
     );
   }
-  revalidatePath(`/guild/${guildId}`);
-  redirect(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/catalog`);
+  revalidatePath(`/guild/${guildId}/catalog/categories`);
+  redirect(`/guild/${guildId}/catalog/categories`);
 }
 
 export async function saveItem(guildId: string, formData: FormData) {
@@ -66,6 +70,8 @@ export async function saveItem(guildId: string, formData: FormData) {
     .split(/\r?\n|,/)
     .map((value) => value.trim())
     .filter(Boolean);
+  const uploadedImageUrl = await saveUploadedItemImage(formData.get("imageFile"));
+  const imageUrl = uploadedImageUrl || String(formData.get("imageUrl") || "").trim();
   const values = [
     guild.id,
     Number(formData.get("categoryId") || 0) || null,
@@ -74,7 +80,7 @@ export async function saveItem(guildId: string, formData: FormData) {
     String(formData.get("namePt") || "").trim(),
     String(formData.get("nameEn") || "").trim(),
     aliases,
-    String(formData.get("imageUrl") || "").trim(),
+    imageUrl,
     formData.get("active") === "on",
     Number(formData.get("sortOrder") || 0),
   ];
@@ -97,22 +103,38 @@ export async function saveItem(guildId: string, formData: FormData) {
       values
     );
   }
-  revalidatePath(`/guild/${guildId}`);
-  redirect(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/catalog`);
+  revalidatePath(`/guild/${guildId}/catalog/items`);
+  redirect(`/guild/${guildId}/catalog/items`);
 }
 
 export async function deleteCategory(guildId: string, formData: FormData) {
   const guild = await ensureGuild(guildId);
   await query("DELETE FROM item_categories WHERE guild_id = $1 AND id = $2", [guild.id, Number(formData.get("id"))]);
-  revalidatePath(`/guild/${guildId}`);
-  redirect(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/catalog`);
+  revalidatePath(`/guild/${guildId}/catalog/categories`);
+  redirect(`/guild/${guildId}/catalog/categories`);
 }
 
 export async function deleteItem(guildId: string, formData: FormData) {
   const guild = await ensureGuild(guildId);
   await query("DELETE FROM guild_items WHERE guild_id = $1 AND id = $2", [guild.id, Number(formData.get("id"))]);
-  revalidatePath(`/guild/${guildId}`);
-  redirect(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/catalog`);
+  revalidatePath(`/guild/${guildId}/catalog/items`);
+  redirect(`/guild/${guildId}/catalog/items`);
+}
+
+async function saveUploadedItemImage(value: FormDataEntryValue | null) {
+  if (!(value instanceof File) || value.size === 0) return "";
+  if (!value.type.startsWith("image/")) return "";
+
+  const extension = path.extname(value.name).toLowerCase().replace(/[^.\w]/g, "") || ".png";
+  const fileName = `${crypto.randomUUID()}${extension}`;
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "items");
+  await mkdir(uploadDir, { recursive: true });
+  const bytes = await value.arrayBuffer();
+  await writeFile(path.join(uploadDir, fileName), Buffer.from(bytes));
+  return `/uploads/items/${fileName}`;
 }
 
 function slugify(value: string) {

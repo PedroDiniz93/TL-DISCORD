@@ -1,9 +1,11 @@
+import Link from "next/link";
+import { ListTree, Package } from "lucide-react";
 import { requireGuildAccess } from "@/lib/guild-access";
 import { buildBotInviteUrl, fetchBotGuild } from "@/lib/discord";
 import { getCatalog } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CategoriesCard, GuildHeader, ItemsCard } from "@/components/guild/guild-ui";
+import { GuildHeader } from "@/components/guild/guild-ui";
 
 export default async function GuildCatalogPage({ params }: { params: Promise<{ guildId: string }> }) {
   const { guildId } = await params;
@@ -32,8 +34,36 @@ export default async function GuildCatalogPage({ params }: { params: Promise<{ g
   return (
     <div className="space-y-8">
       <GuildHeader title={sessionGuild.name} description="Armas Archboss, itens raros, categorias, limites e autocomplete." />
-      <CategoriesCard guildId={guildId} categories={catalog.categories} />
-      <ItemsCard guildId={guildId} categories={catalog.categories} items={catalog.items} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Link href={`/guild/${guildId}/catalog/categories`}>
+          <Card className="transition hover:border-primary">
+            <CardHeader className="flex flex-row items-center gap-3 border-b border-border">
+              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-muted text-primary">
+                <ListTree className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Categorias</CardTitle>
+                <CardDescription>{catalog.categories.length} categorias cadastradas</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-5 text-sm text-muted-foreground">Configurar agrupamentos, limites e ordem.</CardContent>
+          </Card>
+        </Link>
+        <Link href={`/guild/${guildId}/catalog/items`}>
+          <Card className="transition hover:border-primary">
+            <CardHeader className="flex flex-row items-center gap-3 border-b border-border">
+              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-muted text-primary">
+                <Package className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Itens</CardTitle>
+                <CardDescription>{catalog.items.length} itens cadastrados</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-5 text-sm text-muted-foreground">Gerenciar imagens, aliases e status no autocomplete.</CardContent>
+          </Card>
+        </Link>
+      </div>
     </div>
   );
 }
