@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exchangeCode, fetchCurrentUser, fetchCurrentUserGuilds } from "@/lib/discord";
+import { exchangeCode, fetchCurrentUser, fetchCurrentUserGuilds, getAppBaseUrl } from "@/lib/discord";
 import { createSession, validateState } from "@/lib/session";
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       fetchCurrentUserGuilds(token.access_token),
     ]);
     await createSession({ user, guilds });
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/dashboard", getAppBaseUrl()));
   } catch (err) {
     console.error("OAuth callback failed:", err);
     return errorResponse(err instanceof Error ? err.message : String(err), 500);
