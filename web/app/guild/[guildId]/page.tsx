@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Download, Plus, ShieldCheck } from "lucide-react";
+import { Box, CheckCircle2, Download, Gem, PackagePlus, Plus, ShieldCheck, Swords, Users } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { buildBotInviteUrl, fetchBotGuild, fetchGuildChannels, fetchGuildRoles } from "@/lib/discord";
 import { getCatalog, getGuildSettings, getPanelData, type Category, type GuildItem } from "@/lib/data";
@@ -46,34 +46,40 @@ export default async function GuildPage({ params }: { params: Promise<{ guildId:
   ]);
 
   return (
-    <div className="space-y-6">
-      <BackHeader title={sessionGuild.name} description="Bot conectado a esta guild." />
-      <div className="flex flex-wrap gap-3">
-        <Button variant="outline" asChild>
-          <Link href={`/guild/${guildId}/export/wishlist.csv`}>
-            <Download className="h-4 w-4" />
-            Exportar filas
-          </Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href={`/guild/${guildId}/export/deliveries.csv`}>
-            <Download className="h-4 w-4" />
-            Exportar entregas
-          </Link>
-        </Button>
+    <div className="space-y-8">
+      <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <BackHeader title={sessionGuild.name} description="Bot conectado a esta guild." />
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" asChild>
+              <Link href={`/guild/${guildId}/export/wishlist.csv`}>
+                <Download className="h-4 w-4" />
+                Exportar filas
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/guild/${guildId}/export/deliveries.csv`}>
+                <Download className="h-4 w-4" />
+                Exportar entregas
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
       <Stats counts={panelData.counts} queues={panelData.queues.length} />
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+      <div id="settings" className="grid scroll-mt-24 gap-6 lg:grid-cols-[1.2fr_.8fr]">
         <SettingsCard guildId={guildId} channels={channels} roles={roles} settings={settings} />
         <SubscriptionCard subscription={panelData.subscription} />
       </div>
-      <div className="grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
+      <div id="catalog" className="grid scroll-mt-24 gap-6 xl:grid-cols-[.85fr_1.15fr]">
         <CategoriesCard guildId={guildId} categories={catalog.categories} />
         <ItemsCard guildId={guildId} categories={catalog.categories} items={catalog.items} />
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div id="queues" className="grid scroll-mt-24 gap-6 lg:grid-cols-2">
         <QueuesCard queues={panelData.queues} />
+        <div id="reports" className="scroll-mt-24">
         <DeliveriesCard deliveries={panelData.deliveries} />
+        </div>
       </div>
     </div>
   );
@@ -100,11 +106,16 @@ function Stats({ counts, queues }: { counts: { arch_count: number; rare_count: n
   ];
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map(([label, value]) => (
+      {stats.map(([label, value], index) => (
         <Card key={label}>
-          <CardContent className="p-5">
-            <div className="text-sm text-muted-foreground">{label}</div>
-            <div className="mt-1 text-3xl font-bold">{value}</div>
+          <CardContent className="flex items-center justify-between p-5">
+            <div>
+              <div className="text-sm text-muted-foreground">{label}</div>
+              <div className="mt-1 text-3xl font-bold">{value}</div>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-md bg-muted text-primary">
+              {[<Swords key="a" />, <Gem key="b" />, <Users key="c" />, <Box key="d" />][index]}
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -131,7 +142,7 @@ function SettingsCard({
       </CardHeader>
       <CardContent>
         <form action={saveSettings.bind(null, guildId)} className="space-y-4">
-          <Label>
+          <Label className="grid gap-2">
             Canal permitido
             <select name="allowedChannelId" defaultValue={settings.allowedChannelId} className="mt-2 w-full rounded-md border-input">
               <option value="">Sem canal fixo</option>
@@ -142,7 +153,7 @@ function SettingsCard({
               ))}
             </select>
           </Label>
-          <Label>
+          <Label className="grid gap-2">
             Cargos administradores
             <select name="adminRoleIds" multiple defaultValue={settings.adminRoleIds} className="mt-2 w-full rounded-md border-input">
               {roles.map((role) => (
@@ -181,12 +192,14 @@ function SubscriptionCard({ subscription }: { subscription: { plan: string; stat
 function CategoriesCard({ guildId, categories }: { guildId: string; categories: Category[] }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b border-border">
         <CardTitle>Categorias</CardTitle>
         <CardDescription>Limite por jogador e agrupamento dos itens.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <CategoryForm guildId={guildId} />
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <CategoryForm guildId={guildId} />
+        </div>
         <DataTable
           headers={["Tipo", "Categoria", "Limite", "Ordem", "Status", "Editar"]}
           rows={categories.map((category) => [
@@ -206,12 +219,14 @@ function CategoriesCard({ guildId, categories }: { guildId: string; categories: 
 function ItemsCard({ guildId, categories, items }: { guildId: string; categories: Category[]; items: GuildItem[] }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b border-border">
         <CardTitle>Itens</CardTitle>
         <CardDescription>Catalogo usado no autocomplete e no painel do Discord.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ItemForm guildId={guildId} categories={categories} />
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <ItemForm guildId={guildId} categories={categories} />
+        </div>
         <DataTable
           headers={["Tipo", "Item", "Categoria", "Ordem", "Status", "Editar"]}
           rows={items.map((item) => [
@@ -230,7 +245,7 @@ function ItemsCard({ guildId, categories, items }: { guildId: string; categories
 
 function CategoryForm({ guildId, category }: { guildId: string; category?: Category }) {
   return (
-    <form action={saveCategory.bind(null, guildId)} className="grid gap-3 md:grid-cols-6">
+    <form action={saveCategory.bind(null, guildId)} className="grid gap-3 md:grid-cols-[120px_1fr_130px_90px_92px_auto]">
       <input type="hidden" name="id" defaultValue={category?.id || ""} />
       <select name="type" defaultValue={category?.type || "rare"} className="rounded-md border-input">
         <option value="arch">Archboss</option>
@@ -241,7 +256,7 @@ function CategoryForm({ guildId, category }: { guildId: string; category?: Categ
       <Input type="number" min="0" name="limitPerUser" defaultValue={category?.limitPerUser ?? 1} />
       <Input type="number" name="sortOrder" defaultValue={category?.sortOrder || 0} />
       <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="active" defaultChecked={category?.active ?? true} /> Ativa</label>
-      <Button type="submit"><Plus className="h-4 w-4" />{category ? "Salvar" : "Adicionar"}</Button>
+      <Button type="submit"><PackagePlus className="h-4 w-4" />{category ? "Salvar" : "Adicionar"}</Button>
     </form>
   );
 }
@@ -279,11 +294,11 @@ function DeleteItemForm({ guildId, id }: { guildId: string; id: number }) {
 }
 
 function QueuesCard({ queues }: { queues: Array<{ type: string; item_name: string; total: number }> }) {
-  return <Card><CardHeader><CardTitle>Filas</CardTitle></CardHeader><CardContent><DataTable headers={["Tipo", "Item", "Jogadores"]} rows={queues.map((row) => [row.type, row.item_name, row.total])} /></CardContent></Card>;
+  return <Card><CardHeader className="border-b border-border"><CardTitle>Filas</CardTitle><CardDescription>Itens com jogadores aguardando.</CardDescription></CardHeader><CardContent className="pt-5"><DataTable headers={["Tipo", "Item", "Jogadores"]} rows={queues.map((row) => [row.type, row.item_name, <strong key="total">{row.total}</strong>])} /></CardContent></Card>;
 }
 
 function DeliveriesCard({ deliveries }: { deliveries: Array<{ type: string; item_name: string; player_name: string; delivered_at_text: string }> }) {
-  return <Card><CardHeader><CardTitle>Historico de entregas</CardTitle></CardHeader><CardContent><DataTable headers={["Tipo", "Item", "Player", "Data"]} rows={deliveries.map((row) => [row.type, row.item_name, row.player_name, row.delivered_at_text])} /></CardContent></Card>;
+  return <Card><CardHeader className="border-b border-border"><CardTitle>Historico de entregas</CardTitle><CardDescription>Ultimas entregas marcadas pelos administradores.</CardDescription></CardHeader><CardContent className="pt-5"><DataTable headers={["Tipo", "Item", "Player", "Data"]} rows={deliveries.map((row) => [row.type, row.item_name, row.player_name, row.delivered_at_text])} /></CardContent></Card>;
 }
 
 function DataTable({ headers, rows }: { headers: string[]; rows: Array<Array<React.ReactNode>> }) {
@@ -291,12 +306,12 @@ function DataTable({ headers, rows }: { headers: string[]; rows: Array<Array<Rea
   return (
     <div className="overflow-auto">
       <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr>{headers.map((header) => <th key={header} className="border-b px-3 py-2 text-left text-xs uppercase text-muted-foreground">{header}</th>)}</tr>
+        <thead className="bg-muted/50">
+          <tr>{headers.map((header) => <th key={header} className="border-b px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">{header}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((row, index) => (
-            <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex} className="border-b px-3 py-2 align-top">{cell}</td>)}</tr>
+            <tr key={index} className="hover:bg-muted/30">{row.map((cell, cellIndex) => <td key={cellIndex} className="border-b px-3 py-2 align-top">{cell}</td>)}</tr>
           ))}
         </tbody>
       </table>
