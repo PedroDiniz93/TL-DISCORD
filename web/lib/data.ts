@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { getCatalogItemImageUrl } from "@/lib/item-images";
 
 export type Category = {
   id: number;
@@ -178,7 +179,7 @@ function mapItem(row: ItemRow): GuildItem {
     namePt: row.name_pt,
     nameEn: row.name_en,
     aliases: row.aliases || [],
-    imageUrl: row.image_url,
+    imageUrl: getCatalogItemImageUrl(row.name, row.image_url),
     active: Boolean(row.active),
     sortOrder: Number(row.sort_order || 0),
   };
