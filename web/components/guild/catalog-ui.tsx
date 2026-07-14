@@ -24,7 +24,7 @@ export function CategoryManager({ guildId, categories }: { guildId: string; cate
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Adicionar categoria</Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {categories.map((category) => (
           <Card key={category.id} className="overflow-hidden">
             <CardHeader className="border-b border-border">
@@ -72,7 +72,7 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(15);
   const [page, setPage] = useState(1);
 
   const filteredItems = useMemo(() => {
@@ -138,9 +138,9 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
               <option value="inactive">Inativos</option>
             </select>
             <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
-              <option value={12}>12 por pagina</option>
-              <option value={24}>24 por pagina</option>
-              <option value={48}>48 por pagina</option>
+              <option value={15}>15 por pagina</option>
+              <option value={25}>25 por pagina</option>
+              <option value={50}>50 por pagina</option>
             </select>
           </div>
           <div className="flex flex-col gap-2 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
@@ -150,7 +150,7 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
         {pageItems.map((item) => (
           <ItemCard key={item.id} item={item} onEdit={() => setEditing(item)} />
         ))}
@@ -194,30 +194,30 @@ function ItemCard({ item, onEdit }: { item: GuildItem; onEdit: () => void }) {
   return (
     <Card className="group overflow-hidden transition hover:border-primary">
       <CardContent className="p-0">
-        <div className="border-b border-border bg-muted/40 p-2">
-          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[5/3] w-full rounded-md border-border bg-card" />
+        <div className="border-b border-border bg-muted/40 p-1.5">
+          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[2/1] w-full rounded-md border-border bg-card" />
         </div>
-        <div className="space-y-2.5 p-2.5">
+        <div className="space-y-2 p-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="line-clamp-2 min-h-8 text-[13px] font-bold leading-tight">{item.name}</h3>
+              <h3 className="line-clamp-2 min-h-8 text-xs font-bold leading-tight">{item.name}</h3>
               <p className="mt-1 truncate text-xs text-muted-foreground">{item.categoryName || "Sem categoria"}</p>
             </div>
             <StatusPill active={item.active} activeText="Ativo" inactiveText="Inativo" />
           </div>
-          <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
+          <div className="grid grid-cols-3 gap-1.5 rounded-md border border-border bg-muted/30 p-1.5 text-[11px]">
             <Metric label="Tipo" value={item.type} />
             <Metric label="Ordem" value={String(item.sortOrder)} />
             <Metric label="Aliases" value={String(item.aliases.length)} />
           </div>
-          <div className="min-h-8">
+          <div className="min-h-4">
             {item.aliases.length ? (
-              <p className="line-clamp-2 text-[11px] leading-4 text-muted-foreground">{item.aliases.join(", ")}</p>
+              <p className="line-clamp-1 text-[11px] leading-4 text-muted-foreground">{item.aliases.join(", ")}</p>
             ) : (
               <p className="text-[11px] text-muted-foreground">Sem aliases cadastrados.</p>
             )}
           </div>
-          <div className="flex justify-end border-t border-border pt-2.5">
+          <div className="flex justify-end border-t border-border pt-2">
             <Button variant="outline" size="sm" onClick={onEdit}><Edit3 className="h-4 w-4" />Editar</Button>
           </div>
         </div>
