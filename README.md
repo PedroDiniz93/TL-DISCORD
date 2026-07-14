@@ -6,8 +6,9 @@ guilds e painel web.
 
 Ele permite que jogadores registrem interesse em armas de Archboss e itens raros, removam os próprios registros e consultem a fila de pessoas interessadas em cada item. As respostas no Discord usam embeds e, quando existe imagem local do item, exibem a miniatura ao lado do nome.
 
-O mesmo processo também expõe um painel web para administradores configurarem o
-bot por guild usando login com Discord.
+O painel web fica em `web/` e usa Next.js, Tailwind e componentes no estilo
+shadcn/ui para administradores configurarem o bot por guild usando login com
+Discord.
 
 ## O que a aplicação faz
 
@@ -153,8 +154,23 @@ Inicie o bot:
 npm start
 ```
 
-Acesse o painel web pela URL pública do Railway. O login lista apenas guilds nas
-quais o usuário autenticado tem permissão de administrador.
+Rode o painel web localmente:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+No painel web, use a URL pública do serviço web como `APP_BASE_URL` e cadastre o
+callback no Discord:
+
+```text
+https://sua-url-do-painel/oauth/callback
+```
+
+O login lista apenas guilds nas quais o usuário autenticado tem permissão de
+administrador.
 
 Valide a sintaxe do projeto:
 
@@ -177,6 +193,7 @@ npm test
 | `src/wishlist-repository.js` | Repositório principal da lista de desejos. |
 | `src/wishlist-repository-postgres.js` | Persistência da lista de desejos no PostgreSQL. |
 | `src/web/` | Painel web, OAuth Discord, sessões e exportações. |
+| `web/` | Novo painel Next.js + Tailwind + shadcn/ui. |
 | `src/responses.js` | Monta respostas e embeds enviados no Discord. |
 | `src/items.js` | Lista armas, itens raros e regras de limite. |
 | `src/item-assets.js` | Resolve nomes e imagens locais dos itens. |

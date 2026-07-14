@@ -1,8 +1,19 @@
 # Dependências
 node_modules/
+web/node_modules/
+
+# Build Next.js
+web/.next/
+web/out/
+web/.vercel/
 
 # Variáveis de ambiente
 .env
+.env.*
+!.env.example
+web/.env
+web/.env.*
+!web/.env.example
 git_toolbox_prj.xml
 
 # Credenciais do Google (Service Account)
@@ -10,6 +21,7 @@ google-creds.json
 
 # Logs
 logs/*.log
+web/*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
