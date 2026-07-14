@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { query } from "@/lib/db";
 import { ensureGuild } from "@/lib/data";
+import { getItemUploadDir, getItemUploadUrl } from "@/lib/uploads";
 
 export async function saveSettings(guildId: string, formData: FormData) {
   const guild = await ensureGuild(guildId);
@@ -130,11 +131,11 @@ async function saveUploadedItemImage(value: FormDataEntryValue | null) {
 
   const extension = path.extname(value.name).toLowerCase().replace(/[^.\w]/g, "") || ".png";
   const fileName = `${crypto.randomUUID()}${extension}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "items");
+  const uploadDir = getItemUploadDir();
   await mkdir(uploadDir, { recursive: true });
   const bytes = await value.arrayBuffer();
   await writeFile(path.join(uploadDir, fileName), Buffer.from(bytes));
-  return `/uploads/items/${fileName}`;
+  return getItemUploadUrl(fileName);
 }
 
 function slugify(value: string) {
