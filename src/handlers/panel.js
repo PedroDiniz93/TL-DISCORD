@@ -20,14 +20,9 @@ const { buildItemInfoReply } = require("./item-info");
 const { buildMyItemsForInteraction } = require("./my-items");
 const { findKnownItemByHash, getItemInfo } = require("../item-info-service");
 const {
-  rareItems,
-  weapons,
-  isRareArmor,
-  isSkillCore,
-  isWorldBossEquipT4,
-  isWorldBossJewelryT4,
-  isWorldBossWeaponT4,
-} = require("../items");
+  getActiveItemsByType,
+  getCatalog,
+} = require("../item-catalog");
 const { shortStableHash, tr } = require("../utils");
 
 const PANEL_MESSAGE_TITLES = new Set([
@@ -51,25 +46,25 @@ async function handleControlPanelButton(interaction) {
 
   if (action === "register_arch") {
     await interaction.deferReply({ ephemeral: true });
-    await interaction.editReply(buildArchSelectReply(panelInteraction, "register"));
+    await interaction.editReply(await buildArchSelectReply(panelInteraction, "register"));
     return true;
   }
 
   if (action === "register_rare") {
     await interaction.deferReply({ ephemeral: true });
-    await interaction.editReply(buildRareCategorySelectReply(panelInteraction, "register"));
+    await interaction.editReply(await buildRareCategorySelectReply(panelInteraction, "register"));
     return true;
   }
 
   if (action === "queue_arch") {
     await interaction.deferReply({ ephemeral: true });
-    await interaction.editReply(buildArchSelectReply(panelInteraction, "queue"));
+    await interaction.editReply(await buildArchSelectReply(panelInteraction, "queue"));
     return true;
   }
 
   if (action === "queue_rare") {
     await interaction.deferReply({ ephemeral: true });
-    await interaction.editReply(buildRareCategorySelectReply(panelInteraction, "queue"));
+    await interaction.editReply(await buildRareCategorySelectReply(panelInteraction, "queue"));
     return true;
   }
 
@@ -78,7 +73,7 @@ async function handleControlPanelButton(interaction) {
       .split(":")
       .slice(2)
       .join(":") || "home";
-    await interaction.update(buildPanelBackReply(panelInteraction, target));
+    await interaction.update(await buildPanelBackReply(panelInteraction, target));
     return true;
   }
 
@@ -87,7 +82,7 @@ async function handleControlPanelButton(interaction) {
       String(interaction.customId || "").split(":");
     await interaction.deferUpdate();
     await interaction.editReply(
-      buildRareItemSelectReply(
+      await buildRareItemSelectReply(
         panelInteraction,
         rareAction,
         category,
@@ -158,7 +153,7 @@ async function handleControlPanelSelect(interaction) {
   if (kind === "rare") {
     if (action === "category") {
       await interaction.update(
-        buildRareItemSelectReply(panelInteraction, step, value)
+        await buildRareItemSelectReply(panelInteraction, step, value)
       );
       return true;
     }
@@ -405,7 +400,8 @@ function withPanelLanguage(interaction) {
   });
 }
 
-function buildArchSelectReply(interaction, action) {
+async function buildArchSelectReply(interaction, action) {
+  const items = await getActiveItemsByType(interaction.guildId, "arch");
   return buildSelectReply({
     interaction,
     title:
@@ -425,14 +421,16 @@ function buildArchSelectReply(interaction, action) {
             "Choose the Archboss weapon to view the queue."
           ),
     customId: `panel-select:arch:${action}`,
-    options: weapons.map((item) => ({
-      label: trimSelectLabel(item),
-      value: item,
+    options: items.map((item) => ({
+      label: trimSelectLabel(item.name),
+      value: item.name,
     })),
   });
 }
 
-function buildRareCategorySelectReply(interaction, action) {
+async function buildRareCategorySelectReply(interaction, action) {
+  const catalog = await getCatalog(interaction.guildId);
+  const categories = catalog.categories.filter((category) => category.type === "rare" && category.active);
   return buildSelectReply({
     interaction,
     title:
@@ -452,37 +450,18 @@ function buildRareCategorySelectReply(interaction, action) {
             "Choose the rare item queue category first."
           ),
     customId: `panel-select:rare:category:${action}`,
-    options: [
-      {
-        label: tr(interaction, "Equipamentos Raro T3", "Rare Equips T3"),
-        value: "armor",
-      },
-      {
-        label: tr(interaction, "Acessório Raro T3", "Rare Accessory T3"),
-        value: "accessory",
-      },
-      {
-        label: tr(interaction, "Arma Boss Mundo T4", "World Boss Weapon T4"),
-        value: "world_boss_weapon_t4",
-      },
-      {
-        label: tr(interaction, "Equipamentos Boss Mundo T4", "World Boss Equips T4"),
-        value: "world_boss_equip_t4",
-      },
-      {
-        label: tr(interaction, "Joias Boss Mundo T4", "World Boss Jewelry T4"),
-        value: "world_boss_jewelry_t4",
-      },
-      {
-        label: tr(interaction, "Núcleos", "Skill Cores"),
-        value: "skill_core",
-      },
-    ],
+    options: categories.map((category) => ({
+      label: trimSelectLabel(category.name),
+      value: category.key,
+    })),
   });
 }
 
-function buildRareItemSelectReply(interaction, action, category, page = 0) {
-  const filtered = rareItems.filter((item) => isRareItemInCategory(item, category));
+async function buildRareItemSelectReply(interaction, action, category, page = 0) {
+  const catalog = await getCatalog(interaction.guildId);
+  const filtered = catalog.items.filter(
+    (item) => item.type === "rare" && item.active && item.categoryKey === category
+  );
   const totalPages = Math.max(1, Math.ceil(filtered.length / RARE_PANEL_PAGE_SIZE));
   const currentPage = Math.min(Math.max(page, 0), totalPages - 1);
   const pageItems = filtered.slice(
@@ -519,8 +498,8 @@ function buildRareItemSelectReply(interaction, action, category, page = 0) {
     customId: `panel-select:rare:${action}`,
     backTarget: `rare_category:${action}`,
     options: pageItems.map((item) => ({
-      label: trimSelectLabel(item),
-      value: item,
+      label: trimSelectLabel(item.name),
+      value: item.name,
     })),
   });
 
@@ -605,21 +584,6 @@ function chunkArray(items, size) {
   return chunks;
 }
 
-function isRareItemInCategory(item, category) {
-  if (category === "armor") return isRareArmor(item);
-  if (category === "skill_core") return isSkillCore(item);
-  if (category === "world_boss_weapon_t4") return isWorldBossWeaponT4(item);
-  if (category === "world_boss_equip_t4") return isWorldBossEquipT4(item);
-  if (category === "world_boss_jewelry_t4") return isWorldBossJewelryT4(item);
-  return (
-    !isRareArmor(item) &&
-    !isSkillCore(item) &&
-    !isWorldBossWeaponT4(item) &&
-    !isWorldBossEquipT4(item) &&
-    !isWorldBossJewelryT4(item)
-  );
-}
-
 function buildSelectReply({
   interaction,
   title,
@@ -652,7 +616,7 @@ function buildSelectReply({
   };
 }
 
-function buildPanelBackReply(interaction, target) {
+async function buildPanelBackReply(interaction, target) {
   if (target.startsWith("rare_category")) {
     const [, action = "register"] = target.split(":");
     return buildRareCategorySelectReply(interaction, action);

@@ -185,23 +185,10 @@ function normalizeSettings(row) {
 
 function normalizeRules(input) {
   const source = typeof input === "object" && input ? input : {};
-  const limits = {
-    ...DEFAULT_LIMITS,
-    ...(typeof source.limits === "object" && source.limits ? source.limits : {}),
-  };
 
   return {
     adminRoleIds: toCleanStringArray(source.adminRoleIds || source.admin_role_ids),
-    limits: {
-      archWeapons: toPositiveInt(limits.archWeapons, DEFAULT_LIMITS.archWeapons),
-      rareEquips: toPositiveInt(limits.rareEquips, DEFAULT_LIMITS.rareEquips),
-      rareAccessories: toPositiveInt(limits.rareAccessories, DEFAULT_LIMITS.rareAccessories),
-      worldBossWeaponsT4: toPositiveInt(
-        limits.worldBossWeaponsT4,
-        DEFAULT_LIMITS.worldBossWeaponsT4
-      ),
-      skillCores: toPositiveInt(limits.skillCores, DEFAULT_LIMITS.skillCores),
-    },
+    limits: normalizeLegacyLimits(source.limits),
     enabledItems: {
       arch: toCleanStringArray(source.enabledItems?.arch),
       rare: toCleanStringArray(source.enabledItems?.rare),
@@ -233,6 +220,23 @@ function toPositiveInt(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed < 0) return fallback;
   return parsed;
+}
+
+function normalizeLegacyLimits(input) {
+  const limits = {
+    ...DEFAULT_LIMITS,
+    ...(typeof input === "object" && input ? input : {}),
+  };
+  return {
+    archWeapons: toPositiveInt(limits.archWeapons, DEFAULT_LIMITS.archWeapons),
+    rareEquips: toPositiveInt(limits.rareEquips, DEFAULT_LIMITS.rareEquips),
+    rareAccessories: toPositiveInt(limits.rareAccessories, DEFAULT_LIMITS.rareAccessories),
+    worldBossWeaponsT4: toPositiveInt(
+      limits.worldBossWeaponsT4,
+      DEFAULT_LIMITS.worldBossWeaponsT4
+    ),
+    skillCores: toPositiveInt(limits.skillCores, DEFAULT_LIMITS.skillCores),
+  };
 }
 
 module.exports = {

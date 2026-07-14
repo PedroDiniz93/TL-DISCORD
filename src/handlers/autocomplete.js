@@ -1,7 +1,7 @@
-const { rareItems, weapons } = require("../items");
 const { allKnownItems } = require("../item-info-service");
 const { getQueueRows } = require("../wishlist-repository");
 const { getRulesForInteraction, isAllowedChannelForInteraction, isItemEnabled } = require("../guild-settings");
+const { getActiveItemsByType } = require("../item-catalog");
 const {
   respondAutocompleteOnce,
   scoreSearchMatch,
@@ -30,17 +30,8 @@ async function handleAutocomplete(interaction) {
     }
 
     const q = String(focused.value || "");
-    const rules = await getRulesForInteraction(interaction);
-    const dataByOptionName = {
-      arch_weapon: weapons,
-      arma_arch: weapons,
-      item: weapons,
-      rare_item: rareItems,
-      item_raro: rareItems,
-    };
-    const rawList = dataByOptionName[focused.name] || [];
     const itemType = ["rare_item", "item_raro"].includes(focused.name) ? "rare" : "arch";
-    const list = rawList.filter((item) => isItemEnabled(rules, itemType, item));
+    const list = await getAutocompleteItemNames(interaction, itemType);
     const results = list
       .map((x, index) => ({
         value: x,
@@ -67,17 +58,13 @@ async function handleAutocomplete(interaction) {
 async function handleDeliveryAutocomplete(interaction, focused) {
   const q = String(focused.value || "");
   const type = interaction.options.getString("tipo", false);
-  const rules = await getRulesForInteraction(interaction);
 
   if (focused.name === "item") {
-    const list = type === "rare" ? rareItems : weapons;
     const itemType = type === "rare" ? "rare" : "arch";
+    const list = await getAutocompleteItemNames(interaction, itemType);
     await respondAutocompleteOnce(
       interaction,
-      buildScoredAutocompleteResults(
-        list.filter((item) => isItemEnabled(rules, itemType, item)),
-        q
-      )
+      buildScoredAutocompleteResults(list, q)
     );
     return;
   }
@@ -98,6 +85,14 @@ async function handleDeliveryAutocomplete(interaction, focused) {
   }
 
   await respondAutocompleteOnce(interaction, []);
+}
+
+async function getAutocompleteItemNames(interaction, type) {
+  const rules = await getRulesForInteraction(interaction);
+  const items = await getActiveItemsByType(interaction.guildId, type);
+  return items
+    .filter((item) => isItemEnabled(rules, type, item.name))
+    .map((item) => item.name);
 }
 
 async function getPlayersInQueue(type, item) {

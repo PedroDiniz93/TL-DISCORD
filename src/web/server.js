@@ -25,7 +25,13 @@ const {
 const { getPanelData, getWishlistExportRows, getDeliveryExportRows, rowsToCsv } = require("./data");
 const { getGuildSettings, saveGuildSettings } = require("../guild-settings");
 const { ensureControlPanel } = require("../handlers/panel");
-const { rareItems, weapons } = require("../items");
+const {
+  deleteCategory,
+  deleteItem,
+  getCatalog,
+  saveCategory,
+  saveItem,
+} = require("../item-catalog");
 
 let webServer = null;
 
@@ -114,6 +120,26 @@ async function handleRequest(req, res, client) {
 
     if (req.method === "POST" && action === "settings") {
       await handleSaveSettings(req, res, session, guildId, client);
+      return;
+    }
+
+    if (req.method === "POST" && action === "category") {
+      await handleSaveCategory(req, res, guildId);
+      return;
+    }
+
+    if (req.method === "POST" && action === "item") {
+      await handleSaveItem(req, res, guildId);
+      return;
+    }
+
+    if (req.method === "POST" && action === "category-delete") {
+      await handleDeleteCategory(req, res, guildId);
+      return;
+    }
+
+    if (req.method === "POST" && action === "item-delete") {
+      await handleDeleteItem(req, res, guildId);
       return;
     }
 
@@ -219,11 +245,12 @@ async function handleGuildPanel(res, session, guildId) {
     return;
   }
 
-  const [channels, roles, settings, panelData] = await Promise.all([
+  const [channels, roles, settings, panelData, catalog] = await Promise.all([
     fetchGuildChannels(guildId),
     fetchGuildRoles(guildId),
     getGuildSettings(guildId),
     getPanelData(guildId),
+    getCatalog(guildId),
   ]);
 
   const body = `
@@ -243,6 +270,7 @@ async function handleGuildPanel(res, session, guildId) {
       ${renderSettingsForm({ guildId, channels, roles, settings })}
       ${renderSubscription(panelData.subscription)}
     </section>
+    ${renderCatalog({ guildId, catalog })}
     <section class="layout">
       ${renderQueues(panelData.queues)}
       ${renderDeliveries(panelData.deliveries)}
@@ -261,17 +289,6 @@ async function handleSaveSettings(req, res, session, guildId, client) {
   const guild = findSessionGuild(session, guildId);
   const rules = {
     adminRoleIds: form.getAll("adminRoleIds"),
-    limits: {
-      archWeapons: form.get("limit_archWeapons"),
-      rareEquips: form.get("limit_rareEquips"),
-      rareAccessories: form.get("limit_rareAccessories"),
-      worldBossWeaponsT4: form.get("limit_worldBossWeaponsT4"),
-      skillCores: form.get("limit_skillCores"),
-    },
-    enabledItems: {
-      arch: form.getAll("enabledArchItems"),
-      rare: form.getAll("enabledRareItems"),
-    },
   };
 
   const saved = await saveGuildSettings(guildId, {
@@ -289,6 +306,49 @@ async function handleSaveSettings(req, res, session, guildId, client) {
       console.error(`❌ Failed to ensure control panel after settings save for guild ${guildId}:`, err);
     });
   }
+  redirect(res, `/guild/${guildId}`);
+}
+
+async function handleSaveCategory(req, res, guildId) {
+  const form = await readForm(req);
+  await saveCategory(guildId, {
+    id: form.get("id"),
+    type: form.get("type"),
+    key: form.get("key"),
+    name: form.get("name"),
+    limitPerUser: form.get("limitPerUser"),
+    sortOrder: form.get("sortOrder"),
+    active: form.get("active") === "on",
+  });
+  redirect(res, `/guild/${guildId}`);
+}
+
+async function handleSaveItem(req, res, guildId) {
+  const form = await readForm(req);
+  await saveItem(guildId, {
+    id: form.get("id"),
+    categoryId: form.get("categoryId"),
+    type: form.get("type"),
+    name: form.get("name"),
+    namePt: form.get("namePt"),
+    nameEn: form.get("nameEn"),
+    aliases: form.get("aliases"),
+    imageUrl: form.get("imageUrl"),
+    active: form.get("active") === "on",
+    sortOrder: form.get("sortOrder"),
+  });
+  redirect(res, `/guild/${guildId}`);
+}
+
+async function handleDeleteCategory(req, res, guildId) {
+  const form = await readForm(req);
+  await deleteCategory(guildId, form.get("id"));
+  redirect(res, `/guild/${guildId}`);
+}
+
+async function handleDeleteItem(req, res, guildId) {
+  const form = await readForm(req);
+  await deleteItem(guildId, form.get("id"));
   redirect(res, `/guild/${guildId}`);
 }
 
@@ -350,7 +410,6 @@ function renderStats(panelData) {
 }
 
 function renderSettingsForm({ guildId, channels, roles, settings }) {
-  const rules = settings.rules;
   return `
     <form class="panel" method="post" action="/guild/${guildId}/settings">
       <h2>Configuracao do bot</h2>
@@ -371,43 +430,9 @@ function renderSettingsForm({ guildId, channels, roles, settings }) {
           `).join("")}
         </select>
       </label>
-      <div class="form-grid">
-        ${renderLimitInput("Armas Archboss por jogador", "archWeapons", rules.limits.archWeapons)}
-        ${renderLimitInput("Equipamentos raros", "rareEquips", rules.limits.rareEquips)}
-        ${renderLimitInput("Acessorios raros", "rareAccessories", rules.limits.rareAccessories)}
-        ${renderLimitInput("Armas Boss Mundo T4", "worldBossWeaponsT4", rules.limits.worldBossWeaponsT4)}
-        ${renderLimitInput("Nucleos", "skillCores", rules.limits.skillCores)}
-      </div>
-      <label>
-        Armas Archboss habilitadas
-        <select name="enabledArchItems" multiple size="10">
-          ${weapons.map((item) => renderItemOption(item, rules.enabledItems.arch)).join("")}
-        </select>
-        <small>Nenhum selecionado significa todos habilitados.</small>
-      </label>
-      <label>
-        Itens raros habilitados
-        <select name="enabledRareItems" multiple size="12">
-          ${rareItems.map((item) => renderItemOption(item, rules.enabledItems.rare)).join("")}
-        </select>
-        <small>Nenhum selecionado significa todos habilitados.</small>
-      </label>
       <button type="submit">Salvar configuracoes</button>
     </form>
   `;
-}
-
-function renderLimitInput(label, key, value) {
-  return `
-    <label>
-      ${escapeHtml(label)}
-      <input type="number" min="0" name="limit_${escapeHtml(key)}" value="${Number(value || 0)}">
-    </label>
-  `;
-}
-
-function renderItemOption(item, selectedItems) {
-  return `<option value="${escapeHtml(item)}" ${selectedItems.includes(item) ? "selected" : ""}>${escapeHtml(item)}</option>`;
 }
 
 function renderSubscription(subscription) {
@@ -420,6 +445,123 @@ function renderSubscription(subscription) {
         <dt>Validade</dt><dd>${subscription?.current_period_ends_at ? escapeHtml(String(subscription.current_period_ends_at)) : "Sem data definida"}</dd>
       </dl>
     </section>
+  `;
+}
+
+function renderCatalog({ guildId, catalog }) {
+  const categories = catalog.categories;
+  const items = catalog.items;
+  return `
+    <section class="layout catalog-layout">
+      <section class="panel">
+        <h2>Categorias de itens</h2>
+        ${renderCategoryForm(guildId)}
+        ${categories.length ? `
+          <table>
+            <thead><tr><th>Tipo</th><th>Categoria</th><th>Limite</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
+            <tbody>${categories.map((category) => renderCategoryRow(guildId, category)).join("")}</tbody>
+          </table>
+        ` : "<p>Nenhuma categoria cadastrada.</p>"}
+      </section>
+      <section class="panel">
+        <h2>Itens do catalogo</h2>
+        ${renderItemForm(guildId, categories)}
+        ${items.length ? `
+          <table>
+            <thead><tr><th>Tipo</th><th>Item</th><th>Categoria</th><th>Ordem</th><th>Status</th><th></th></tr></thead>
+            <tbody>${items.map((item) => renderItemRow(guildId, item, categories)).join("")}</tbody>
+          </table>
+        ` : "<p>Nenhum item cadastrado.</p>"}
+      </section>
+    </section>
+  `;
+}
+
+function renderCategoryForm(guildId, category = {}) {
+  return `
+    <form class="inline-form" method="post" action="/guild/${guildId}/category">
+      <input type="hidden" name="id" value="${escapeHtml(category.id || "")}">
+      <select name="type">
+        <option value="arch" ${category.type === "arch" ? "selected" : ""}>Archboss</option>
+        <option value="rare" ${category.type !== "arch" ? "selected" : ""}>Item raro</option>
+      </select>
+      <input name="name" placeholder="Nome da categoria" value="${escapeHtml(category.name || "")}" required>
+      <input name="key" placeholder="chave" value="${escapeHtml(category.key || "")}">
+      <input type="number" min="0" name="limitPerUser" value="${Number(category.limitPerUser ?? 1)}" title="Limite por jogador">
+      <input type="number" name="sortOrder" value="${Number(category.sortOrder || 0)}" title="Ordem">
+      <label class="checkbox"><input type="checkbox" name="active" ${category.active === false ? "" : "checked"}> Ativa</label>
+      <button type="submit">${category.id ? "Salvar" : "Adicionar"}</button>
+    </form>
+  `;
+}
+
+function renderCategoryRow(guildId, category) {
+  return `
+    <tr>
+      <td>${escapeHtml(category.type)}</td>
+      <td>${escapeHtml(category.name)}<small>${escapeHtml(category.key)}</small></td>
+      <td>${Number(category.limitPerUser || 0)}</td>
+      <td>${Number(category.sortOrder || 0)}</td>
+      <td>${category.active ? "Ativa" : "Inativa"}</td>
+      <td>
+        <details>
+          <summary>Editar</summary>
+          ${renderCategoryForm(guildId, category)}
+          <form method="post" action="/guild/${guildId}/category-delete">
+            <input type="hidden" name="id" value="${escapeHtml(category.id)}">
+            <button type="submit" class="danger">Remover</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+  `;
+}
+
+function renderItemForm(guildId, categories, item = {}) {
+  return `
+    <form class="inline-form item-form" method="post" action="/guild/${guildId}/item">
+      <input type="hidden" name="id" value="${escapeHtml(item.id || "")}">
+      <select name="type">
+        <option value="arch" ${item.type === "arch" ? "selected" : ""}>Archboss</option>
+        <option value="rare" ${item.type !== "arch" ? "selected" : ""}>Item raro</option>
+      </select>
+      <select name="categoryId">
+        <option value="">Sem categoria</option>
+        ${categories.map((category) => `
+          <option value="${escapeHtml(category.id)}" ${String(item.categoryId || "") === String(category.id) ? "selected" : ""}>${escapeHtml(category.name)}</option>
+        `).join("")}
+      </select>
+      <input name="name" placeholder="Nome usado no bot" value="${escapeHtml(item.name || "")}" required>
+      <input name="namePt" placeholder="Nome PT" value="${escapeHtml(item.namePt || "")}">
+      <input name="nameEn" placeholder="Nome EN" value="${escapeHtml(item.nameEn || "")}">
+      <textarea name="aliases" placeholder="Aliases separados por virgula ou linha">${escapeHtml((item.aliases || []).join(", "))}</textarea>
+      <input name="imageUrl" placeholder="URL da imagem/icone" value="${escapeHtml(item.imageUrl || "")}">
+      <input type="number" name="sortOrder" value="${Number(item.sortOrder || 0)}" title="Ordem">
+      <label class="checkbox"><input type="checkbox" name="active" ${item.active === false ? "" : "checked"}> Ativo</label>
+      <button type="submit">${item.id ? "Salvar" : "Adicionar"}</button>
+    </form>
+  `;
+}
+
+function renderItemRow(guildId, item, categories) {
+  return `
+    <tr>
+      <td>${escapeHtml(item.type)}</td>
+      <td>${escapeHtml(item.name)}${item.aliases.length ? `<small>${escapeHtml(item.aliases.join(", "))}</small>` : ""}</td>
+      <td>${escapeHtml(item.categoryName || "")}</td>
+      <td>${Number(item.sortOrder || 0)}</td>
+      <td>${item.active ? "Ativo" : "Inativo"}</td>
+      <td>
+        <details>
+          <summary>Editar</summary>
+          ${renderItemForm(guildId, categories, item)}
+          <form method="post" action="/guild/${guildId}/item-delete">
+            <input type="hidden" name="id" value="${escapeHtml(item.id)}">
+            <button type="submit" class="danger">Remover</button>
+          </form>
+        </details>
+      </td>
+    </tr>
   `;
 }
 
@@ -541,7 +683,7 @@ function escapeHtml(value) {
 }
 
 const CSS = `
-*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#18212f;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#101823;color:#fff}header a{color:#fff;text-decoration:none}.brand{font-weight:800;font-size:18px}nav{display:flex;gap:16px;align-items:center;color:#d6dde8}main{max-width:1240px;margin:0 auto;padding:28px}.topline{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:18px}.topline h1{margin:0 0 6px;font-size:30px}.topline p{margin:0;color:#5c6778}.backlink{display:inline-block;margin-bottom:10px;color:#2d5f9a;text-decoration:none}.actions{display:flex;gap:10px;flex-wrap:wrap}.button,button{appearance:none;border:0;border-radius:6px;background:#235a8f;color:#fff;padding:10px 14px;text-decoration:none;font-weight:700;cursor:pointer}.button{display:inline-block}.grid{display:grid;gap:14px}.guild-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}.guild-card,.panel{background:#fff;border:1px solid #dfe5ee;border-radius:8px;box-shadow:0 1px 2px rgba(16,24,35,.04)}.guild-card{display:flex;flex-direction:column;gap:8px;padding:18px;color:#18212f;text-decoration:none}.guild-card strong{font-size:18px}.guild-card span{color:#667386}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.stats div{background:#fff;border:1px solid #dfe5ee;border-radius:8px;padding:16px}.stats span{display:block;color:#667386;font-size:13px}.stats strong{display:block;font-size:28px;margin-top:4px}.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:18px;margin-bottom:18px}.panel{padding:18px;overflow:auto}.panel h2{font-size:18px;margin:0 0 16px}label{display:block;font-weight:700;margin:0 0 14px}input,select{width:100%;margin-top:6px;border:1px solid #ccd5e1;border-radius:6px;padding:9px 10px;background:#fff;color:#18212f}select[multiple]{min-height:160px}small{display:block;color:#667386;margin-top:6px;font-weight:500}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;border-bottom:1px solid #e7ecf3;padding:10px 8px;vertical-align:top}th{color:#526073;font-size:12px;text-transform:uppercase}dl{display:grid;grid-template-columns:100px 1fr;gap:10px;margin:0}dt{color:#667386}dd{margin:0;font-weight:700}code{background:#edf1f7;border-radius:4px;padding:2px 5px}@media(max-width:820px){main{padding:18px}.topline,.layout{display:block}.actions{margin-top:14px}.stats{grid-template-columns:repeat(2,1fr)}.panel{margin-bottom:16px}.form-grid{grid-template-columns:1fr}}
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#18212f;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#101823;color:#fff}header a{color:#fff;text-decoration:none}.brand{font-weight:800;font-size:18px}nav{display:flex;gap:16px;align-items:center;color:#d6dde8}main{max-width:1320px;margin:0 auto;padding:28px}.topline{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:18px}.topline h1{margin:0 0 6px;font-size:30px}.topline p{margin:0;color:#5c6778}.backlink{display:inline-block;margin-bottom:10px;color:#2d5f9a;text-decoration:none}.actions{display:flex;gap:10px;flex-wrap:wrap}.button,button{appearance:none;border:0;border-radius:6px;background:#235a8f;color:#fff;padding:10px 14px;text-decoration:none;font-weight:700;cursor:pointer}.danger{background:#a64242}.button{display:inline-block}.grid{display:grid;gap:14px}.guild-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}.guild-card,.panel{background:#fff;border:1px solid #dfe5ee;border-radius:8px;box-shadow:0 1px 2px rgba(16,24,35,.04)}.guild-card{display:flex;flex-direction:column;gap:8px;padding:18px;color:#18212f;text-decoration:none}.guild-card strong{font-size:18px}.guild-card span{color:#667386}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.stats div{background:#fff;border:1px solid #dfe5ee;border-radius:8px;padding:16px}.stats span{display:block;color:#667386;font-size:13px}.stats strong{display:block;font-size:28px;margin-top:4px}.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:18px;margin-bottom:18px}.catalog-layout{grid-template-columns:minmax(420px,.8fr) minmax(0,1.2fr)}.panel{padding:18px;overflow:auto}.panel h2{font-size:18px;margin:0 0 16px}label{display:block;font-weight:700;margin:0 0 14px}input,select,textarea{width:100%;margin-top:6px;border:1px solid #ccd5e1;border-radius:6px;padding:9px 10px;background:#fff;color:#18212f}textarea{min-height:70px;resize:vertical}select[multiple]{min-height:160px}small{display:block;color:#667386;margin-top:4px;font-weight:500}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.inline-form{display:grid;grid-template-columns:110px 1fr 110px 90px 96px auto;gap:8px;align-items:end;margin-bottom:16px}.item-form{grid-template-columns:95px 150px repeat(3,minmax(120px,1fr));align-items:end}.item-form textarea,.item-form input[name=imageUrl],.item-form input[name=sortOrder],.item-form .checkbox,.item-form button{grid-column:auto}.checkbox{display:flex;align-items:center;gap:8px;margin:0;font-weight:700}.checkbox input{width:auto;margin:0}details{min-width:220px}summary{cursor:pointer;color:#235a8f;font-weight:700}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;border-bottom:1px solid #e7ecf3;padding:10px 8px;vertical-align:top}th{color:#526073;font-size:12px;text-transform:uppercase}dl{display:grid;grid-template-columns:100px 1fr;gap:10px;margin:0}dt{color:#667386}dd{margin:0;font-weight:700}code{background:#edf1f7;border-radius:4px;padding:2px 5px}@media(max-width:980px){main{padding:18px}.topline,.layout{display:block}.actions{margin-top:14px}.stats{grid-template-columns:repeat(2,1fr)}.panel{margin-bottom:16px}.form-grid,.inline-form,.item-form{grid-template-columns:1fr}}
 `;
 
 module.exports = {

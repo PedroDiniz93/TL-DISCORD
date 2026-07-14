@@ -29,6 +29,7 @@ bot por guild usando login com Discord.
 - Salva os dados em PostgreSQL.
 - Possui painel web com login Discord OAuth para configurar guilds.
 - Permite configurar canal permitido, cargos administradores, limites por categoria e itens habilitados.
+- Permite gerenciar categorias e itens por guild: adicionar, editar, desativar, remover, ordenar e cadastrar aliases.
 - Exibe filas, histórico de entregas, exportação CSV e status da assinatura no painel.
 - Registra comandos executados em `logs/commands.log`.
 - Registra alterações de loot em `logs/loot-history.log`.
@@ -64,6 +65,8 @@ tabelas são criadas pelas migrações em `db/migrations/`.
 | `deliveries` | Histórico de itens entregues |
 | `audit_logs` | Auditoria para ações administrativas futuras |
 | `subscriptions` | Plano e status comercial da guild |
+| `item_categories` | Categorias configuráveis de itens por guild |
+| `guild_items` | Catálogo de armas e itens raros por guild |
 
 ## Logs de auditoria
 
@@ -169,6 +172,7 @@ npm test
 | `src/commands.js` | Define os comandos disponíveis. |
 | `src/db.js` | Centraliza a conexão PostgreSQL. |
 | `src/guild-settings.js` | Lê e grava configurações por guild. |
+| `src/item-catalog.js` | Gerencia categorias e itens configuráveis por guild. |
 | `src/handlers/` | Implementa a lógica de cada comando. |
 | `src/wishlist-repository.js` | Repositório principal da lista de desejos. |
 | `src/wishlist-repository-postgres.js` | Persistência da lista de desejos no PostgreSQL. |

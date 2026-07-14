@@ -11,6 +11,7 @@ const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
 const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
 const { getRulesForInteraction, isItemEnabled } = require("../guild-settings");
+const { findItemByName } = require("../item-catalog");
 const {
   addArchRegistration,
   deleteArchRow,
@@ -39,7 +40,8 @@ async function handleArmaArch(interaction) {
 
 async function registerArchWeapon({ interaction, nick, arma }) {
   const rules = await getRulesForInteraction(interaction);
-  if (!isItemEnabled(rules, "arch", arma)) {
+  const catalogItem = await findItemByName(interaction.guildId, "arch", arma);
+  if (!catalogItem || !isItemEnabled(rules, "arch", catalogItem.name)) {
     return buildWarningItemReply({
       interaction,
       itemName: arma,
@@ -51,6 +53,7 @@ async function registerArchWeapon({ interaction, nick, arma }) {
       ),
     });
   }
+  const itemName = catalogItem.name;
 
   const userRows = await getUserArchRows(interaction.user.id);
 
@@ -90,21 +93,21 @@ async function registerArchWeapon({ interaction, nick, arma }) {
   await addArchRegistration({
     registeredAt: nowBrasilia(),
     nick: nickname.nick,
-    weapon: arma,
+    weapon: itemName,
     discordUserId: interaction.user.id,
   });
   await appendLootHistoryLog({
     interaction,
     action: "add",
     itemType: "arch",
-    item: arma,
+    item: itemName,
     nick: nickname.nick,
   });
 
   return buildRegisteredItemReply({
     interaction,
     nick: nickname.nick,
-    itemName: arma,
+    itemName,
     itemLabel: {
       pt: "Arma Archboss",
       en: "Archboss weapon",

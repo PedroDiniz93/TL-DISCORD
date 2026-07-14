@@ -1,15 +1,4 @@
-const {
-  MAX_RARE_ACCESSORIES_PER_USER,
-  MAX_RARE_EQUIPS_PER_USER,
-  MAX_SKILL_CORES_PER_USER,
-  MAX_WORLD_BOSS_WEAPONS_T4_PER_USER,
-  isKnownRareItem,
-  isRareArmor,
-  isSkillCore,
-  isWorldBossEquipT4,
-  isWorldBossWeaponT4,
-  stripLeadingItemEmoji,
-} = require("../items");
+const { stripLeadingItemEmoji } = require("../items");
 const {
   buildEmptyItemReply,
   buildRareItemQueueReply,
@@ -23,6 +12,7 @@ const { appendLootHistoryLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
 const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
 const { getRulesForInteraction, isItemEnabled } = require("../guild-settings");
+const { findItemByName, getItemCategoryKey } = require("../item-catalog");
 const {
   addRareItemRegistration,
   deleteRareItemRow,
@@ -52,7 +42,8 @@ async function handleItemRaro(interaction) {
 
 async function registerRareItem({ interaction, nick, item }) {
   const rules = await getRulesForInteraction(interaction);
-  if (!isKnownRareItem(item)) {
+  const catalogItem = await findItemByName(interaction.guildId, "rare", item);
+  if (!catalogItem) {
     return buildWarningItemReply({
       interaction,
       itemName: item,
@@ -65,7 +56,7 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
-  if (!isItemEnabled(rules, "rare", item)) {
+  if (!isItemEnabled(rules, "rare", catalogItem.name)) {
     return buildWarningItemReply({
       interaction,
       itemName: item,
@@ -78,127 +69,26 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
-  const itemForSheet = stripLeadingItemEmoji(item);
+  const itemForSheet = stripLeadingItemEmoji(catalogItem.name);
   const userRows = await getUserRareItemRows(interaction.user.id);
-  const targetIsArmor = isRareArmor(item);
-  const targetIsSkillCore = isSkillCore(item);
-  const targetIsWorldBossWeaponT4 = isWorldBossWeaponT4(item);
-  const targetIsWorldBossEquipT4 = isWorldBossEquipT4(item);
-  const targetIsEquip = targetIsArmor || targetIsWorldBossEquipT4;
-  const userSkillCores = userRows
-    .map((row) => (row.Item || "").trim())
-    .filter((name) => isSkillCore(name));
-  const userEquips = userRows
-    .map((row) => (row.Item || "").trim())
-    .filter((name) => isRareArmor(name) || isWorldBossEquipT4(name));
-  const userWorldBossWeaponsT4 = userRows
-    .map((row) => (row.Item || "").trim())
-    .filter((name) => isWorldBossWeaponT4(name));
-  const userAccessories = userRows
-    .map((row) => (row.Item || "").trim())
-    .filter(
-      (name) =>
-        isKnownRareItem(name) &&
-        !isRareArmor(name) &&
-        !isSkillCore(name) &&
-        !isWorldBossWeaponT4(name) &&
-        !isWorldBossEquipT4(name)
-    );
+  const targetCategoryKey = getItemCategoryKey(catalogItem);
+  const categoryLimit = Number(catalogItem.limitPerUser || 1);
+  const userRowsInCategory = await getUserRowsInRareCategory(interaction.guildId, userRows, targetCategoryKey);
 
-  if (targetIsEquip && userEquips.length >= rules.limits.rareEquips) {
+  if (userRowsInCategory.length >= categoryLimit) {
     return buildWarningItemReply({
       interaction,
-      itemName: userEquips[0],
-      title: tr(interaction, "⚠️ Limite de equipamento", "⚠️ Equip limit reached"),
+      itemName: userRowsInCategory[0]?.Item || itemForSheet,
+      title: tr(interaction, "⚠️ Limite de categoria", "⚠️ Category limit reached"),
       description: tr(
         interaction,
-        `Voce ja possui ${rules.limits.rareEquips} equipamento(s) T3/T4 registrado(s). Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
-        `You already have ${rules.limits.rareEquips} registered T3/T4 equip(s). Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+        `Voce ja possui ${categoryLimit} item(ns) nessa categoria. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `You already have ${categoryLimit} item(s) in this category. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
       ),
       fields: [
         {
-          name: tr(interaction, "Equipamento registrado", "Registered equip"),
-          value: userEquips[0],
-          inline: false,
-        },
-      ],
-      components: [buildRemoveItemAction(interaction, "rare")],
-    });
-  }
-
-  if (targetIsSkillCore && userSkillCores.length >= rules.limits.skillCores) {
-    return buildWarningItemReply({
-      interaction,
-      itemName: userSkillCores[0],
-      title: tr(interaction, "⚠️ Limite de núcleo", "⚠️ Skill core limit reached"),
-      description: tr(
-        interaction,
-        `Voce ja possui ${rules.limits.skillCores} nucleo(s) registrado(s). Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
-        `You already have ${rules.limits.skillCores} registered skill core(s). Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
-      ),
-      fields: [
-        {
-          name: tr(interaction, "Núcleo registrado", "Registered skill core"),
-          value: userSkillCores[0],
-          inline: false,
-        },
-      ],
-      components: [buildRemoveItemAction(interaction, "rare")],
-    });
-  }
-
-  if (
-    targetIsWorldBossWeaponT4 &&
-    userWorldBossWeaponsT4.length >= rules.limits.worldBossWeaponsT4
-  ) {
-    return buildWarningItemReply({
-      interaction,
-      itemName: userWorldBossWeaponsT4[0],
-      title: tr(
-        interaction,
-        "⚠️ Limite de arma Boss Mundo T4",
-        "⚠️ World Boss Weapon T4 limit reached"
-      ),
-      description: tr(
-        interaction,
-        `Voce ja possui ${rules.limits.worldBossWeaponsT4} arma(s) Boss Mundo T4 registrada(s). Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outra.`,
-        `You already have ${rules.limits.worldBossWeaponsT4} registered World Boss Weapon T4 item(s). Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
-      ),
-      fields: [
-        {
-          name: tr(
-            interaction,
-            "Arma Boss Mundo T4 registrada",
-            "Registered World Boss Weapon T4"
-          ),
-          value: userWorldBossWeaponsT4[0],
-          inline: false,
-        },
-      ],
-      components: [buildRemoveItemAction(interaction, "rare")],
-    });
-  }
-
-  if (
-    !targetIsArmor &&
-    !targetIsSkillCore &&
-    !targetIsWorldBossWeaponT4 &&
-    !targetIsWorldBossEquipT4 &&
-    userAccessories.length >= rules.limits.rareAccessories
-  ) {
-    return buildWarningItemReply({
-      interaction,
-      itemName: userAccessories[0],
-      title: tr(interaction, "⚠️ Limite de acessórios", "⚠️ Accessory limit reached"),
-      description: tr(
-        interaction,
-        `Voce ja possui ${rules.limits.rareAccessories} acessorios raros registrados. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
-        `You already have ${rules.limits.rareAccessories} registered rare accessories. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
-      ),
-      fields: [
-        {
-          name: tr(interaction, "Acessórios registrados", "Registered accessories"),
-          value: userAccessories.join("\n"),
+          name: tr(interaction, "Itens registrados", "Registered items"),
+          value: userRowsInCategory.map((row) => row.Item).join("\n"),
           inline: false,
         },
       ],
@@ -233,6 +123,17 @@ async function registerRareItem({ interaction, nick, item }) {
     },
     type: "rare",
   });
+}
+
+async function getUserRowsInRareCategory(guildId, rows, categoryKey) {
+  const matches = [];
+  for (const row of rows) {
+    const catalogItem = await findItemByName(guildId, "rare", row.Item);
+    if (catalogItem && getItemCategoryKey(catalogItem) === categoryKey) {
+      matches.push(row);
+    }
+  }
+  return matches;
 }
 
 async function buildRemoverItemRaroReply(interaction, item) {
