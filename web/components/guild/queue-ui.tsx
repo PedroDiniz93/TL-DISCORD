@@ -1,13 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import { ImagePlus, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, ImagePlus, Search, Users } from "lucide-react";
 import type { QueueGroup } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export function QueueGrid({ queues }: { queues: QueueGroup[] }) {
   const [selectedQueue, setSelectedQueue] = useState<QueueGroup | null>(null);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
+
+  const filteredQueues = useMemo(() => {
+    const term = normalizeSearch(query);
+    return queues.filter((queue) => {
+      const matchesTerm = !term || normalizeSearch([
+        queue.item_name,
+        queue.type,
+        ...queue.players.map((player) => `${player.nickname} ${player.discordUserId}`),
+      ].join(" ")).includes(term);
+      const matchesType = typeFilter === "all" || queue.type === typeFilter;
+      return matchesTerm && matchesType;
+    });
+  }, [query, queues, typeFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredQueues.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageQueues = filteredQueues.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize, query, typeFilter]);
 
   if (!queues.length) {
     return <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">Nenhuma fila ativa encontrada.</div>;
@@ -15,8 +41,38 @@ export function QueueGrid({ queues }: { queues: QueueGroup[] }) {
 
   return (
     <div className="space-y-5">
+      <Card className="overflow-hidden">
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_170px_140px]">
+            <label className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Filtrar por item, jogador ou Discord ID"
+                className="pl-9"
+              />
+            </label>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
+              <option value="all">Todos os tipos</option>
+              <option value="arch">Archboss</option>
+              <option value="rare">Item raro</option>
+            </select>
+            <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-10 rounded-md border border-input bg-card px-3 text-sm">
+              <option value={10}>10 por pagina</option>
+              <option value={20}>20 por pagina</option>
+              <option value={40}>40 por pagina</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-2 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span><strong className="text-foreground">{filteredQueues.length}</strong> de {queues.length} filas encontradas</span>
+            <span>Pagina {safePage} de {totalPages}</span>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-        {queues.map((queue) => (
+        {pageQueues.map((queue) => (
           <Card key={`${queue.type}:${queue.item_name}`} className="overflow-hidden transition hover:border-primary">
             <CardContent className="p-0">
               <div className="border-b border-border bg-muted/40 p-2">
@@ -46,6 +102,27 @@ export function QueueGrid({ queues }: { queues: QueueGroup[] }) {
           </Card>
         ))}
       </div>
+
+      {!filteredQueues.length ? (
+        <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">Nenhuma fila encontrada com os filtros atuais.</div>
+      ) : null}
+
+      {filteredQueues.length ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {(safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredQueues.length)} de {filteredQueues.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <ChevronLeft className="h-4 w-4" />Anterior
+            </Button>
+            <div className="rounded-md border border-border px-3 py-2 text-sm font-semibold">{safePage}/{totalPages}</div>
+            <Button type="button" variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+              Proxima<ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <QueueModal queue={selectedQueue} onClose={() => setSelectedQueue(null)} />
     </div>
@@ -105,4 +182,12 @@ function QueueImage({ src, alt }: { src: string; alt: string }) {
 function formatDate(value: string) {
   if (!value) return "";
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+}
+
+function normalizeSearch(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }

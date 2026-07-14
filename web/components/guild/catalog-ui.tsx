@@ -195,29 +195,29 @@ function ItemCard({ item, onEdit }: { item: GuildItem; onEdit: () => void }) {
     <Card className="group overflow-hidden transition hover:border-primary">
       <CardContent className="p-0">
         <div className="border-b border-border bg-muted/40 p-2">
-          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[4/3] w-full rounded-md border-border bg-card" />
+          <ItemImage src={item.imageUrl} alt={item.name} className="aspect-[5/3] w-full rounded-md border-border bg-card" />
         </div>
-        <div className="space-y-3 p-3">
+        <div className="space-y-2.5 p-2.5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="line-clamp-2 min-h-9 text-sm font-bold leading-tight">{item.name}</h3>
+              <h3 className="line-clamp-2 min-h-8 text-[13px] font-bold leading-tight">{item.name}</h3>
               <p className="mt-1 truncate text-xs text-muted-foreground">{item.categoryName || "Sem categoria"}</p>
             </div>
             <StatusPill active={item.active} activeText="Ativo" inactiveText="Inativo" />
           </div>
-          <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-muted/30 p-2 text-sm">
+          <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
             <Metric label="Tipo" value={item.type} />
             <Metric label="Ordem" value={String(item.sortOrder)} />
             <Metric label="Aliases" value={String(item.aliases.length)} />
           </div>
-          <div className="min-h-9">
+          <div className="min-h-8">
             {item.aliases.length ? (
-              <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{item.aliases.join(", ")}</p>
+              <p className="line-clamp-2 text-[11px] leading-4 text-muted-foreground">{item.aliases.join(", ")}</p>
             ) : (
-              <p className="text-xs text-muted-foreground">Sem aliases cadastrados.</p>
+              <p className="text-[11px] text-muted-foreground">Sem aliases cadastrados.</p>
             )}
           </div>
-          <div className="flex justify-end border-t border-border pt-3">
+          <div className="flex justify-end border-t border-border pt-2.5">
             <Button variant="outline" size="sm" onClick={onEdit}><Edit3 className="h-4 w-4" />Editar</Button>
           </div>
         </div>
@@ -361,8 +361,8 @@ function StatusPill({ active, activeText, inactiveText }: { active: boolean; act
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 truncate font-semibold">{value}</div>
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="mt-0.5 truncate font-semibold">{value}</div>
     </div>
   );
 }
