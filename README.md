@@ -1,8 +1,8 @@
 # TLGM Bot
 
 Bot de Discord para gerenciar filas de desejo de itens de Throne and Liberty.
-Ele pode usar Google Sheets no modo legado ou PostgreSQL no modo preparado para
-múltiplas guilds e painel web.
+Ele usa PostgreSQL como base de dados, com estrutura preparada para múltiplas
+guilds e painel web.
 
 Ele permite que jogadores registrem interesse em armas de Archboss e itens raros, removam os próprios registros e consultem a fila de pessoas interessadas em cada item. As respostas no Discord usam embeds e, quando existe imagem local do item, exibem a miniatura ao lado do nome.
 
@@ -23,8 +23,7 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - O autocomplete aceita busca sem acento, em português ou inglês, e por termos parciais.
 - Exibe embeds mais organizados no Discord, com imagem local do item quando disponível.
 - Restringe o uso dos comandos ao canal configurado.
-- Salva os dados em abas do Google Sheets ou em PostgreSQL, conforme o modo configurado.
-- Cria e ajusta automaticamente cabeçalhos e formatação das abas usadas.
+- Salva os dados em PostgreSQL.
 - Registra comandos executados em `logs/commands.log`.
 - Registra alterações de loot em `logs/loot-history.log`.
 - Registra consultas de fila Archboss em `logs/queue-views.log`.
@@ -47,21 +46,18 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 
 ## Persistência
 
-No modo legado, a aplicação usa Google Sheets com as abas abaixo. No modo
-PostgreSQL, as mesmas informações são salvas nas tabelas criadas pelas migrações
-em `db/migrations/`.
+A aplicação salva as filas, entregas, guilds e assinaturas em PostgreSQL. As
+tabelas são criadas pelas migrações em `db/migrations/`.
 
-No modo Google Sheets, a aplicação usa estas abas:
-
-| Aba | Colunas |
+| Tabela | Conteúdo |
 | --- | --- |
-| `LISTA DESEJO ARCH` | `Data`, `Nick`, `Arma`, `DiscordUserId` |
-| `LISTA DESEJO ITEM RARO` | `Data`, `Nick`, `Item`, `DiscordUserId` |
-| `HISTORICO DE GANHO ARCH BOSS` | `Data/Hora`, `Player`, `Item`, `DiscordUserId` |
-| `HISTORICO DE GANHO ITEM RARO` | `Data/Hora`, `Player`, `Item`, `DiscordUserId` |
-
-Nesse modo, o bot autentica com uma conta de serviço do Google e usa o ID da
-planilha informado no `.env`.
+| `guilds` | Servidores/clientes do bot |
+| `guild_settings` | Configurações por guild |
+| `players` | Jogadores vinculados a uma guild |
+| `wishlist_entries` | Registros ativos ou removidos da lista de desejos |
+| `deliveries` | Histórico de itens entregues |
+| `audit_logs` | Auditoria para ações administrativas futuras |
+| `subscriptions` | Plano e status comercial da guild |
 
 ## Logs de auditoria
 
@@ -92,30 +88,13 @@ O bot primeiro verifica os nomes configurados em `src/item-assets.js`. Se não e
 
 Crie um arquivo `.env` na raiz do projeto:
 
-### Modo Google Sheets
-
 ```env
-STORAGE_DRIVER=sheets
-DISCORD_TOKEN=token_do_bot
-DISCORD_CLIENT_ID=id_da_aplicacao_discord
-GUILD_ID=id_do_servidor
-ALLOWED_CHANNEL_ID=id_do_canal_permitido
-ADMIN_ROLE_ID=id_do_cargo_administrador
-SHEET_ID=id_da_planilha_google
-GOOGLE_CREDS_B64=json_da_conta_de_servico_em_base64
-```
-
-`GOOGLE_CREDS_B64` deve ser o JSON da conta de serviço convertido para base64.
-
-### Modo PostgreSQL
-
-Use este modo para preparar a aplicação para múltiplas guilds e painel web.
-
-```env
-STORAGE_DRIVER=postgres
 DISCORD_TOKEN=token_do_bot
 DISCORD_CLIENT_ID=id_da_aplicacao_discord
 DATABASE_URL=postgres://usuario:senha@host:5432/database
+GUILD_ID=id_do_servidor_para_registro_local
+ALLOWED_CHANNEL_ID=id_do_canal_permitido
+ADMIN_ROLE_ID=id_do_cargo_administrador
 ```
 
 Quando `GUILD_ID` estiver definido, `npm run register` registra os comandos só
@@ -126,7 +105,8 @@ aplicação do Discord, que é o fluxo esperado para um bot vendável.
 base PostgreSQL já possui as tabelas `guilds` e `guild_settings` para a próxima
 etapa: configurar canal, cargo e regras pelo painel web.
 
-Todas as variáveis obrigatórias do modo escolhido são validadas na inicialização.
+As variáveis obrigatórias para iniciar são `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`
+e `DATABASE_URL`.
 
 ## Como rodar
 
@@ -136,23 +116,11 @@ Instale as dependências:
 npm install
 ```
 
-Crie as tabelas do PostgreSQL, se estiver usando `STORAGE_DRIVER=postgres`:
+Crie as tabelas do PostgreSQL:
 
 ```bash
 npm run db:migrate
 ```
-
-Importe os dados existentes do Google Sheets para a guild configurada em
-`GUILD_ID`, se estiver migrando uma instalação atual:
-
-```bash
-npm run db:import:sheets -- --dry-run
-npm run db:import:sheets
-```
-
-O importador exige `DATABASE_URL`, `GUILD_ID`, `SHEET_ID` e `GOOGLE_CREDS_B64`.
-Ele é idempotente: se encontrar registros iguais no PostgreSQL, pula em vez de
-duplicar.
 
 Registre os comandos no servidor:
 
@@ -182,10 +150,8 @@ npm test
 | `src/commands.js` | Define os comandos disponíveis. |
 | `src/db.js` | Centraliza a conexão PostgreSQL. |
 | `src/handlers/` | Implementa a lógica de cada comando. |
-| `src/wishlist-repository.js` | Escolhe o provider de dados conforme `STORAGE_DRIVER`. |
+| `src/wishlist-repository.js` | Repositório principal da lista de desejos. |
 | `src/wishlist-repository-postgres.js` | Persistência da lista de desejos no PostgreSQL. |
-| `src/wishlist-repository-sheets.js` | Persistência legada no Google Sheets. |
-| `src/sheets.js` | Lida com autenticação, leitura e escrita no Google Sheets. |
 | `src/responses.js` | Monta respostas e embeds enviados no Discord. |
 | `src/items.js` | Lista armas, itens raros e regras de limite. |
 | `src/item-assets.js` | Resolve nomes e imagens locais dos itens. |

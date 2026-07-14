@@ -1,4 +1,3 @@
-const { ARCH_SHEET } = require("../config");
 const {
   buildArchQueueReply,
   buildArchWishlistReply,
@@ -172,8 +171,8 @@ async function buildFilaArchReply(interaction, item) {
       title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
       description: tr(
         interaction,
-        `Nenhum jogador na fila de **${item}** na aba ${ARCH_SHEET.title}.`,
-        `No players in queue for **${item}** in sheet ${ARCH_SHEET.title}.`
+        `Nenhum jogador na fila de **${item}**.`,
+        `No players in queue for **${item}**.`
       ),
     });
   }

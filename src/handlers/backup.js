@@ -1,9 +1,9 @@
 const { AttachmentBuilder } = require("discord.js");
 const {
-  ARCH_GAIN_HISTORY_SHEET,
-  ARCH_SHEET,
-  RARE_ITEM_GAIN_HISTORY_SHEET,
-  RARE_ITEM_SHEET,
+  ARCH_EXPORT,
+  ARCH_GAIN_HISTORY_EXPORT,
+  RARE_ITEM_EXPORT,
+  RARE_ITEM_GAIN_HISTORY_EXPORT,
 } = require("../config");
 const { getAdminRoleLabel, hasAdminRole } = require("../permissions");
 const { buildWarningItemReply } = require("../responses");
@@ -46,29 +46,29 @@ async function buildBackupFiles(backupDate) {
   return [
     buildCsvAttachment({
       name: `${backupDate}-lista-desejo-arch.csv`,
-      sheet: ARCH_SHEET,
+      exportConfig: ARCH_EXPORT,
       rows: archRows,
     }),
     buildCsvAttachment({
       name: `${backupDate}-lista-desejo-item-raro.csv`,
-      sheet: RARE_ITEM_SHEET,
+      exportConfig: RARE_ITEM_EXPORT,
       rows: rareRows,
     }),
     buildCsvAttachment({
       name: `${backupDate}-historico-arch-boss.csv`,
-      sheet: ARCH_GAIN_HISTORY_SHEET,
+      exportConfig: ARCH_GAIN_HISTORY_EXPORT,
       rows: archHistoryRows,
     }),
     buildCsvAttachment({
       name: `${backupDate}-historico-item-raro.csv`,
-      sheet: RARE_ITEM_GAIN_HISTORY_SHEET,
+      exportConfig: RARE_ITEM_GAIN_HISTORY_EXPORT,
       rows: rareHistoryRows,
     }),
   ];
 }
 
-function buildCsvAttachment({ name, sheet, rows }) {
-  const csv = rowsToCsv(sheet.headers, rows);
+function buildCsvAttachment({ name, exportConfig, rows }) {
+  const csv = rowsToCsv(exportConfig.headers, rows);
   return {
     rowCount: rows.length,
     attachment: new AttachmentBuilder(Buffer.from(csv, "utf8"), {

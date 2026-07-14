@@ -1,22 +1,18 @@
 const path = require("path");
 
-const ARCH_SHEET = {
-  title: "LISTA DESEJO ARCH",
+const ARCH_EXPORT = {
   headers: ["Data", "Nick", "Arma", "DiscordUserId"],
 };
 
-const RARE_ITEM_SHEET = {
-  title: "LISTA DESEJO ITEM RARO",
+const RARE_ITEM_EXPORT = {
   headers: ["Data", "Nick", "Item", "DiscordUserId"],
 };
 
-const ARCH_GAIN_HISTORY_SHEET = {
-  title: "HISTORICO DE GANHO ARCH BOSS",
+const ARCH_GAIN_HISTORY_EXPORT = {
   headers: ["Data/Hora", "Player", "Item", "DiscordUserId"],
 };
 
-const RARE_ITEM_GAIN_HISTORY_SHEET = {
-  title: "HISTORICO DE GANHO ITEM RARO",
+const RARE_ITEM_GAIN_HISTORY_EXPORT = {
   headers: ["Data/Hora", "Player", "Item", "DiscordUserId"],
 };
 
@@ -57,8 +53,8 @@ module.exports = {
   ADMIN_ROLE_ID,
   ALLOWED_CHANNEL_ID,
   ALLOWED_CHANNEL_NAME,
-  ARCH_GAIN_HISTORY_SHEET,
-  ARCH_SHEET,
+  ARCH_EXPORT,
+  ARCH_GAIN_HISTORY_EXPORT,
   COMMAND_LOG_PATH,
   HEADER_BG,
   HEADER_FG,
@@ -66,6 +62,6 @@ module.exports = {
   LOG_DIR,
   PT_BR_COMMANDS,
   QUEUE_VIEWS_LOG_PATH,
-  RARE_ITEM_GAIN_HISTORY_SHEET,
-  RARE_ITEM_SHEET,
+  RARE_ITEM_EXPORT,
+  RARE_ITEM_GAIN_HISTORY_EXPORT,
 };

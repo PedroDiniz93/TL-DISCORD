@@ -1,4 +1,3 @@
-const { RARE_ITEM_SHEET } = require("../config");
 const {
   MAX_RARE_ACCESSORIES_PER_USER,
   MAX_RARE_EQUIPS_PER_USER,
@@ -272,8 +271,8 @@ async function buildFilaItemRaroReply(interaction, item) {
       title: tr(interaction, "📭 Fila vazia", "📭 Empty queue"),
       description: tr(
         interaction,
-        `Nenhum jogador na fila do item raro **${item}** na aba ${RARE_ITEM_SHEET.title}.`,
-        `No players in queue for rare item **${item}** in sheet ${RARE_ITEM_SHEET.title}.`
+        `Nenhum jogador na fila do item raro **${item}**.`,
+        `No players in queue for rare item **${item}**.`
       ),
     });
   }

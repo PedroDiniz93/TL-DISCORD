@@ -8,7 +8,6 @@ const {
 const { getAdminRoleLabel, hasAdminRole } = require("../permissions");
 const { buildWarningItemReply } = require("../responses");
 const { getArchRows, getRareItemRows } = require("../wishlist-repository");
-const { getStorageDriver } = require("../env");
 
 async function handleStatusBot(interaction) {
   if (!(await hasAdminRole(interaction))) {
@@ -24,7 +23,6 @@ async function handleStatusBot(interaction) {
   const startedAt = new Date(Date.now() - process.uptime() * 1000);
   const memory = process.memoryUsage();
   const storageStatus = await getStorageStatus();
-  const storageLabel = getStorageDriver() === "sheets" ? "Google Sheets" : "PostgreSQL";
 
   const embed = new EmbedBuilder()
     .setColor(storageStatus.ok ? 0x57c785 : 0xd9826b)
@@ -46,7 +44,7 @@ async function handleStatusBot(interaction) {
         inline: false,
       },
       {
-        name: storageLabel,
+        name: "PostgreSQL",
         value: storageStatus.ok ? "Conectado" : `Erro: ${storageStatus.error}`,
         inline: false,
       },

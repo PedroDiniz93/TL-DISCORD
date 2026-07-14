@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "check": "node --check index.js && node --check register-commands.js && find src -name '*.js' -exec node --check {} \\;",
-    "db:import:sheets": "node scripts/import-sheets-to-postgres.js",
     "db:migrate": "node db/migrate.js",
     "register": "node register-commands.js",
     "start": "node index.js",
@@ -17,7 +16,6 @@
   "dependencies": {
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
-    "google-spreadsheet": "^3.3.0",
     "pg": "^8.16.3"
   }
 }
