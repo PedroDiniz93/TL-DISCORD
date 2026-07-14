@@ -44,10 +44,18 @@ async function destroySession(req) {
 }
 
 function createOAuthState() {
-  return crypto.randomBytes(24).toString("hex");
+  const payload = {
+    nonce: crypto.randomBytes(16).toString("hex"),
+    issuedAt: Date.now(),
+  };
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const signature = signStatePayload(encodedPayload);
+  return `${encodedPayload}.${signature}`;
 }
 
 function validateOAuthState(req, state) {
+  if (isValidSignedState(state)) return true;
+
   const expected = getCookie(req, STATE_COOKIE);
   return Boolean(expected && state && expected === state);
 }
@@ -118,6 +126,48 @@ function hashSessionId(sessionId) {
 
 function isSecureCookiesEnabled() {
   return String(process.env.WEB_SECURE_COOKIES || "true").toLowerCase() !== "false";
+}
+
+function isValidSignedState(state) {
+  const [encodedPayload, signature] = String(state || "").split(".");
+  if (!encodedPayload || !signature) return false;
+
+  const expected = signStatePayload(encodedPayload);
+  const provided = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (provided.length !== expectedBuffer.length) return false;
+  if (!crypto.timingSafeEqual(provided, expectedBuffer)) return false;
+
+  try {
+    const payload = JSON.parse(base64UrlDecode(encodedPayload));
+    const ageMs = Date.now() - Number(payload.issuedAt || 0);
+    return ageMs >= 0 && ageMs <= STATE_MAX_AGE_SECONDS * 1000;
+  } catch {
+    return false;
+  }
+}
+
+function signStatePayload(encodedPayload) {
+  return crypto
+    .createHmac("sha256", getStateSecret())
+    .update(encodedPayload)
+    .digest("base64url");
+}
+
+function getStateSecret() {
+  return (
+    String(process.env.WEB_SESSION_SECRET || "").trim() ||
+    String(process.env.DISCORD_CLIENT_SECRET || "").trim() ||
+    String(process.env.DISCORD_TOKEN || "").trim()
+  );
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(value).toString("base64url");
+}
+
+function base64UrlDecode(value) {
+  return Buffer.from(value, "base64url").toString("utf8");
 }
 
 module.exports = {
