@@ -6,6 +6,9 @@ guilds e painel web.
 
 Ele permite que jogadores registrem interesse em armas de Archboss e itens raros, removam os próprios registros e consultem a fila de pessoas interessadas em cada item. As respostas no Discord usam embeds e, quando existe imagem local do item, exibem a miniatura ao lado do nome.
 
+O mesmo processo também expõe um painel web para administradores configurarem o
+bot por guild usando login com Discord.
+
 ## O que a aplicação faz
 
 - Registra uma arma de Archboss por jogador.
@@ -24,6 +27,9 @@ Ele permite que jogadores registrem interesse em armas de Archboss e itens raros
 - Exibe embeds mais organizados no Discord, com imagem local do item quando disponível.
 - Restringe o uso dos comandos ao canal configurado.
 - Salva os dados em PostgreSQL.
+- Possui painel web com login Discord OAuth para configurar guilds.
+- Permite configurar canal permitido, cargos administradores, limites por categoria e itens habilitados.
+- Exibe filas, histórico de entregas, exportação CSV e status da assinatura no painel.
 - Registra comandos executados em `logs/commands.log`.
 - Registra alterações de loot em `logs/loot-history.log`.
 - Registra consultas de fila Archboss em `logs/queue-views.log`.
@@ -91,7 +97,9 @@ Crie um arquivo `.env` na raiz do projeto:
 ```env
 DISCORD_TOKEN=token_do_bot
 DISCORD_CLIENT_ID=id_da_aplicacao_discord
+DISCORD_CLIENT_SECRET=client_secret_da_aplicacao_discord
 DATABASE_URL=postgres://usuario:senha@host:5432/database
+APP_BASE_URL=https://sua-url-do-railway.up.railway.app
 GUILD_ID=id_do_servidor_para_registro_local
 ALLOWED_CHANNEL_ID=id_do_canal_permitido
 ADMIN_ROLE_ID=id_do_cargo_administrador
@@ -105,8 +113,16 @@ aplicação do Discord, que é o fluxo esperado para um bot vendável.
 base PostgreSQL já possui as tabelas `guilds` e `guild_settings` para a próxima
 etapa: configurar canal, cargo e regras pelo painel web.
 
-As variáveis obrigatórias para iniciar são `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`
-e `DATABASE_URL`.
+As variáveis obrigatórias para iniciar o bot são `DISCORD_TOKEN`,
+`DISCORD_CLIENT_ID` e `DATABASE_URL`.
+
+Para usar o painel web, configure também `DISCORD_CLIENT_SECRET` e `APP_BASE_URL`
+ou `DISCORD_REDIRECT_URI`. No portal de desenvolvedor do Discord, cadastre a URL
+de callback:
+
+```text
+https://sua-url-do-railway.up.railway.app/oauth/callback
+```
 
 ## Como rodar
 
@@ -134,6 +150,9 @@ Inicie o bot:
 npm start
 ```
 
+Acesse o painel web pela URL pública do Railway. O login lista apenas guilds nas
+quais o usuário autenticado tem permissão de administrador.
+
 Valide a sintaxe do projeto:
 
 ```bash
@@ -149,9 +168,11 @@ npm test
 | `db/migrations/` | Migrações SQL para o PostgreSQL. |
 | `src/commands.js` | Define os comandos disponíveis. |
 | `src/db.js` | Centraliza a conexão PostgreSQL. |
+| `src/guild-settings.js` | Lê e grava configurações por guild. |
 | `src/handlers/` | Implementa a lógica de cada comando. |
 | `src/wishlist-repository.js` | Repositório principal da lista de desejos. |
 | `src/wishlist-repository-postgres.js` | Persistência da lista de desejos no PostgreSQL. |
+| `src/web/` | Painel web, OAuth Discord, sessões e exportações. |
 | `src/responses.js` | Monta respostas e embeds enviados no Discord. |
 | `src/items.js` | Lista armas, itens raros e regras de limite. |
 | `src/item-assets.js` | Resolve nomes e imagens locais dos itens. |

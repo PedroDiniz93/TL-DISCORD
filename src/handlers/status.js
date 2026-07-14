@@ -11,11 +11,12 @@ const { getArchRows, getRareItemRows } = require("../wishlist-repository");
 
 async function handleStatusBot(interaction) {
   if (!(await hasAdminRole(interaction))) {
+    const adminRoleLabel = await getAdminRoleLabel(interaction);
     return interaction.editReply(
       buildWarningItemReply({
         interaction,
         title: "Acesso negado",
-        description: `Apenas membros com cargo ${getAdminRoleLabel()} podem ver o status do bot.`,
+        description: `Apenas membros com cargo ${adminRoleLabel} podem ver o status do bot.`,
       })
     );
   }

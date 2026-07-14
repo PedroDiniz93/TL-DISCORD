@@ -30,11 +30,12 @@ const LOG_FILES = [
 
 async function handleBaixarLogs(interaction) {
   if (!(await hasAdminRole(interaction))) {
+    const adminRoleLabel = await getAdminRoleLabel(interaction);
     return interaction.editReply(
       buildWarningItemReply({
         interaction,
         title: "Acesso negado",
-        description: `Apenas membros com cargo ${getAdminRoleLabel()} podem baixar os logs do bot.`,
+        description: `Apenas membros com cargo ${adminRoleLabel} podem baixar os logs do bot.`,
       })
     );
   }

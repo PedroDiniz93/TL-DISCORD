@@ -16,11 +16,12 @@ const {
 
 async function handleAdminBackupPlanilha(interaction) {
   if (!(await hasAdminRole(interaction))) {
+    const adminRoleLabel = await getAdminRoleLabel(interaction);
     return interaction.editReply(
       buildWarningItemReply({
         interaction,
         title: "Acesso negado",
-        description: `Apenas membros com cargo ${getAdminRoleLabel()} podem gerar backup da planilha.`,
+        description: `Apenas membros com cargo ${adminRoleLabel} podem gerar backup dos dados.`,
       })
     );
   }

@@ -1,8 +1,8 @@
 const { rareItems, weapons } = require("../items");
 const { allKnownItems } = require("../item-info-service");
 const { getQueueRows } = require("../wishlist-repository");
+const { getRulesForInteraction, isAllowedChannelForInteraction, isItemEnabled } = require("../guild-settings");
 const {
-  isAllowedChannel,
   respondAutocompleteOnce,
   scoreSearchMatch,
 } = require("../utils");
@@ -10,7 +10,7 @@ const {
 async function handleAutocomplete(interaction) {
   try {
     if (interaction.responded) return;
-    if (!isAllowedChannel(interaction)) {
+    if (!(await isAllowedChannelForInteraction(interaction))) {
       await respondAutocompleteOnce(interaction, []);
       return;
     }
@@ -30,6 +30,7 @@ async function handleAutocomplete(interaction) {
     }
 
     const q = String(focused.value || "");
+    const rules = await getRulesForInteraction(interaction);
     const dataByOptionName = {
       arch_weapon: weapons,
       arma_arch: weapons,
@@ -37,7 +38,9 @@ async function handleAutocomplete(interaction) {
       rare_item: rareItems,
       item_raro: rareItems,
     };
-    const list = dataByOptionName[focused.name] || [];
+    const rawList = dataByOptionName[focused.name] || [];
+    const itemType = ["rare_item", "item_raro"].includes(focused.name) ? "rare" : "arch";
+    const list = rawList.filter((item) => isItemEnabled(rules, itemType, item));
     const results = list
       .map((x, index) => ({
         value: x,
@@ -64,11 +67,17 @@ async function handleAutocomplete(interaction) {
 async function handleDeliveryAutocomplete(interaction, focused) {
   const q = String(focused.value || "");
   const type = interaction.options.getString("tipo", false);
+  const rules = await getRulesForInteraction(interaction);
 
   if (focused.name === "item") {
+    const list = type === "rare" ? rareItems : weapons;
+    const itemType = type === "rare" ? "rare" : "arch";
     await respondAutocompleteOnce(
       interaction,
-      buildScoredAutocompleteResults(type === "rare" ? rareItems : weapons, q)
+      buildScoredAutocompleteResults(
+        list.filter((item) => isItemEnabled(rules, itemType, item)),
+        q
+      )
     );
     return;
   }

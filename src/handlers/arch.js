@@ -10,6 +10,7 @@ const {
 const { appendLootHistoryLog, appendQueueViewLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
 const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
+const { getRulesForInteraction, isItemEnabled } = require("../guild-settings");
 const {
   addArchRegistration,
   deleteArchRow,
@@ -37,9 +38,23 @@ async function handleArmaArch(interaction) {
 }
 
 async function registerArchWeapon({ interaction, nick, arma }) {
+  const rules = await getRulesForInteraction(interaction);
+  if (!isItemEnabled(rules, "arch", arma)) {
+    return buildWarningItemReply({
+      interaction,
+      itemName: arma,
+      title: tr(interaction, "⚠️ Item desabilitado", "⚠️ Item disabled"),
+      description: tr(
+        interaction,
+        "Essa arma nao esta habilitada para registros nesta guild.",
+        "This weapon is not enabled for registrations in this guild."
+      ),
+    });
+  }
+
   const userRows = await getUserArchRows(interaction.user.id);
 
-  if (userRows.length) {
+  if (userRows.length >= rules.limits.archWeapons) {
     const userWeapons = userRows
       .map((row) => row.Arma)
       .filter(Boolean)
@@ -51,8 +66,8 @@ async function registerArchWeapon({ interaction, nick, arma }) {
       title: tr(interaction, "⚠️ Arma já registrada", "⚠️ Weapon already registered"),
       description: tr(
         interaction,
-        "Você já possui uma arma de Archboss registrada. Remova com `/remover_arch` ou `/remove_arch` para adicionar outra.",
-        "You already have an Archboss weapon registered. Remove it with `/remove_arch` or `/remover_arch` to add another one."
+        `Voce ja possui ${rules.limits.archWeapons} arma(s) de Archboss registrada(s). Remova com \`/remover_arch\` ou \`/remove_arch\` para adicionar outra.`,
+        `You already have ${rules.limits.archWeapons} registered Archboss weapon(s). Remove one with \`/remove_arch\` or \`/remover_arch\` to add another one.`
       ),
       fields: userWeapons.length
         ? [

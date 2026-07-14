@@ -22,6 +22,7 @@ const {
 const { appendLootHistoryLog } = require("../logging");
 const { resolveNicknameForRegistration } = require("../nicknames");
 const { enrichQueueRowsWithDiscordDisplayNames } = require("../discord-members");
+const { getRulesForInteraction, isItemEnabled } = require("../guild-settings");
 const {
   addRareItemRegistration,
   deleteRareItemRow,
@@ -50,6 +51,7 @@ async function handleItemRaro(interaction) {
 }
 
 async function registerRareItem({ interaction, nick, item }) {
+  const rules = await getRulesForInteraction(interaction);
   if (!isKnownRareItem(item)) {
     return buildWarningItemReply({
       interaction,
@@ -59,6 +61,19 @@ async function registerRareItem({ interaction, nick, item }) {
         interaction,
         "Esse item raro não está disponível para registro.",
         "This rare item is not available for registration."
+      ),
+    });
+  }
+
+  if (!isItemEnabled(rules, "rare", item)) {
+    return buildWarningItemReply({
+      interaction,
+      itemName: item,
+      title: tr(interaction, "⚠️ Item desabilitado", "⚠️ Item disabled"),
+      description: tr(
+        interaction,
+        "Esse item raro nao esta habilitado para registros nesta guild.",
+        "This rare item is not enabled for registrations in this guild."
       ),
     });
   }
@@ -90,15 +105,15 @@ async function registerRareItem({ interaction, nick, item }) {
         !isWorldBossEquipT4(name)
     );
 
-  if (targetIsEquip && userEquips.length >= MAX_RARE_EQUIPS_PER_USER) {
+  if (targetIsEquip && userEquips.length >= rules.limits.rareEquips) {
     return buildWarningItemReply({
       interaction,
       itemName: userEquips[0],
       title: tr(interaction, "⚠️ Limite de equipamento", "⚠️ Equip limit reached"),
       description: tr(
         interaction,
-        "Você já possui 1 equipamento T3/T4 registrado. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outro.",
-        "You already have 1 registered T3/T4 equip. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+        `Voce ja possui ${rules.limits.rareEquips} equipamento(s) T3/T4 registrado(s). Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `You already have ${rules.limits.rareEquips} registered T3/T4 equip(s). Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
       ),
       fields: [
         {
@@ -111,15 +126,15 @@ async function registerRareItem({ interaction, nick, item }) {
     });
   }
 
-  if (targetIsSkillCore && userSkillCores.length >= MAX_SKILL_CORES_PER_USER) {
+  if (targetIsSkillCore && userSkillCores.length >= rules.limits.skillCores) {
     return buildWarningItemReply({
       interaction,
       itemName: userSkillCores[0],
       title: tr(interaction, "⚠️ Limite de núcleo", "⚠️ Skill core limit reached"),
       description: tr(
         interaction,
-        "Você já possui 1 núcleo registrado. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outro.",
-        "You already have 1 registered skill core. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+        `Voce ja possui ${rules.limits.skillCores} nucleo(s) registrado(s). Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `You already have ${rules.limits.skillCores} registered skill core(s). Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
       ),
       fields: [
         {
@@ -134,7 +149,7 @@ async function registerRareItem({ interaction, nick, item }) {
 
   if (
     targetIsWorldBossWeaponT4 &&
-    userWorldBossWeaponsT4.length >= MAX_WORLD_BOSS_WEAPONS_T4_PER_USER
+    userWorldBossWeaponsT4.length >= rules.limits.worldBossWeaponsT4
   ) {
     return buildWarningItemReply({
       interaction,
@@ -146,8 +161,8 @@ async function registerRareItem({ interaction, nick, item }) {
       ),
       description: tr(
         interaction,
-        "Você já possui 1 arma Boss Mundo T4 registrada. Remova com `/remover_item_raro` ou `/remove_rare_item` para adicionar outra.",
-        "You already have 1 registered World Boss Weapon T4. Remove it with `/remove_rare_item` or `/remover_item_raro` to add another one."
+        `Voce ja possui ${rules.limits.worldBossWeaponsT4} arma(s) Boss Mundo T4 registrada(s). Remova com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outra.`,
+        `You already have ${rules.limits.worldBossWeaponsT4} registered World Boss Weapon T4 item(s). Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
       ),
       fields: [
         {
@@ -169,7 +184,7 @@ async function registerRareItem({ interaction, nick, item }) {
     !targetIsSkillCore &&
     !targetIsWorldBossWeaponT4 &&
     !targetIsWorldBossEquipT4 &&
-    userAccessories.length >= MAX_RARE_ACCESSORIES_PER_USER
+    userAccessories.length >= rules.limits.rareAccessories
   ) {
     return buildWarningItemReply({
       interaction,
@@ -177,8 +192,8 @@ async function registerRareItem({ interaction, nick, item }) {
       title: tr(interaction, "⚠️ Limite de acessórios", "⚠️ Accessory limit reached"),
       description: tr(
         interaction,
-        `Você já possui ${MAX_RARE_ACCESSORIES_PER_USER} acessórios raros registrados. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
-        `You already have ${MAX_RARE_ACCESSORIES_PER_USER} registered rare accessories. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
+        `Voce ja possui ${rules.limits.rareAccessories} acessorios raros registrados. Remova um com \`/remover_item_raro\` ou \`/remove_rare_item\` para adicionar outro.`,
+        `You already have ${rules.limits.rareAccessories} registered rare accessories. Remove one with \`/remove_rare_item\` or \`/remover_item_raro\` to add another one.`
       ),
       fields: [
         {

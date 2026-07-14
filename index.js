@@ -1,5 +1,4 @@
 require("dotenv").config();
-const http = require("http");
 const { Client, GatewayIntentBits } = require("discord.js");
 const { ALLOWED_CHANNEL_ID, ALLOWED_CHANNEL_NAME } = require("./src/config");
 const { handleAutocomplete } = require("./src/handlers/autocomplete");
@@ -14,8 +13,10 @@ const {
 const { appendCommandLog } = require("./src/logging");
 const { buildWarningItemReply } = require("./src/responses");
 const { closePool } = require("./src/db");
+const { isAllowedChannelForInteraction } = require("./src/guild-settings");
 const { runWithInteractionContext } = require("./src/interaction-context");
-const { isAllowedChannel, tr } = require("./src/utils");
+const { startWebServer, stopWebServer } = require("./src/web/server");
+const { tr } = require("./src/utils");
 const { validateRequiredEnv } = require("./src/env");
 
 validateRequiredEnv();
@@ -24,44 +25,16 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-let healthServer = null;
-
-function startHealthServer() {
-  const port = process.env.PORT;
-  if (!port) return;
-
-  healthServer = http.createServer((req, res) => {
-    if (req.url === "/health" || req.url === "/") {
-      const ready = client.isReady();
-      res.writeHead(ready ? 200 : 503, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: ready, ready }));
-      return;
-    }
-
-    res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("Not found");
-  });
-
-  healthServer.listen(port, () => {
-    console.log(`✅ Healthcheck listening on port ${port}`);
-  });
-}
-
 async function shutdown(signal) {
   console.log(`Received ${signal}, shutting down...`);
   client.destroy();
+  await stopWebServer().catch((err) => {
+    console.error("❌ Failed to stop web server:", err);
+  });
   await closePool().catch((err) => {
     console.error("❌ Failed to close database pool:", err);
   });
-
-  if (!healthServer) {
-    process.exit(0);
-    return;
-  }
-
-  healthServer.close(() => {
-    process.exit(0);
-  });
+  process.exit(0);
 }
 
 function isUnknownInteractionError(err) {
@@ -247,7 +220,7 @@ client.on("interactionCreate", (interaction) => runWithInteractionContext(intera
 
   if (!interaction.isChatInputCommand()) return;
 
-  if (!isAllowedChannel(interaction)) {
+  if (!(await isAllowedChannelForInteraction(interaction))) {
     await appendCommandLog({
       interaction,
       status: "BLOCKED_CHANNEL",
@@ -336,7 +309,7 @@ client.on("interactionCreate", (interaction) => runWithInteractionContext(intera
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-startHealthServer();
+startWebServer({ client });
 
 client.login(process.env.DISCORD_TOKEN).catch((err) => {
   console.error("❌ Failed to login to Discord:", err);
