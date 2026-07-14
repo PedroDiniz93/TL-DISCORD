@@ -179,7 +179,7 @@ function mapItem(row: ItemRow): GuildItem {
     namePt: row.name_pt,
     nameEn: row.name_en,
     aliases: row.aliases || [],
-    imageUrl: getCatalogItemImageUrl(row.name, row.image_url),
+    imageUrl: getCatalogItemImageUrl(row.name, row.image_url, [row.name_pt, row.name_en, ...(row.aliases || [])]),
     active: Boolean(row.active),
     sortOrder: Number(row.sort_order || 0),
   };

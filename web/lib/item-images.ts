@@ -22,14 +22,14 @@ const ITEM_IMAGES: Record<string, string> = {
   "🔮 Orb do Tevent (Tevent Orb)": "tevent-orb.webp",
 };
 
-export function getCatalogItemImageUrl(itemName: string, imageUrl: string) {
+export function getCatalogItemImageUrl(itemName: string, imageUrl: string, aliases: string[] = []) {
   const existing = String(imageUrl || "").trim();
   if (existing.startsWith("assets/items/")) {
     return getItemAssetUrl(path.basename(existing));
   }
   if (existing) return existing;
 
-  const fileName = findItemAssetFileName(itemName);
+  const fileName = findItemAssetFileName(itemName, aliases);
   return fileName ? getItemAssetUrl(fileName) : "";
 }
 
@@ -48,14 +48,51 @@ function getItemAssetUrl(fileName: string) {
   return `/api/item-assets/${encodeURIComponent(fileName)}`;
 }
 
-function findItemAssetFileName(itemName: string) {
-  const candidates = [
-    ITEM_IMAGES[itemName],
-    `${slugifyItemName(itemName)}.webp`,
-    `${getDisplayItemName(itemName)}.webp`,
-  ].filter(Boolean);
+function findItemAssetFileName(itemName: string, aliases: string[]) {
+  const names = [itemName, ...aliases].map((value) => String(value || "").trim()).filter(Boolean);
+  const directCandidates = names.flatMap((name) => [
+    ITEM_IMAGES[name],
+    `${slugifyItemName(name)}.webp`,
+    `${getDisplayItemName(name)}.webp`,
+  ]).filter(Boolean);
 
-  return candidates.find((candidate) => Boolean(getItemAssetPath(candidate))) || "";
+  const direct = directCandidates.find((candidate) => Boolean(getItemAssetPath(candidate)));
+  if (direct) return direct;
+
+  const assetIndex = getAssetIndex();
+  for (const name of names) {
+    const keys = [
+      normalizeAssetKey(name),
+      normalizeAssetKey(getDisplayItemName(name)),
+      normalizeAssetKey(slugifyItemName(name)),
+    ].filter(Boolean);
+    const match = keys.map((key) => assetIndex.get(key)).find(Boolean);
+    if (match) return match;
+  }
+
+  return "";
+}
+
+function getAssetIndex() {
+  const index = new Map<string, string>();
+  for (const dir of getAssetDirs()) {
+    if (!fs.existsSync(dir)) continue;
+    for (const fileName of fs.readdirSync(dir)) {
+      if (!/\.(png|jpe?g|webp|gif|svg)$/i.test(fileName)) continue;
+      const baseName = path.basename(fileName, path.extname(fileName));
+      for (const key of [normalizeAssetKey(baseName), normalizeAssetKey(fileName)]) {
+        if (key && !index.has(key)) index.set(key, fileName);
+      }
+    }
+  }
+  return index;
+}
+
+function getAssetDirs() {
+  return [
+    path.join(process.cwd(), "assets", "items"),
+    path.join(process.cwd(), "..", "assets", "items"),
+  ];
 }
 
 function getDisplayItemName(itemName: string) {
@@ -73,4 +110,14 @@ function slugifyItemName(itemName: string) {
     .replace(/['’]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function normalizeAssetKey(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['’]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
 }
