@@ -60,7 +60,7 @@ export default async function GuildCatalogPage({ params }: { params: Promise<{ g
                 <CardDescription>{catalog.items.length} itens cadastrados</CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="pt-5 text-sm text-muted-foreground">Gerenciar imagens, aliases e status no autocomplete.</CardContent>
+            <CardContent className="pt-5 text-sm text-muted-foreground">Gerenciar imagens e status no autocomplete.</CardContent>
           </Card>
         </Link>
       </div>

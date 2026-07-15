@@ -22,14 +22,14 @@ const ITEM_IMAGES: Record<string, string> = {
   "🔮 Orb do Tevent (Tevent Orb)": "tevent-orb.webp",
 };
 
-export function getCatalogItemImageUrl(itemName: string, imageUrl: string, aliases: string[] = []) {
+export function getCatalogItemImageUrl(itemName: string, imageUrl: string, additionalNames: string[] = []) {
   const existing = String(imageUrl || "").trim();
   if (existing.startsWith("assets/items/")) {
     return getItemAssetUrl(path.basename(existing));
   }
   if (existing) return existing;
 
-  const fileName = findItemAssetFileName(itemName, aliases);
+  const fileName = findItemAssetFileName(itemName, additionalNames);
   return fileName ? getItemAssetUrl(fileName) : "";
 }
 
@@ -49,8 +49,8 @@ function getItemAssetUrl(fileName: string) {
   return `/item-assets/${encodeURIComponent(fileName)}`;
 }
 
-function findItemAssetFileName(itemName: string, aliases: string[]) {
-  const names = [itemName, ...aliases].map((value) => String(value || "").trim()).filter(Boolean);
+function findItemAssetFileName(itemName: string, additionalNames: string[]) {
+  const names = [itemName, ...additionalNames].map((value) => String(value || "").trim()).filter(Boolean);
   const directCandidates = names.flatMap((name) => [
     ITEM_IMAGES[name],
     `${slugifyItemName(name)}.webp`,

@@ -30,7 +30,7 @@ Discord.
 - Salva os dados em PostgreSQL.
 - Possui painel web com login Discord OAuth para configurar guilds.
 - Permite configurar canal permitido, cargos administradores, limites por categoria e itens habilitados.
-- Permite gerenciar categorias e itens por guild: adicionar, editar, desativar, remover, ordenar e cadastrar aliases.
+- Permite gerenciar categorias e itens por guild: adicionar, editar, desativar, remover e ordenar.
 - Exibe filas, histórico de entregas, exportação CSV e status da assinatura no painel.
 - Registra comandos executados em `logs/commands.log`.
 - Registra alterações de loot em `logs/loot-history.log`.

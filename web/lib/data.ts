@@ -19,7 +19,6 @@ export type GuildItem = {
   name: string;
   namePt: string;
   nameEn: string;
-  aliases: string[];
   imageUrl: string;
   active: boolean;
   sortOrder: number;
@@ -90,7 +89,7 @@ export async function getCatalog(discordGuildId: string) {
       [guild.id]
     ),
     query<ItemRow>(
-      `SELECT gi.id, gi.category_id, gi.type, gi.name, gi.name_pt, gi.name_en, gi.aliases,
+      `SELECT gi.id, gi.category_id, gi.type, gi.name, gi.name_pt, gi.name_en,
               gi.image_url, gi.active, gi.sort_order, ic.name AS category_name
        FROM guild_items gi
        LEFT JOIN item_categories ic ON ic.id = gi.category_id
@@ -166,7 +165,6 @@ type ItemRow = {
   name: string;
   name_pt: string;
   name_en: string;
-  aliases: string[];
   image_url: string;
   active: boolean;
   sort_order: number;
@@ -203,8 +201,7 @@ function mapItem(row: ItemRow): GuildItem {
     name: row.name,
     namePt: row.name_pt,
     nameEn: row.name_en,
-    aliases: row.aliases || [],
-    imageUrl: getCatalogItemImageUrl(row.name, row.image_url, [row.name_pt, row.name_en, ...(row.aliases || [])]),
+    imageUrl: getCatalogItemImageUrl(row.name, row.image_url, [row.name_pt, row.name_en]),
     active: Boolean(row.active),
     sortOrder: Number(row.sort_order || 0),
   };

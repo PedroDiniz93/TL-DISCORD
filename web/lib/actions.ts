@@ -67,10 +67,6 @@ export async function saveCategory(guildId: string, formData: FormData) {
 export async function saveItem(guildId: string, formData: FormData) {
   const guild = await ensureGuild(guildId);
   const id = Number(formData.get("id") || 0);
-  const aliases = String(formData.get("aliases") || "")
-    .split(/\r?\n|,/)
-    .map((value) => value.trim())
-    .filter(Boolean);
   const uploadedImageUrl = await saveUploadedItemImage(formData.get("imageFile"));
   const imageUrl = uploadedImageUrl || String(formData.get("imageUrl") || "").trim();
   const values = [
@@ -80,7 +76,7 @@ export async function saveItem(guildId: string, formData: FormData) {
     String(formData.get("name") || "").trim(),
     String(formData.get("namePt") || "").trim(),
     String(formData.get("nameEn") || "").trim(),
-    aliases,
+    [],
     imageUrl,
     formData.get("active") === "on",
     Number(formData.get("sortOrder") || 0),

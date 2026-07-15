@@ -84,7 +84,6 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
         item.nameEn,
         item.categoryName,
         item.type,
-        ...item.aliases,
       ].join(" ")).includes(term);
       const matchesType = typeFilter === "all" || item.type === typeFilter;
       const matchesCategory = categoryFilter === "all" || String(item.categoryId || "") === categoryFilter;
@@ -106,7 +105,7 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
       <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Itens</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Gerencie imagens, categorias, aliases e disponibilidade no autocomplete.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Gerencie imagens, categorias e disponibilidade no autocomplete.</p>
         </div>
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Adicionar item</Button>
       </div>
@@ -119,7 +118,7 @@ export function ItemManager({ guildId, categories, items }: { guildId: string; c
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Filtrar por nome, alias ou categoria"
+                placeholder="Filtrar por nome ou categoria"
                 className="pl-9"
               />
             </label>
@@ -205,17 +204,9 @@ function ItemCard({ item, onEdit }: { item: GuildItem; onEdit: () => void }) {
             </div>
             <StatusPill active={item.active} activeText="Ativo" inactiveText="Inativo" />
           </div>
-          <div className="grid grid-cols-3 gap-1.5 rounded-md border border-border bg-muted/30 p-1.5 text-[11px]">
+          <div className="grid grid-cols-2 gap-1.5 rounded-md border border-border bg-muted/30 p-1.5 text-[11px]">
             <Metric label="Tipo" value={item.type} />
             <Metric label="Ordem" value={String(item.sortOrder)} />
-            <Metric label="Aliases" value={String(item.aliases.length)} />
-          </div>
-          <div className="min-h-4">
-            {item.aliases.length ? (
-              <p className="line-clamp-1 text-[11px] leading-4 text-muted-foreground">{item.aliases.join(", ")}</p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">Sem aliases cadastrados.</p>
-            )}
           </div>
           <div className="flex justify-end border-t border-border pt-2">
             <Button variant="outline" size="sm" onClick={onEdit}><Edit3 className="h-4 w-4" />Editar</Button>
@@ -300,9 +291,6 @@ function ItemForm({ guildId, categories, item }: { guildId: string; categories: 
           <Input name="imageFile" type="file" accept="image/*" />
         </Label>
       </div>
-      <Label className="grid gap-2">Aliases
-        <textarea name="aliases" defaultValue={(item?.aliases || []).join(", ")} className="min-h-24 rounded-md border border-input bg-card px-3 py-2 text-sm" />
-      </Label>
       <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="active" defaultChecked={item?.active ?? true} /> Item ativo</label>
       <Button type="submit"><ImagePlus className="h-4 w-4" />Salvar item</Button>
     </form>

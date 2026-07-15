@@ -332,7 +332,7 @@ async function handleSaveItem(req, res, guildId) {
     name: form.get("name"),
     namePt: form.get("namePt"),
     nameEn: form.get("nameEn"),
-    aliases: form.get("aliases"),
+    aliases: [],
     imageUrl: form.get("imageUrl"),
     active: form.get("active") === "on",
     sortOrder: form.get("sortOrder"),
@@ -534,7 +534,6 @@ function renderItemForm(guildId, categories, item = {}) {
       <input name="name" placeholder="Nome usado no bot" value="${escapeHtml(item.name || "")}" required>
       <input name="namePt" placeholder="Nome PT" value="${escapeHtml(item.namePt || "")}">
       <input name="nameEn" placeholder="Nome EN" value="${escapeHtml(item.nameEn || "")}">
-      <textarea name="aliases" placeholder="Aliases separados por virgula ou linha">${escapeHtml((item.aliases || []).join(", "))}</textarea>
       <input name="imageUrl" placeholder="URL da imagem/icone" value="${escapeHtml(item.imageUrl || "")}">
       <input type="number" name="sortOrder" value="${Number(item.sortOrder || 0)}" title="Ordem">
       <label class="checkbox"><input type="checkbox" name="active" ${item.active === false ? "" : "checked"}> Ativo</label>
@@ -547,7 +546,7 @@ function renderItemRow(guildId, item, categories) {
   return `
     <tr>
       <td>${escapeHtml(item.type)}</td>
-      <td>${escapeHtml(item.name)}${item.aliases.length ? `<small>${escapeHtml(item.aliases.join(", "))}</small>` : ""}</td>
+      <td>${escapeHtml(item.name)}</td>
       <td>${escapeHtml(item.categoryName || "")}</td>
       <td>${Number(item.sortOrder || 0)}</td>
       <td>${item.active ? "Ativo" : "Inativo"}</td>

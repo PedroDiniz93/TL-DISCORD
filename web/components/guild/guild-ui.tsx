@@ -108,7 +108,7 @@ export function ItemsCard({ guildId, categories, items }: { guildId: string; cat
         <div className="rounded-md border border-border bg-muted/30 p-4"><ItemForm guildId={guildId} categories={categories} /></div>
         <DataTable headers={["Tipo", "Item", "Categoria", "Ordem", "Status", "Editar"]} rows={items.map((item) => [
           item.type,
-          <div key="item">{item.name}<div className="text-xs text-muted-foreground">{item.aliases.join(", ")}</div></div>,
+          <div key="item">{item.name}</div>,
           item.categoryName,
           item.sortOrder,
           item.active ? "Ativo" : "Inativo",
@@ -145,7 +145,6 @@ export function ItemForm({ guildId, categories, item }: { guildId: string; categ
       <Input name="namePt" placeholder="Nome PT" defaultValue={item?.namePt || ""} />
       <Input name="nameEn" placeholder="Nome EN" defaultValue={item?.nameEn || ""} />
       <Input name="imageUrl" placeholder="URL da imagem/icone" defaultValue={item?.imageUrl || ""} />
-      <textarea name="aliases" placeholder="Aliases" defaultValue={(item?.aliases || []).join(", ")} className="rounded-md border-input md:col-span-2" />
       <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="active" defaultChecked={item?.active ?? true} /> Ativo</label>
       <Button type="submit"><Plus className="h-4 w-4" />{item ? "Salvar" : "Adicionar"}</Button>
     </form>
