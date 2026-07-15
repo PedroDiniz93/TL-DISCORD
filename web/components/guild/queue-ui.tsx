@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ImagePlus, Search, Users } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ImagePlus, Search, Trash2, Users } from "lucide-react";
+import { markQueuePlayerDelivered, removeQueuePlayerRegistration } from "@/lib/actions";
 import type { QueueGroup } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-export function QueueGrid({ queues }: { queues: QueueGroup[] }) {
+export function QueueGrid({ guildId, queues }: { guildId: string; queues: QueueGroup[] }) {
   const [selectedQueue, setSelectedQueue] = useState<QueueGroup | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -124,12 +125,18 @@ export function QueueGrid({ queues }: { queues: QueueGroup[] }) {
         </div>
       ) : null}
 
-      <QueueModal queue={selectedQueue} onClose={() => setSelectedQueue(null)} />
+      <QueueModal guildId={guildId} queue={selectedQueue} onClose={() => setSelectedQueue(null)} />
     </div>
   );
 }
 
-function QueueModal({ queue, onClose }: { queue: QueueGroup | null; onClose: () => void }) {
+function QueueModal({ guildId, queue, onClose }: { guildId: string; queue: QueueGroup | null; onClose: () => void }) {
+  const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setExpandedPlayerId(null);
+  }, [queue?.type, queue?.item_name]);
+
   if (!queue) return null;
 
   return (
@@ -151,21 +158,80 @@ function QueueModal({ queue, onClose }: { queue: QueueGroup | null; onClose: () 
                   <th className="border-b px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Jogador</th>
                   <th className="border-b px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Discord ID</th>
                   <th className="border-b px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Registro</th>
+                  <th className="border-b px-3 py-2 text-right text-xs font-semibold uppercase text-muted-foreground">Acao</th>
                 </tr>
               </thead>
               <tbody>
-                {queue.players.map((player, index) => (
-                  <tr key={player.id} className="hover:bg-muted/30">
-                    <td className="border-b px-3 py-2 font-semibold">{index + 1}</td>
-                    <td className="border-b px-3 py-2">{player.nickname || "Sem nome"}</td>
-                    <td className="border-b px-3 py-2 text-muted-foreground">{player.discordUserId}</td>
-                    <td className="border-b px-3 py-2 text-muted-foreground">{player.registeredAtText || formatDate(player.createdAt)}</td>
-                  </tr>
-                ))}
+                {queue.players.map((player, index) => {
+                  const expanded = expandedPlayerId === player.id;
+                  return (
+                    <Fragment key={player.id}>
+                      <tr className="hover:bg-muted/30">
+                        <td className="border-b px-3 py-2 font-semibold">{index + 1}</td>
+                        <td className="border-b px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedPlayerId(expanded ? null : player.id)}
+                            className="inline-flex items-center gap-2 font-semibold text-primary hover:underline"
+                          >
+                            {player.nickname || "Sem nome"}
+                            <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                          </button>
+                        </td>
+                        <td className="border-b px-3 py-2 text-muted-foreground">{player.discordUserId}</td>
+                        <td className="border-b px-3 py-2 text-muted-foreground">{player.registeredAtText || formatDate(player.createdAt)}</td>
+                        <td className="border-b px-3 py-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                            <form action={removeQueuePlayerRegistration.bind(null, guildId)}>
+                              <input type="hidden" name="entryId" value={player.id} />
+                              <Button type="submit" size="sm" variant="destructive" className="w-full sm:w-auto">
+                                <Trash2 className="h-4 w-4" />Remover
+                              </Button>
+                            </form>
+                            <form action={markQueuePlayerDelivered.bind(null, guildId)}>
+                              <input type="hidden" name="entryId" value={player.id} />
+                              <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
+                                <CheckCircle2 className="h-4 w-4" />Marcar entregue
+                              </Button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                      {expanded ? (
+                        <tr key={`${player.id}:history`}>
+                          <td className="border-b bg-muted/20 px-3 py-3" colSpan={5}>
+                            <PlayerHistory playerName={player.nickname || "Sem nome"} history={player.deliveryHistory} />
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PlayerHistory({ playerName, history }: { playerName: string; history: QueueGroup["players"][number]["deliveryHistory"] }) {
+  if (!history.length) {
+    return <div className="rounded-md border border-dashed border-border bg-card p-3 text-sm text-muted-foreground">Nenhum ganho registrado para {playerName}.</div>;
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-card">
+      <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">Historico de ganhos</div>
+      <div className="divide-y divide-border">
+        {history.map((item) => (
+          <div key={item.id} className="grid gap-1 px-3 py-2 text-sm sm:grid-cols-[90px_minmax(180px,1fr)_160px] sm:items-center">
+            <span className="font-semibold">{item.type}</span>
+            <span>{item.itemName}</span>
+            <span className="text-muted-foreground">{item.deliveredAtText || formatDate(item.createdAt)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

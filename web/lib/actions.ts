@@ -5,8 +5,9 @@ import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { query } from "@/lib/db";
+import { query, transaction } from "@/lib/db";
 import { ensureGuild } from "@/lib/data";
+import { requireGuildAccess } from "@/lib/guild-access";
 import { getItemUploadDir, getItemUploadUrl } from "@/lib/uploads";
 
 export async function saveSettings(guildId: string, formData: FormData) {
@@ -121,6 +122,85 @@ export async function deleteItem(guildId: string, formData: FormData) {
   redirect(`/guild/${guildId}/catalog/items`);
 }
 
+export async function markQueuePlayerDelivered(guildId: string, formData: FormData) {
+  const { session } = await requireGuildAccess(guildId);
+  const guild = await ensureGuild(guildId);
+  const entryId = Number(formData.get("entryId") || 0);
+  if (!entryId) redirect(`/guild/${guildId}/queues`);
+
+  await transaction(async (client) => {
+    const removed = await client.query<{
+      id: number;
+      type: string;
+      item_name: string;
+      nickname: string;
+      discord_user_id: string;
+    }>(
+      `UPDATE wishlist_entries
+       SET deleted_at = now(),
+           deleted_by_discord_user_id = $3
+       WHERE guild_id = $1
+         AND id = $2
+         AND deleted_at IS NULL
+       RETURNING id, type, item_name, nickname, discord_user_id`,
+      [guild.id, entryId, session.user.id]
+    );
+
+    const row = removed.rows[0];
+    if (!row) return;
+
+    await client.query(
+      `INSERT INTO deliveries (
+         guild_id,
+         wishlist_entry_id,
+         type,
+         item_name,
+         player_name,
+         discord_user_id,
+         delivered_at_text,
+         delivered_by_discord_user_id
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        guild.id,
+        row.id,
+        row.type,
+        row.item_name,
+        row.nickname,
+        row.discord_user_id,
+        nowBrasilia(),
+        session.user.id,
+      ]
+    );
+  });
+
+  revalidatePath(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/queues`);
+  revalidatePath(`/guild/${guildId}/history`);
+  redirect(`/guild/${guildId}/queues`);
+}
+
+export async function removeQueuePlayerRegistration(guildId: string, formData: FormData) {
+  const { session } = await requireGuildAccess(guildId);
+  const guild = await ensureGuild(guildId);
+  const entryId = Number(formData.get("entryId") || 0);
+  if (!entryId) redirect(`/guild/${guildId}/queues`);
+
+  await query(
+    `UPDATE wishlist_entries
+     SET deleted_at = now(),
+         deleted_by_discord_user_id = $3
+     WHERE guild_id = $1
+       AND id = $2
+       AND deleted_at IS NULL`,
+    [guild.id, entryId, session.user.id]
+  );
+
+  revalidatePath(`/guild/${guildId}`);
+  revalidatePath(`/guild/${guildId}/queues`);
+  redirect(`/guild/${guildId}/queues`);
+}
+
 async function saveUploadedItemImage(value: FormDataEntryValue | null) {
   if (!(value instanceof File) || value.size === 0) return "";
   if (!value.type.startsWith("image/")) return "";
@@ -141,4 +221,16 @@ function slugify(value: string) {
     .replace(/[^\p{L}\p{N}]+/gu, "_")
     .replace(/^_+|_+$/g, "")
     .toLowerCase() || "categoria";
+}
+
+function nowBrasilia() {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date());
 }

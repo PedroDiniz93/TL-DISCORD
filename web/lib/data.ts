@@ -30,6 +30,7 @@ export type QueuePlayer = {
   discordUserId: string;
   registeredAtText: string;
   createdAt: string;
+  deliveryHistory: PlayerDeliveryHistory[];
 };
 
 export type QueueGroup = {
@@ -38,6 +39,16 @@ export type QueueGroup = {
   total: number;
   imageUrl: string;
   players: QueuePlayer[];
+};
+
+export type PlayerDeliveryHistory = {
+  id: number;
+  type: string;
+  itemName: string;
+  playerName: string;
+  discordUserId: string;
+  deliveredAtText: string;
+  createdAt: string;
 };
 
 export async function ensureGuild(discordGuildId: string, name = "") {
@@ -106,7 +117,7 @@ export async function getCatalog(discordGuildId: string) {
 
 export async function getPanelData(discordGuildId: string) {
   const guild = await ensureGuild(discordGuildId);
-  const [counts, queues, deliveries, subscription] = await Promise.all([
+  const [counts, queues, deliveries, playerDeliveryHistory, subscription] = await Promise.all([
     query<{ arch_count: number; rare_count: number; player_count: number }>(
       `SELECT
          COUNT(*) FILTER (WHERE type = 'arch')::int AS arch_count,
@@ -127,7 +138,15 @@ export async function getPanelData(discordGuildId: string) {
        FROM deliveries
        WHERE guild_id = $1
        ORDER BY created_at DESC, id DESC
-       LIMIT 50`,
+      LIMIT 50`,
+      [guild.id]
+    ),
+    query<DeliveryHistoryRow>(
+      `SELECT id, type, item_name, player_name, discord_user_id, delivered_at_text, created_at
+       FROM deliveries
+       WHERE guild_id = $1
+       ORDER BY created_at DESC, id DESC
+       LIMIT 500`,
       [guild.id]
     ),
     query<{ plan: string; status: string; current_period_ends_at: Date | null }>(
@@ -141,7 +160,7 @@ export async function getPanelData(discordGuildId: string) {
   ]);
   return {
     counts: counts.rows[0] || { arch_count: 0, rare_count: 0, player_count: 0 },
-    queues: mapQueues(queues.rows),
+    queues: mapQueues(queues.rows, playerDeliveryHistory.rows),
     deliveries: deliveries.rows,
     subscription: subscription.rows[0] || { plan: "free", status: "trial", current_period_ends_at: null },
   };
@@ -180,6 +199,16 @@ type QueueEntryRow = {
   created_at: Date;
 };
 
+type DeliveryHistoryRow = {
+  id: number;
+  type: string;
+  item_name: string;
+  player_name: string;
+  discord_user_id: string;
+  delivered_at_text: string;
+  created_at: Date;
+};
+
 function mapCategory(row: CategoryRow): Category {
   return {
     id: row.id,
@@ -207,8 +236,9 @@ function mapItem(row: ItemRow): GuildItem {
   };
 }
 
-function mapQueues(rows: QueueEntryRow[]): QueueGroup[] {
+function mapQueues(rows: QueueEntryRow[], deliveryRows: DeliveryHistoryRow[] = []): QueueGroup[] {
   const groups = new Map<string, QueueGroup>();
+  const deliveryHistoryByPlayer = mapDeliveryHistoryByPlayer(deliveryRows);
   for (const row of rows) {
     const key = `${row.type}:${row.item_name.toLowerCase()}`;
     const group = groups.get(key) || {
@@ -225,6 +255,7 @@ function mapQueues(rows: QueueEntryRow[]): QueueGroup[] {
       discordUserId: row.discord_user_id,
       registeredAtText: row.registered_at_text,
       createdAt: row.created_at.toISOString(),
+      deliveryHistory: getPlayerDeliveryHistory(deliveryHistoryByPlayer, row),
     });
     groups.set(key, group);
   }
@@ -233,4 +264,57 @@ function mapQueues(rows: QueueEntryRow[]): QueueGroup[] {
     if (b.total !== a.total) return b.total - a.total;
     return a.item_name.localeCompare(b.item_name);
   });
+}
+
+function mapDeliveryHistoryByPlayer(rows: DeliveryHistoryRow[]) {
+  const history = new Map<string, PlayerDeliveryHistory[]>();
+  for (const row of rows) {
+    const item = mapPlayerDeliveryHistory(row);
+    for (const key of getDeliveryHistoryKeys(row.discord_user_id, row.player_name)) {
+      const items = history.get(key) || [];
+      if (items.length < 20) items.push(item);
+      history.set(key, items);
+    }
+  }
+  return history;
+}
+
+function mapPlayerDeliveryHistory(row: DeliveryHistoryRow): PlayerDeliveryHistory {
+  return {
+    id: row.id,
+    type: row.type,
+    itemName: row.item_name,
+    playerName: row.player_name,
+    discordUserId: row.discord_user_id,
+    deliveredAtText: row.delivered_at_text,
+    createdAt: row.created_at.toISOString(),
+  };
+}
+
+function getPlayerDeliveryHistory(history: Map<string, PlayerDeliveryHistory[]>, row: QueueEntryRow) {
+  const seen = new Set<number>();
+  const items: PlayerDeliveryHistory[] = [];
+  for (const key of getDeliveryHistoryKeys(row.discord_user_id, row.nickname)) {
+    for (const item of history.get(key) || []) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      items.push(item);
+    }
+  }
+  return items.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 20);
+}
+
+function getDeliveryHistoryKeys(discordUserId: string, playerName: string) {
+  return [
+    discordUserId ? `discord:${String(discordUserId).trim()}` : "",
+    playerName ? `name:${normalizePlayerName(playerName)}` : "",
+  ].filter(Boolean);
+}
+
+function normalizePlayerName(value: string) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }

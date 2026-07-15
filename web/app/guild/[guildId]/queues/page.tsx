@@ -41,7 +41,7 @@ export default async function GuildQueuesPage({ params }: { params: Promise<{ gu
         </Button>
       </div>
       <Stats counts={panelData.counts} queues={panelData.queues.length} />
-      <QueueGrid queues={panelData.queues} />
+      <QueueGrid guildId={guildId} queues={panelData.queues} />
     </div>
   );
 }
