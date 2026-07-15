@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Box, Gem, PackagePlus, Plus, ShieldCheck, Swords, Users } from "lucide-react";
-import { deleteCategory, deleteItem, saveCategory, saveItem, saveSettings } from "@/lib/actions";
+import { Bot, Box, CheckCircle2, Gem, PackagePlus, Plus, RefreshCw, Send, ShieldCheck, Swords, Users, XCircle } from "lucide-react";
+import { deleteCategory, deleteItem, resendControlPanel, saveCategory, saveItem, saveSettings, testConfiguredChannel } from "@/lib/actions";
 import type { Category, GuildItem } from "@/lib/data";
+import type { GuildBotStatus } from "@/lib/discord";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,17 +44,23 @@ export function SettingsCard({ guildId, channels, roles, settings }: {
   guildId: string;
   channels: Array<{ id: string; name: string }>;
   roles: Array<{ id: string; name: string }>;
-  settings: { allowedChannelId: string; adminRoleIds: string[] };
+  settings: { allowedChannelId: string; adminRoleIds: string[]; locale: string };
 }) {
   return (
     <Card>
-      <CardHeader><CardTitle>Configuracao do bot</CardTitle><CardDescription>Canal de uso e cargos que podem administrar.</CardDescription></CardHeader>
+      <CardHeader><CardTitle>Configuracao do bot</CardTitle><CardDescription>Canal de uso, idioma e cargos que podem administrar.</CardDescription></CardHeader>
       <CardContent>
         <form action={saveSettings.bind(null, guildId)} className="space-y-4">
           <Label className="grid gap-2">Canal permitido
             <select name="allowedChannelId" defaultValue={settings.allowedChannelId} className="mt-2 w-full rounded-md border-input">
               <option value="">Sem canal fixo</option>
               {channels.map((channel) => <option key={channel.id} value={channel.id}>#{channel.name}</option>)}
+            </select>
+          </Label>
+          <Label className="grid gap-2">Idioma
+            <select name="locale" defaultValue={settings.locale || "pt-BR"} className="mt-2 w-full rounded-md border-input">
+              <option value="pt-BR">Portugues</option>
+              <option value="en-US">English</option>
             </select>
           </Label>
           <Label className="grid gap-2">Cargos administradores
@@ -65,6 +72,51 @@ export function SettingsCard({ guildId, channels, roles, settings }: {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+export function GuildAdministrationCard({ guildId, status }: { guildId: string; status: GuildBotStatus }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" />Administracao da Guild</CardTitle>
+        <CardDescription>Status do bot, canal configurado e acoes do painel.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid gap-3 text-sm">
+          <StatusRow label="Bot na guild" ok={status.botInstalled} value={status.botInstalled ? "Instalado" : "Nao instalado"} />
+          <StatusRow label="Canal configurado" ok={status.channelExists} value={status.configuredChannelId ? status.channelExists ? `#${status.channelName}` : "Canal nao encontrado" : "Sem canal"} />
+          <StatusRow label="Ver canal" ok={status.permissions.viewChannel} />
+          <StatusRow label="Enviar mensagens" ok={status.permissions.sendMessages} />
+          <StatusRow label="Enviar embeds" ok={status.permissions.embedLinks} />
+          <StatusRow label="Ler historico" ok={status.permissions.readMessageHistory} />
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <form action={testConfiguredChannel.bind(null, guildId)}>
+            <Button type="submit" variant="outline" className="w-full" disabled={!status.canSendPanel}>
+              <Send className="h-4 w-4" />Testar envio
+            </Button>
+          </form>
+          <form action={resendControlPanel.bind(null, guildId)}>
+            <Button type="submit" className="w-full" disabled={!status.canSendPanel}>
+              <RefreshCw className="h-4 w-4" />Reenviar painel
+            </Button>
+          </form>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusRow({ label, ok, value }: { label: string; ok: boolean; value?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={ok ? "inline-flex items-center gap-2 font-semibold text-emerald-700" : "inline-flex items-center gap-2 font-semibold text-destructive"}>
+        {ok ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+        {value || (ok ? "OK" : "Falha")}
+      </span>
+    </div>
   );
 }
 

@@ -141,7 +141,7 @@ function QueueModal({ guildId, queue, onClose }: { guildId: string; queue: Queue
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 px-4 py-6">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-lg border border-border bg-card shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-6xl overflow-auto rounded-lg border border-border bg-card shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
             <h3 className="text-lg font-bold">{queue.item_name}</h3>
@@ -151,7 +151,7 @@ function QueueModal({ guildId, queue, onClose }: { guildId: string; queue: Queue
         </div>
         <div className="p-5">
           <div className="overflow-auto rounded-md border border-border">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="border-b px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Posicao</th>
@@ -190,7 +190,7 @@ function QueueModal({ guildId, queue, onClose }: { guildId: string; queue: Queue
                             </form>
                             <form action={markQueuePlayerDelivered.bind(null, guildId)}>
                               <input type="hidden" name="entryId" value={player.id} />
-                              <Button type="submit" size="sm" variant="outline" className="w-full sm:w-auto">
+                              <Button type="submit" size="sm" className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
                                 <CheckCircle2 className="h-4 w-4" />Marcar entregue
                               </Button>
                             </form>

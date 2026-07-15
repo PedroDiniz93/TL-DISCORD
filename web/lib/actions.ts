@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { query, transaction } from "@/lib/db";
 import { ensureGuild } from "@/lib/data";
+import { sendGuildChannelTest, sendGuildControlPanel } from "@/lib/discord";
 import { requireGuildAccess } from "@/lib/guild-access";
 import { getItemUploadDir, getItemUploadUrl } from "@/lib/uploads";
 
@@ -18,6 +19,7 @@ export async function saveSettings(guildId: string, formData: FormData) {
      SET allowed_channel_id = $2,
          admin_role_id = $3,
          rules = jsonb_set(COALESCE(rules, '{}'::jsonb), '{adminRoleIds}', $4::jsonb, true),
+         locale = $5,
          updated_at = now()
      WHERE guild_id = $1`,
     [
@@ -25,8 +27,29 @@ export async function saveSettings(guildId: string, formData: FormData) {
       String(formData.get("allowedChannelId") || ""),
       adminRoleIds[0] || "",
       JSON.stringify(adminRoleIds),
+      String(formData.get("locale") || "pt-BR"),
     ]
   );
+  revalidatePath(`/guild/${guildId}/settings`);
+  redirect(`/guild/${guildId}/settings`);
+}
+
+export async function testConfiguredChannel(guildId: string) {
+  await requireGuildAccess(guildId);
+  const settings = await getActionGuildSettings(guildId);
+  if (settings.allowedChannelId) {
+    await sendGuildChannelTest(guildId, settings.allowedChannelId);
+  }
+  revalidatePath(`/guild/${guildId}/settings`);
+  redirect(`/guild/${guildId}/settings`);
+}
+
+export async function resendControlPanel(guildId: string) {
+  await requireGuildAccess(guildId);
+  const settings = await getActionGuildSettings(guildId);
+  if (settings.allowedChannelId) {
+    await sendGuildControlPanel(guildId, settings.allowedChannelId, settings.locale);
+  }
   revalidatePath(`/guild/${guildId}/settings`);
   redirect(`/guild/${guildId}/settings`);
 }
@@ -233,4 +256,16 @@ function nowBrasilia() {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date());
+}
+
+async function getActionGuildSettings(guildId: string) {
+  const guild = await ensureGuild(guildId);
+  const result = await query<{ allowed_channel_id: string; locale: string }>(
+    `SELECT allowed_channel_id, locale FROM guild_settings WHERE guild_id = $1`,
+    [guild.id]
+  );
+  return {
+    allowedChannelId: result.rows[0]?.allowed_channel_id || "",
+    locale: result.rows[0]?.locale || "pt-BR",
+  };
 }
