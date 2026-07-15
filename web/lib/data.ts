@@ -51,6 +51,22 @@ export type PlayerDeliveryHistory = {
   createdAt: string;
 };
 
+export type GuildPlayer = {
+  key: string;
+  nickname: string;
+  discordUserId: string;
+  activeItems: PlayerActiveItem[];
+  deliveryHistory: PlayerDeliveryHistory[];
+};
+
+export type PlayerActiveItem = {
+  id: number;
+  type: string;
+  itemName: string;
+  registeredAtText: string;
+  createdAt: string;
+};
+
 export async function ensureGuild(discordGuildId: string, name = "") {
   const result = await query<{ id: number; discord_guild_id: string; name: string }>(
     `INSERT INTO guilds (discord_guild_id, name)
@@ -164,6 +180,34 @@ export async function getPanelData(discordGuildId: string) {
     deliveries: deliveries.rows,
     subscription: subscription.rows[0] || { plan: "free", status: "trial", current_period_ends_at: null },
   };
+}
+
+export async function getGuildPlayers(discordGuildId: string) {
+  const guild = await ensureGuild(discordGuildId);
+  const [players, activeEntries, deliveryRows] = await Promise.all([
+    query<{ nickname: string; discord_user_id: string }>(
+      `SELECT nickname, discord_user_id
+       FROM players
+       WHERE guild_id = $1
+       ORDER BY lower(nickname) ASC, discord_user_id ASC`,
+      [guild.id]
+    ),
+    query<QueueEntryRow>(
+      `SELECT id, type, item_name, nickname, discord_user_id, registered_at_text, created_at
+       FROM wishlist_entries
+       WHERE guild_id = $1 AND deleted_at IS NULL
+       ORDER BY created_at ASC, id ASC`,
+      [guild.id]
+    ),
+    query<DeliveryHistoryRow>(
+      `SELECT id, type, item_name, player_name, discord_user_id, delivered_at_text, created_at
+       FROM deliveries
+       WHERE guild_id = $1
+       ORDER BY created_at DESC, id DESC`,
+      [guild.id]
+    ),
+  ]);
+  return mapGuildPlayers(players.rows, activeEntries.rows, deliveryRows.rows);
 }
 
 type CategoryRow = {
@@ -317,4 +361,65 @@ function normalizePlayerName(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+}
+
+function mapGuildPlayers(
+  playerRows: Array<{ nickname: string; discord_user_id: string }>,
+  activeRows: QueueEntryRow[],
+  deliveryRows: DeliveryHistoryRow[]
+) {
+  const players = new Map<string, GuildPlayer>();
+
+  for (const row of playerRows) {
+    const player = ensureMappedPlayer(players, row.discord_user_id, row.nickname);
+    if (!player.nickname && row.nickname) player.nickname = row.nickname;
+  }
+
+  for (const row of activeRows) {
+    const player = ensureMappedPlayer(players, row.discord_user_id, row.nickname);
+    player.activeItems.push({
+      id: row.id,
+      type: row.type,
+      itemName: row.item_name,
+      registeredAtText: row.registered_at_text,
+      createdAt: row.created_at.toISOString(),
+    });
+  }
+
+  for (const row of deliveryRows) {
+    const player = ensureMappedPlayer(players, row.discord_user_id, row.player_name);
+    player.deliveryHistory.push(mapPlayerDeliveryHistory(row));
+  }
+
+  return Array.from(players.values()).sort((a, b) => {
+    const nameCompare = normalizePlayerName(a.nickname).localeCompare(normalizePlayerName(b.nickname));
+    if (nameCompare !== 0) return nameCompare;
+    return a.discordUserId.localeCompare(b.discordUserId);
+  });
+}
+
+function ensureMappedPlayer(players: Map<string, GuildPlayer>, discordUserId: string, nickname: string) {
+  const key = buildPlayerKey(discordUserId, nickname);
+  const existing = players.get(key);
+  if (existing) {
+    if (!existing.nickname && nickname) existing.nickname = nickname;
+    if (!existing.discordUserId && discordUserId) existing.discordUserId = discordUserId;
+    return existing;
+  }
+
+  const player: GuildPlayer = {
+    key,
+    nickname: nickname || "",
+    discordUserId: discordUserId || "",
+    activeItems: [],
+    deliveryHistory: [],
+  };
+  players.set(key, player);
+  return player;
+}
+
+function buildPlayerKey(discordUserId: string, nickname: string) {
+  const userId = String(discordUserId || "").trim();
+  if (userId) return `discord:${userId}`;
+  return `name:${normalizePlayerName(nickname)}`;
 }

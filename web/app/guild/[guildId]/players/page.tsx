@@ -1,14 +1,13 @@
-import Link from "next/link";
-import { Download } from "lucide-react";
 import { requireGuildAccess } from "@/lib/guild-access";
 import { buildBotInviteUrl, fetchBotGuild } from "@/lib/discord";
-import { getGuildSettings, getPanelData } from "@/lib/data";
+import { getGuildPlayers, getGuildSettings } from "@/lib/data";
 import { tr } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DeliveriesCard, GuildHeader } from "@/components/guild/guild-ui";
+import { GuildHeader } from "@/components/guild/guild-ui";
+import { PlayerGrid } from "@/components/guild/player-ui";
 
-export default async function GuildHistoryPage({ params }: { params: Promise<{ guildId: string }> }) {
+export default async function GuildPlayersPage({ params }: { params: Promise<{ guildId: string }> }) {
   const { guildId } = await params;
   const { sessionGuild } = await requireGuildAccess(guildId);
   const settings = await getGuildSettings(guildId);
@@ -22,7 +21,7 @@ export default async function GuildHistoryPage({ params }: { params: Promise<{ g
         <Card>
           <CardHeader>
             <CardTitle>{tr(locale, "Convidar bot", "Invite bot")}</CardTitle>
-            <CardDescription>{tr(locale, "Convide o bot antes de visualizar o historico.", "Invite the bot before viewing history.")}</CardDescription>
+            <CardDescription>{tr(locale, "Convide o bot antes de visualizar jogadores.", "Invite the bot before viewing players.")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild><a href={buildBotInviteUrl(guildId)}>{tr(locale, "Convidar para", "Invite to")} {sessionGuild.name}</a></Button>
@@ -32,17 +31,12 @@ export default async function GuildHistoryPage({ params }: { params: Promise<{ g
     );
   }
 
-  const panelData = await getPanelData(guildId);
+  const players = await getGuildPlayers(guildId);
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <GuildHeader title={sessionGuild.name} description={tr(locale, "Historico das ultimas entregas feitas pelos administradores.", "History of the latest deliveries marked by administrators.")} locale={locale} />
-        <Button variant="outline" asChild>
-          <Link href={`/guild/${guildId}/export/deliveries.csv`}><Download className="h-4 w-4" />{tr(locale, "Exportar entregas", "Export deliveries")}</Link>
-        </Button>
-      </div>
-      <DeliveriesCard deliveries={panelData.deliveries} locale={locale} />
+      <GuildHeader title={sessionGuild.name} description={tr(locale, "Jogadores com lista ativa ou historico de recebimento.", "Players with an active list or delivery history.")} locale={locale} />
+      <PlayerGrid players={players} locale={locale} />
     </div>
   );
 }

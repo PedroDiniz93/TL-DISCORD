@@ -4,16 +4,19 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { query, transaction } from "@/lib/db";
 import { ensureGuild } from "@/lib/data";
 import { sendGuildChannelTest, sendGuildControlPanel } from "@/lib/discord";
 import { requireGuildAccess } from "@/lib/guild-access";
 import { getItemUploadDir, getItemUploadUrl } from "@/lib/uploads";
+import { WEB_LOCALE_COOKIE, normalizeLocale } from "@/lib/i18n";
 
 export async function saveSettings(guildId: string, formData: FormData) {
   const guild = await ensureGuild(guildId);
   const adminRoleIds = formData.getAll("adminRoleIds").map(String).filter(Boolean);
+  const locale = normalizeLocale(String(formData.get("locale") || "pt-BR"));
   await query(
     `UPDATE guild_settings
      SET allowed_channel_id = $2,
@@ -27,9 +30,17 @@ export async function saveSettings(guildId: string, formData: FormData) {
       String(formData.get("allowedChannelId") || ""),
       adminRoleIds[0] || "",
       JSON.stringify(adminRoleIds),
-      String(formData.get("locale") || "pt-BR"),
+      locale,
     ]
   );
+  const cookieStore = await cookies();
+  cookieStore.set(WEB_LOCALE_COOKIE, locale, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 365 * 24 * 60 * 60,
+  });
   revalidatePath(`/guild/${guildId}/settings`);
   redirect(`/guild/${guildId}/settings`);
 }

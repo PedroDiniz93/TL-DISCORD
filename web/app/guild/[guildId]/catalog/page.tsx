@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ListTree, Package } from "lucide-react";
 import { requireGuildAccess } from "@/lib/guild-access";
 import { buildBotInviteUrl, fetchBotGuild } from "@/lib/discord";
-import { getCatalog } from "@/lib/data";
+import { getCatalog, getGuildSettings } from "@/lib/data";
+import { tr } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuildHeader } from "@/components/guild/guild-ui";
@@ -10,19 +11,21 @@ import { GuildHeader } from "@/components/guild/guild-ui";
 export default async function GuildCatalogPage({ params }: { params: Promise<{ guildId: string }> }) {
   const { guildId } = await params;
   const { sessionGuild } = await requireGuildAccess(guildId);
+  const settings = await getGuildSettings(guildId);
+  const locale = settings.locale;
 
   const botGuild = await fetchBotGuild(guildId);
   if (!botGuild) {
     return (
       <div className="space-y-6">
-        <GuildHeader title={sessionGuild.name} description="O bot ainda nao esta instalado neste servidor." />
+        <GuildHeader title={sessionGuild.name} description={tr(locale, "O bot ainda nao esta instalado neste servidor.", "The bot is not installed on this server yet.")} locale={locale} />
         <Card>
           <CardHeader>
-            <CardTitle>Convidar bot</CardTitle>
-            <CardDescription>Convide o bot antes de configurar o catalogo.</CardDescription>
+            <CardTitle>{tr(locale, "Convidar bot", "Invite bot")}</CardTitle>
+            <CardDescription>{tr(locale, "Convide o bot antes de configurar o catalogo.", "Invite the bot before configuring the catalog.")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild><a href={buildBotInviteUrl(guildId)}>Convidar para {sessionGuild.name}</a></Button>
+            <Button asChild><a href={buildBotInviteUrl(guildId)}>{tr(locale, "Convidar para", "Invite to")} {sessionGuild.name}</a></Button>
           </CardContent>
         </Card>
       </div>
@@ -33,7 +36,7 @@ export default async function GuildCatalogPage({ params }: { params: Promise<{ g
 
   return (
     <div className="space-y-8">
-      <GuildHeader title={sessionGuild.name} description="Armas Archboss, itens raros, categorias, limites e autocomplete." />
+      <GuildHeader title={sessionGuild.name} description={tr(locale, "Armas Archboss, itens raros, categorias, limites e autocomplete.", "Archboss weapons, rare items, categories, limits, and autocomplete.")} locale={locale} />
       <div className="grid gap-4 md:grid-cols-2">
         <Link href={`/guild/${guildId}/catalog/categories`}>
           <Card className="transition hover:border-primary">
@@ -42,11 +45,11 @@ export default async function GuildCatalogPage({ params }: { params: Promise<{ g
                 <ListTree className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle>Categorias</CardTitle>
-                <CardDescription>{catalog.categories.length} categorias cadastradas</CardDescription>
+                <CardTitle>{tr(locale, "Categorias", "Categories")}</CardTitle>
+                <CardDescription>{catalog.categories.length} {tr(locale, "categorias cadastradas", "registered categories")}</CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="pt-5 text-sm text-muted-foreground">Configurar agrupamentos, limites e ordem.</CardContent>
+            <CardContent className="pt-5 text-sm text-muted-foreground">{tr(locale, "Configurar agrupamentos, limites e ordem.", "Configure groups, limits, and order.")}</CardContent>
           </Card>
         </Link>
         <Link href={`/guild/${guildId}/catalog/items`}>
@@ -56,11 +59,11 @@ export default async function GuildCatalogPage({ params }: { params: Promise<{ g
                 <Package className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle>Itens</CardTitle>
-                <CardDescription>{catalog.items.length} itens cadastrados</CardDescription>
+                <CardTitle>{tr(locale, "Itens", "Items")}</CardTitle>
+                <CardDescription>{catalog.items.length} {tr(locale, "itens cadastrados", "registered items")}</CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="pt-5 text-sm text-muted-foreground">Gerenciar imagens e status no autocomplete.</CardContent>
+            <CardContent className="pt-5 text-sm text-muted-foreground">{tr(locale, "Gerenciar imagens e status no autocomplete.", "Manage images and autocomplete status.")}</CardContent>
           </Card>
         </Link>
       </div>
